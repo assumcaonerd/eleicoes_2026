@@ -24,16 +24,77 @@ export function plansPage(user:any){
 
 export function appPage(user:any,active:boolean){
   if(!active) return layout("Aplicativo",'<div class="card"><h1>Assinatura necessária</h1><p class="muted">Sua conta está autenticada, mas ainda não possui uma assinatura ativa.</p><a class="btn" href="/planos">Escolher plano</a></div>',user);
-  var body = '<h1>Votos por Seção 2026</h1><p class="muted">Pesquise, favorite e compare candidatos usando a base oficial carregada no sistema.</p><div class="card"><form id="search"><div class="grid"><label class="field">Candidato<input name="q" placeholder="Nome ou número" required></label><label class="field">Cargo<select name="office"><option value="">Todos</option><option value="1">Presidente</option><option value="3">Governador</option><option value="5">Senador</option><option value="6">Deputado Federal</option><option value="7">Deputado Estadual/Distrital</option></select></label><label class="field">UF<input name="uf" maxlength="2" placeholder="ES"></label></div><button class="btn">Buscar</button></form><div class="row" style="margin-top:16px"><button class="btn secondary" id="favoritesBtn" type="button">Favoritos</button><button class="btn secondary" id="historyBtn" type="button">Pesquisas recentes</button><button class="btn secondary" id="statusBtn" type="button">Atualização dos dados</button><button class="btn" id="compareBtn" type="button">Comparar selecionados</button></div><div id="results" style="margin-top:20px"></div></div><script>
+  var body = `<h1>Votos por Seção 2026</h1>
+<p class="muted">Pesquise, favorite e compare candidatos usando a base oficial carregada no sistema.</p>
+<div class="card">
+<form id="search">
+<div class="grid">
+<label class="field">Candidato<input name="q" placeholder="Nome ou número" required></label>
+<label class="field">Cargo<select name="office"><option value="">Todos</option><option value="1">Presidente</option><option value="3">Governador</option><option value="5">Senador</option><option value="6">Deputado Federal</option><option value="7">Deputado Estadual/Distrital</option></select></label>
+<label class="field">UF<input name="uf" maxlength="2" placeholder="ES"></label>
+</div>
+<button class="btn">Buscar</button>
+</form>
+<div class="row" style="margin-top:16px">
+<button class="btn secondary" id="favoritesBtn" type="button">Favoritos</button>
+<button class="btn secondary" id="historyBtn" type="button">Pesquisas recentes</button>
+<button class="btn secondary" id="statusBtn" type="button">Atualização dos dados</button>
+<button class="btn" id="compareBtn" type="button">Comparar selecionados</button>
+</div>
+<div id="results" style="margin-top:20px"></div>
+</div>
+<script>
 var selected=[];
-function table(rows){return "<table><thead><tr><th></th><th>Candidato</th><th>Cargo</th><th>UF</th><th>Número</th><th>Partido</th><th></th></tr></thead><tbody>"+rows.map(function(x){return "<tr><td><input type=checkbox class=cmp data-id="+x.id+"></td><td><b>"+x.ballot_name+"</b></td><td>"+x.office_name+"</td><td>"+x.uf+"</td><td>"+x.number+"</td><td>"+(x.party_abbr||"")+"</td><td><button type=button class=fav data-id="+x.id+">★</button></td></tr>"}).join("")+"</tbody></table>"}
-async function bind(){document.querySelectorAll(".cmp").forEach(function(el){el.addEventListener("change",function(){var id=Number(this.dataset.id);if(this.checked){if(selected.length>=3){this.checked=false;alert("Compare até 3 candidatos.");return}selected.push(id)}else selected=selected.filter(function(v){return v!==id})})});document.querySelectorAll(".fav").forEach(function(el){el.addEventListener("click",async function(){await fetch("/api/favorites",{method:"POST",headers:{"content-type":"application/x-www-form-urlencoded"},body:"candidateId="+this.dataset.id});this.textContent="✓"})})}
-document.getElementById("search").addEventListener("submit",async function(e){e.preventDefault();var f=new FormData(e.target);var p=new URLSearchParams();for(var pair of f.entries()){if(pair[1])p.set(pair[0],String(pair[1]))}var r=await fetch("/api/candidates?"+p.toString());var d=await r.json();var el=document.getElementById("results");if(!r.ok){el.innerHTML="<div class=error>"+d.error+"</div>";return}el.innerHTML=table(d.rows);bind()});
-document.getElementById("favoritesBtn").addEventListener("click",async function(){var d=await (await fetch("/api/favorites")).json();document.getElementById("results").innerHTML=table(d.rows||[]);bind()});
-document.getElementById("historyBtn").addEventListener("click",async function(){var d=await (await fetch("/api/history")).json();document.getElementById("results").innerHTML="<h3>Pesquisas recentes</h3>"+(d.rows||[]).map(function(x){return "<div class=card style='margin:8px 0;padding:12px'><b>"+x.query+"</b><div class=muted>"+new Date(x.created_at).toLocaleString("pt-BR")+"</div></div>"}).join("")});
-document.getElementById("statusBtn").addEventListener("click",async function(){var d=await (await fetch("/api/data-status")).json();document.getElementById("results").innerHTML="<h3>Fontes carregadas</h3>"+(d.rows||[]).map(function(x){return "<div class=card style='margin:8px 0;padding:12px'><b>"+x.source_kind+"</b><div class=muted>"+x.rows+" registros · atualização "+(x.updated_at?new Date(x.updated_at).toLocaleString("pt-BR"):"-")+"</div></div>"}).join("")});
-document.getElementById("compareBtn").addEventListener("click",async function(){if(selected.length<2){alert("Selecione 2 ou 3 candidatos.");return}var d=await (await fetch("/api/compare?level=municipality&ids="+selected.join(","))).json();var rows=d.rows||[];document.getElementById("results").innerHTML="<h3>Comparação por município</h3><table><thead><tr><th>Município</th><th>Candidato ID</th><th>Votos</th></tr></thead><tbody>"+rows.map(function(x){return "<tr><td>"+(x.municipality_name||"")+"</td><td>"+x.candidate_id+"</td><td>"+x.votes+"</td></tr>"}).join("")+"</tbody></table>"});
-</script>';
+function table(rows){
+  return "<table><thead><tr><th></th><th>Candidato</th><th>Cargo</th><th>UF</th><th>Número</th><th>Partido</th><th></th></tr></thead><tbody>"+
+    rows.map(function(x){return "<tr><td><input type='checkbox' class='cmp' data-id='"+x.id+"'></td><td><b>"+x.ballot_name+"</b></td><td>"+x.office_name+"</td><td>"+x.uf+"</td><td>"+x.number+"</td><td>"+(x.party_abbr||"")+"</td><td><button type='button' class='fav' data-id='"+x.id+"'>★</button></td></tr>"}).join("")+
+    "</tbody></table>";
+}
+function bind(){
+  document.querySelectorAll(".cmp").forEach(function(el){
+    el.addEventListener("change",function(){
+      var id=Number(this.dataset.id);
+      if(this.checked){
+        if(selected.length>=3){this.checked=false;alert("Compare até 3 candidatos.");return;}
+        selected.push(id);
+      } else {
+        selected=selected.filter(function(v){return v!==id});
+      }
+    });
+  });
+  document.querySelectorAll(".fav").forEach(function(el){
+    el.addEventListener("click",async function(){
+      await fetch("/api/favorites",{method:"POST",headers:{"content-type":"application/x-www-form-urlencoded"},body:"candidateId="+this.dataset.id});
+      this.textContent="✓";
+    });
+  });
+}
+document.getElementById("search").addEventListener("submit",async function(e){
+  e.preventDefault();
+  var f=new FormData(e.target), p=new URLSearchParams();
+  for(var pair of f.entries()) if(pair[1]) p.set(pair[0],String(pair[1]));
+  var r=await fetch("/api/candidates?"+p.toString()), d=await r.json(), el=document.getElementById("results");
+  if(!r.ok){el.innerHTML="<div class='error'>"+d.error+"</div>";return;}
+  el.innerHTML=table(d.rows); bind();
+});
+document.getElementById("favoritesBtn").addEventListener("click",async function(){
+  var d=await (await fetch("/api/favorites")).json();
+  document.getElementById("results").innerHTML=table(d.rows||[]); bind();
+});
+document.getElementById("historyBtn").addEventListener("click",async function(){
+  var d=await (await fetch("/api/history")).json();
+  document.getElementById("results").innerHTML="<h3>Pesquisas recentes</h3>"+(d.rows||[]).map(function(x){return "<div class='card' style='margin:8px 0;padding:12px'><b>"+x.query+"</b><div class='muted'>"+new Date(x.created_at).toLocaleString("pt-BR")+"</div></div>"}).join("");
+});
+document.getElementById("statusBtn").addEventListener("click",async function(){
+  var d=await (await fetch("/api/data-status")).json();
+  document.getElementById("results").innerHTML="<h3>Fontes carregadas</h3>"+(d.rows||[]).map(function(x){return "<div class='card' style='margin:8px 0;padding:12px'><b>"+x.source_kind+"</b><div class='muted'>"+x.rows+" registros · atualização "+(x.updated_at?new Date(x.updated_at).toLocaleString("pt-BR"):"-")+"</div></div>"}).join("");
+});
+document.getElementById("compareBtn").addEventListener("click",async function(){
+  if(selected.length<2){alert("Selecione 2 ou 3 candidatos.");return;}
+  var d=await (await fetch("/api/compare?level=municipality&ids="+selected.join(","))).json(), rows=d.rows||[];
+  document.getElementById("results").innerHTML="<h3>Comparação por município</h3><table><thead><tr><th>Município</th><th>Candidato ID</th><th>Votos</th></tr></thead><tbody>"+rows.map(function(x){return "<tr><td>"+(x.municipality_name||"")+"</td><td>"+x.candidate_id+"</td><td>"+x.votes+"</td></tr>"}).join("")+"</tbody></table>";
+});
+</script>`;
   return layout("Aplicativo",body,user);
 }
 
