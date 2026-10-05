@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/download-data-2026.yml"
+      - "data/download-trigger.txt"
   workflow_dispatch:
 
 permissions:
