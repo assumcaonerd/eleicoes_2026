@@ -8,6 +8,7 @@ import { registerAppResource, registerAppTool, RESOURCE_MIME_TYPE } from "@model
 import { z } from "zod";
 import { config } from "./config.js";
 import { candidateSummary, searchCandidates, votesByLevel } from "./tools/queries.js";
+import { handleWeb } from "./web/handler.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const widget = readFileSync(join(here, "ui", "results-widget.html"), "utf8");
@@ -74,7 +75,8 @@ const server = createServer(async (req, res) => {
     res.end(JSON.stringify({ ok: true, app: "Votos por Seção", year: 2026 }));
     return;
   }
-  if (req.url !== "/mcp") {
+  if (await handleWeb(req, res)) return;
+  if (req.url !== "/mcp" || process.env.ENABLE_MCP !== "true") {
     res.writeHead(404); res.end("Not found"); return;
   }
   const mcp = makeMcpServer();
