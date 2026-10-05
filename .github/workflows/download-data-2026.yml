@@ -1,0 +1,70 @@
+name: Baixar dados oficiais 2026
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/download-data-2026.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar diretórios
+        run: |
+          mkdir -p data-2026/raw data-2026/manifest
+
+      - name: Baixar candidatos 2026
+        run: |
+          curl -fL --retry 5 --retry-delay 5             "https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand/consulta_cand_2026.zip"             -o data-2026/raw/consulta_cand_2026.zip
+
+      - name: Baixar eleitorado 2026
+        run: |
+          curl -fL --retry 5 --retry-delay 5             "https://cdn.tse.jus.br/estatistica/sead/odsele/perfil_eleitorado/perfil_eleitorado_2026.zip"             -o data-2026/raw/perfil_eleitorado_2026.zip
+
+      - name: Baixar locais de votação 2026
+        run: |
+          curl -fL --retry 5 --retry-delay 5             "https://cdn.tse.jus.br/estatistica/sead/odsele/eleitorado_locais_votacao/eleitorado_local_votacao_2026.zip"             -o data-2026/raw/eleitorado_local_votacao_2026.zip
+
+      - name: Baixar perfil por seção, todas as UFs
+        shell: bash
+        run: |
+          set -euo pipefail
+          ufs=(AC AL AM AP BA CE DF ES GO MA MG MS MT PA PB PE PI PR RJ RN RO RR RS SC SE SP TO ZZ)
+          for uf in "${ufs[@]}"; do
+            url="https://cdn.tse.jus.br/estatistica/sead/odsele/perfil_eleitor_secao/perfil_eleitor_secao_2026_${uf}.zip"
+            echo "Baixando ${uf}..."
+            curl -fL --retry 5 --retry-delay 5 "$url"               -o "data-2026/raw/perfil_eleitor_secao_2026_${uf}.zip"
+          done
+
+      - name: Baixar configurações oficiais Resultados 2026
+        run: |
+          curl -fL --retry 5             "https://resultados.tse.jus.br/oficial/comum/config/ele-c.json"             -o data-2026/raw/ele-c.json
+          curl -fL --retry 5             "https://resultados.tse.jus.br/oficial/ele2026/6259/config/mun-e006259-cm.json"             -o data-2026/raw/mun-e006259-cm.json || true
+
+      - name: Gerar manifesto e checksums
+        shell: bash
+        run: |
+          cd data-2026
+          find raw -type f -printf '%P\t%s bytes\n' | sort > manifest/arquivos.txt
+          sha256sum raw/* | sort > manifest/SHA256SUMS.txt
+          printf 'Gerado em UTC: %s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > manifest/metadata.txt
+          printf 'Fonte: Tribunal Superior Eleitoral\n' >> manifest/metadata.txt
+          printf 'Ano: 2026\n' >> manifest/metadata.txt
+          printf 'Observação: o pacote consolidado de votação por seção 2026 ainda não estava publicado no catálogo de Dados Abertos no momento desta execução.\n' >> manifest/metadata.txt
+          du -sh raw >> manifest/metadata.txt
+
+      - name: Publicar artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: dados-oficiais-tse-2026
+          path: data-2026/
+          retention-days: 90
+          compression-level: 0
