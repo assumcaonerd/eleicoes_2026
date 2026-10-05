@@ -82,3 +82,100 @@ export async function votesByLevel(args: {
   `, [args.candidateId, args.municipalityCode ?? null, args.neighborhood ?? null, args.zone ?? null, limit, offset]);
   return rows;
 }
+
+
+export async function compareCandidates(args:{
+  candidateIds:number[];
+  level:"municipality"|"neighborhood"|"zone"|"polling_place"|"section";
+  municipalityCode?:string;
+  zone?:number;
+  limit?:number;
+}) {
+  const ids=[...new Set(args.candidateIds)].slice(0,3);
+  if(ids.length<2) throw new Error("Informe de 2 a 3 candidatos.");
+  const limit=Math.min(args.limit??200,500);
+  const levelExpr = args.level==="municipality"
+    ? "municipality_code, municipality_name"
+    : args.level==="neighborhood"
+      ? "municipality_code, municipality_name, neighborhood"
+      : args.level==="zone"
+        ? "municipality_code, municipality_name, zone"
+        : args.level==="polling_place"
+          ? "municipality_code, municipality_name, neighborhood, zone, polling_place_code"
+          : "municipality_code, municipality_name, neighborhood, zone, polling_place_code, section";
+  const predicates = args.level==="municipality"
+    ? "municipality_code <> '' AND zone=-1 AND section=-1"
+    : args.level==="zone"
+      ? "zone>=0 AND section=-1"
+      : args.level==="section"
+        ? "section>=0"
+        : args.level==="neighborhood"
+          ? "neighborhood<>''"
+          : "polling_place_code<>''";
+  const {rows}=await sql(`
+    SELECT ${levelExpr}, candidate_id, SUM(votes)::int AS votes
+    FROM vote_facts
+    WHERE candidate_id = ANY($1::bigint[])
+      AND ${predicates}
+      AND ($2::text IS NULL OR municipality_code=$2)
+      AND ($3::int IS NULL OR zone=$3)
+    GROUP BY ${levelExpr}, candidate_id
+    ORDER BY ${levelExpr}, votes DESC
+    LIMIT $4
+  `,[ids,args.municipalityCode??null,args.zone??null,limit*ids.length]);
+  return rows;
+}
+
+export async function topTerritories(args:{
+  candidateId:number;
+  level:"municipality"|"neighborhood"|"zone"|"polling_place"|"section";
+  limit?:number;
+}) {
+  const limit=Math.min(args.limit??20,100);
+  const levelExpr = args.level==="municipality"
+    ? "municipality_code, municipality_name"
+    : args.level==="neighborhood"
+      ? "municipality_code, municipality_name, neighborhood"
+      : args.level==="zone"
+        ? "municipality_code, municipality_name, zone"
+        : args.level==="polling_place"
+          ? "municipality_code, municipality_name, neighborhood, zone, polling_place_code"
+          : "municipality_code, municipality_name, neighborhood, zone, polling_place_code, section";
+  const predicates = args.level==="municipality"
+    ? "municipality_code <> '' AND zone=-1 AND section=-1"
+    : args.level==="zone"
+      ? "zone>=0 AND section=-1"
+      : args.level==="section"
+        ? "section>=0"
+        : args.level==="neighborhood"
+          ? "neighborhood<>''"
+          : "polling_place_code<>''";
+  const {rows}=await sql(`
+    SELECT ${levelExpr}, SUM(votes)::int AS votes
+    FROM vote_facts
+    WHERE candidate_id=$1 AND ${predicates}
+    GROUP BY ${levelExpr}
+    ORDER BY votes DESC
+    LIMIT $2
+  `,[args.candidateId,limit]);
+  return rows;
+}
+
+export async function partyVotes(args:{partyAbbr:string;officeCode:number;uf:string}) {
+  const {rows}=await sql(`
+    SELECT c.party_abbr,c.office_name,c.uf,SUM(v.votes)::bigint AS votes
+    FROM vote_facts v JOIN candidates c ON c.id=v.candidate_id
+    WHERE c.party_abbr=$1 AND c.office_code=$2 AND c.uf=$3
+      AND v.municipality_code='' AND v.zone=-1
+    GROUP BY c.party_abbr,c.office_name,c.uf
+  `,[args.partyAbbr.toUpperCase(),args.officeCode,args.uf.toUpperCase()]);
+  return rows[0]??null;
+}
+
+export async function sourceStatus() {
+  const {rows}=await sql(`
+    SELECT source_kind, count(*)::bigint AS rows, max(source_updated_at) AS updated_at
+    FROM vote_facts GROUP BY source_kind ORDER BY source_kind
+  `);
+  return rows;
+}
