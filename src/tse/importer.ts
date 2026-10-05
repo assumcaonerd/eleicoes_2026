@@ -74,12 +74,20 @@ export async function importAll2026() {
 
     for (const uf of ufs) {
       for (const office of [3, 5, 6, 7]) {
-        rowsImported += await storeScope({ office, uf });
-        filesDownloaded++;
+        try {
+          rowsImported += await storeScope({ office, uf });
+          filesDownloaded++;
+        } catch (err: any) {
+          if (!String(err?.message ?? err).includes("404")) throw err;
+        }
       }
     }
-    rowsImported += await storeScope({ office: 1, uf: "BR" });
-    filesDownloaded++;
+    try {
+      rowsImported += await storeScope({ office: 1, uf: "BR" });
+      filesDownloaded++;
+    } catch (err: any) {
+      if (!String(err?.message ?? err).includes("404")) throw err;
+    }
 
     await mapLimit(municipalities, concurrency, async (municipality) => {
       for (const office of [1, 3, 5, 6, 7]) {
