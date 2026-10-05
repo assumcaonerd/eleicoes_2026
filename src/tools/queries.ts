@@ -179,3 +179,40 @@ export async function sourceStatus() {
   `);
   return rows;
 }
+
+
+export async function sectionMap(args:{candidateId:number;municipalityCode?:string;limit?:number}) {
+  const {rows}=await sql(`
+    SELECT v.municipality_code,v.municipality_name,v.zone,v.section,v.polling_place_code,
+           p.polling_place_name,p.neighborhood,p.latitude,p.longitude,
+           SUM(v.votes)::int AS votes,
+           s.valid_votes,s.turnout,s.electorate,
+           CASE WHEN s.valid_votes>0 THEN ROUND((SUM(v.votes)::numeric/s.valid_votes)*100,2) ELSE NULL END AS pct_valid
+    FROM vote_facts v
+    LEFT JOIN places p ON p.uf=v.uf AND p.municipality_code=v.municipality_code AND p.zone=v.zone AND p.section=v.section
+    LEFT JOIN section_stats s ON s.election_id=v.election_id AND s.round=v.round AND s.uf=v.uf
+      AND s.municipality_code=v.municipality_code AND s.zone=v.zone AND s.section=v.section
+    WHERE v.candidate_id=$1 AND v.section>=0
+      AND ($2::text IS NULL OR v.municipality_code=$2)
+      AND p.latitude IS NOT NULL AND p.longitude IS NOT NULL
+    GROUP BY v.municipality_code,v.municipality_name,v.zone,v.section,v.polling_place_code,
+             p.polling_place_name,p.neighborhood,p.latitude,p.longitude,s.valid_votes,s.turnout,s.electorate
+    ORDER BY votes DESC
+    LIMIT $3
+  `,[args.candidateId,args.municipalityCode??null,Math.min(args.limit??2000,5000)]);
+  return rows;
+}
+
+export async function sectionMetrics(args:{candidateId:number;municipalityCode:string;zone:number;section:number}) {
+  const {rows}=await sql(`
+    SELECT SUM(v.votes)::int AS votes,s.valid_votes,s.turnout,s.electorate,s.abstentions,s.blank_votes,s.null_votes,
+      CASE WHEN s.valid_votes>0 THEN ROUND((SUM(v.votes)::numeric/s.valid_votes)*100,2) ELSE NULL END AS pct_valid,
+      CASE WHEN s.turnout>0 THEN ROUND((SUM(v.votes)::numeric/s.turnout)*100,2) ELSE NULL END AS pct_turnout
+    FROM vote_facts v
+    LEFT JOIN section_stats s ON s.election_id=v.election_id AND s.round=v.round AND s.uf=v.uf
+      AND s.municipality_code=v.municipality_code AND s.zone=v.zone AND s.section=v.section
+    WHERE v.candidate_id=$1 AND v.municipality_code=$2 AND v.zone=$3 AND v.section=$4
+    GROUP BY s.valid_votes,s.turnout,s.electorate,s.abstentions,s.blank_votes,s.null_votes
+  `,[args.candidateId,args.municipalityCode,args.zone,args.section]);
+  return rows[0]??null;
+}
