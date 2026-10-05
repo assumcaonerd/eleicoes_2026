@@ -31,6 +31,7 @@ function makeMcpServer() {
       officeCode: z.number().int().optional(),
       uf: z.string().length(2).optional(),
     },
+    _meta: { ui: { resourceUri } },
   }, async (args) => {
     const rows = await searchCandidates(args);
     return { content: [{ type: "text", text: JSON.stringify(rows) }], structuredContent: { rows } };
