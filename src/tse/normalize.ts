@@ -91,8 +91,10 @@ export function discoverMunicipalities(payload: any) {
         const code = String(municipality?.cd ?? "").trim();
         const name = String(municipality?.nm ?? "").trim();
         const ibgeCode = String(municipality?.cdi ?? "").trim() || undefined;
-        const zones = Array.isArray(municipality?.z)
-          ? municipality.z.map((z:any) => Number(String(z))).filter(Number.isFinite)
+        const zones: number[] = Array.isArray(municipality?.z)
+          ? municipality.z
+              .map((z:any) => Number(String(z)))
+              .filter((z:number) => Number.isFinite(z))
           : [];
         if (/^\d{5}$/.test(code) && name) {
           out.push({ uf, code, ibgeCode, name, zones:[...new Set(zones)] });
@@ -117,8 +119,10 @@ export function discoverMunicipalities(payload: any) {
     const code = String(first(value.cdmun, value.codigo, value.cd) ?? "").trim();
     const name = String(first(value.nmmun, value.nome, value.nm) ?? "").trim();
     const zonesRaw = first(value.z, value.zonas, value.zn);
-    const zones = Array.isArray(zonesRaw)
-      ? zonesRaw.map((z:any) => Number(first(z?.cd, z?.n, z?.z, z))).filter(Number.isFinite)
+    const zones: number[] = Array.isArray(zonesRaw)
+      ? zonesRaw
+          .map((z:any) => Number(first(z?.cd, z?.n, z?.z, z)))
+          .filter((z:number) => Number.isFinite(z))
       : [];
     if (stateCode && /^\d{5}$/.test(code) && name) out.push({ uf:stateCode, code, name, zones:[...new Set(zones)] });
 
