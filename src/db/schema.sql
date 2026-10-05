@@ -169,3 +169,26 @@ CREATE TABLE IF NOT EXISTS search_history (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS search_history_user_idx ON search_history(user_id, created_at DESC);
+
+
+CREATE TABLE IF NOT EXISTS section_stats (
+  id BIGSERIAL PRIMARY KEY,
+  election_id INTEGER NOT NULL,
+  round INTEGER NOT NULL DEFAULT 1,
+  uf CHAR(2) NOT NULL,
+  municipality_code TEXT NOT NULL,
+  municipality_name TEXT,
+  zone INTEGER NOT NULL,
+  section INTEGER NOT NULL,
+  polling_place_code TEXT NOT NULL DEFAULT '',
+  electorate INTEGER,
+  turnout INTEGER,
+  abstentions INTEGER,
+  valid_votes INTEGER,
+  blank_votes INTEGER,
+  null_votes INTEGER,
+  source_kind TEXT NOT NULL,
+  source_updated_at TIMESTAMPTZ,
+  UNIQUE(election_id, round, uf, municipality_code, zone, section, polling_place_code, source_kind)
+);
+CREATE INDEX IF NOT EXISTS section_stats_scope_idx ON section_stats(uf, municipality_code, zone, section);
