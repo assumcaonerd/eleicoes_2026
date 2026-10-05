@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Votos por Seção</title>
+<style>
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#161616;background:#fff}
+body{margin:0;padding:18px}.card{border:1px solid #e6e6e6;border-radius:18px;padding:18px;box-shadow:0 8px 30px rgba(0,0,0,.05)}
+.top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.brand{font-weight:800;font-size:18px}.muted{color:#666;font-size:12px}.big{font-size:34px;font-weight:800;margin:12px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:14px}.pill{padding:10px 12px;background:#f6f6f6;border-radius:12px}.label{font-size:11px;color:#686868;text-transform:uppercase;letter-spacing:.05em}.value{font-weight:700;margin-top:3px}
+table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px}th,td{text-align:left;padding:9px 6px;border-bottom:1px solid #eee}th{font-size:11px;color:#666;text-transform:uppercase}.votes{text-align:right;font-variant-numeric:tabular-nums}.footer{margin-top:14px;font-size:11px;color:#777}
+</style>
+</head>
+<body>
+<div class="card"><div class="top"><div><div class="brand">Votos por Seção</div><div class="muted">Eleições 2026 • dados oficiais armazenados localmente</div></div><div id="updated" class="muted"></div></div><div id="content"><div class="muted">Carregando resultado…</div></div><div class="footer">Fonte original: Tribunal Superior Eleitoral. Este aplicativo é independente da Justiça Eleitoral.</div></div>
+<script>
+function fmt(n){return new Intl.NumberFormat('pt-BR').format(Number(n||0))}
+function render(data){
+ const c=data?.candidate||data?.structuredContent?.candidate; const t=data?.totals||data?.structuredContent?.totals; const rows=data?.rows||data?.structuredContent?.rows||[];
+ const el=document.getElementById('content'); if(!c){el.innerHTML='<div class="muted">Nenhum resultado encontrado.</div>';return}
+ let html=`<div style="margin-top:14px"><div style="font-size:21px;font-weight:800">${c.ballot_name||''}</div><div class="muted">${c.office_name||''} • ${c.uf||''} • ${c.party_abbr||''} • ${c.number||''}</div>`;
+ if(t) html+=`<div class="big">${fmt(t.total_votes)} votos</div>`;
+ if(rows.length){html+='<table><thead><tr><th>Local</th><th>Zona</th><th>Seção</th><th class="votes">Votos</th></tr></thead><tbody>';
+ for(const r of rows) html+=`<tr><td>${r.neighborhood||r.municipality_name||r.polling_place_name||''}</td><td>${r.zone??''}</td><td>${r.section??''}</td><td class="votes">${fmt(r.votes)}</td></tr>`;
+ html+='</tbody></table>'} html+='</div>';el.innerHTML=html;
+}
+window.addEventListener('message',e=>{const m=e.data;if(m?.method==='ui/notifications/tool-result')render(m.params?.content||m.params?.structuredContent||m.params)});
+if(window.openai?.toolOutput) render(window.openai.toolOutput);
+</script>
+</body>
+</html>
