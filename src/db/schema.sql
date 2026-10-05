@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS places (
   address TEXT,
   neighborhood TEXT NOT NULL DEFAULT '',
   cep TEXT,
+  latitude NUMERIC(9,6),
+  longitude NUMERIC(9,6),
   UNIQUE (uf, municipality_code, zone, section, polling_place_code)
 );
 
@@ -150,3 +152,20 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS audit_logs_user_idx ON audit_logs(user_id, created_at DESC);
+
+
+CREATE TABLE IF NOT EXISTS favorites (
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  candidate_id BIGINT NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY(user_id, candidate_id)
+);
+
+CREATE TABLE IF NOT EXISTS search_history (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  query TEXT NOT NULL,
+  filters JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS search_history_user_idx ON search_history(user_id, created_at DESC);
