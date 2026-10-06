@@ -68,9 +68,12 @@ export async function importAll2026() {
   try {
     const { data: municipalityPayload } = await fetchAndPersist<any>(municipalityConfigUrl());
     filesDownloaded++;
-    const municipalities = discoverMunicipalities(municipalityPayload);
-    if (municipalities.length < 5000) throw new Error(`Lista de municípios incompleta: ${municipalities.length}`);
+    const discovered = discoverMunicipalities(municipalityPayload);
+    if (discovered.length < 5000) throw new Error(`Lista de municípios incompleta: ${discovered.length}`);
+    const onlyUf=(process.env.TSE_ONLY_UF??"").trim().toUpperCase();
+    const municipalities = onlyUf ? discovered.filter(m=>m.uf===onlyUf) : discovered;
     const ufs = [...new Set(municipalities.map((m) => m.uf))].sort();
+    if(onlyUf && municipalities.length===0) throw new Error(`UF sem municípios: ${onlyUf}`);
 
     for (const uf of ufs) {
       for (const office of [3, 5, 6, 7]) {
