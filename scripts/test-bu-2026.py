@@ -4,7 +4,7 @@ FORMAT_URL="https://www.tse.jus.br/eleicoes/eleicoes-2026-content/arquivos/forma
 BASE="https://resultados.tse.jus.br/oficial/ele2026/arquivo-urna/3220"
 UF="es"; MUN="56006"; ZONE="0046"; SEC="0059"
 
-with urllib.request.urlopen(FORMAT_URL,timeout=30) as r:
+req=urllib.request.Request(FORMAT_URL,headers={"User-Agent":"Mozilla/5.0"})\nwith urllib.request.urlopen(req,timeout=30) as r:
     z=zipfile.ZipFile(io.BytesIO(r.read()))
     spec_data=z.read("spec/bu.asn1").decode("utf-8")
 with tempfile.NamedTemporaryFile("w",suffix=".asn1",delete=False,encoding="utf-8") as f:
