@@ -325,6 +325,43 @@ def verify_granular(conn):
           ORDER BY sv.votes DESC LIMIT 1
         """)
         sample=cur.fetchone()
+        cur.execute("""
+          SELECT p.neighborhood,SUM(sv.votes)::int AS votes
+          FROM section_votes sv
+          JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code
+            AND p.zone=sv.zone AND p.section=sv.section
+          WHERE sv.uf='ES' AND sv.office_code=7 AND sv.candidate_number='22190'
+            AND COALESCE(p.neighborhood,'')<>''
+          GROUP BY p.neighborhood ORDER BY votes DESC LIMIT 5
+        """)
+        top_neighborhoods=cur.fetchall()
+        cur.execute("""
+          SELECT MAX(p.polling_place_name),MAX(p.address),MAX(p.neighborhood),
+                 MAX(p.polling_place_code),SUM(sv.votes)::int AS votes
+          FROM section_votes sv
+          JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code
+            AND p.zone=sv.zone AND p.section=sv.section
+          WHERE sv.uf='ES' AND sv.office_code=7 AND sv.candidate_number='22190'
+          GROUP BY p.polling_place_code ORDER BY votes DESC LIMIT 5
+        """)
+        top_places=cur.fetchall()
+        cur.execute("""
+          SELECT sv.municipality_name,sv.zone,sv.section,
+                 MAX(p.polling_place_name),MAX(p.address),MAX(p.neighborhood),
+                 SUM(sv.votes)::int AS votes
+          FROM section_votes sv
+          JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code
+            AND p.zone=sv.zone AND p.section=sv.section
+          WHERE sv.uf='ES' AND sv.office_code=7 AND sv.candidate_number='22190'
+          GROUP BY sv.municipality_name,sv.zone,sv.section
+          ORDER BY votes DESC LIMIT 5
+        """)
+        top_sections=cur.fetchall()
+    print("GRANULAR_TERRITORY_SAMPLE="+json.dumps({
+      "neighborhoods":top_neighborhoods,
+      "places":top_places,
+      "sections":top_sections
+    },ensure_ascii=False,default=str),flush=True)
     print("GRANULAR_VERIFY="+json.dumps({
       "places":places_count,"vote_rows":votes_count,
       "joined_loose":joined_loose,"joined_exact":joined_exact,
