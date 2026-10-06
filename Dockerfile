@@ -13,6 +13,7 @@ RUN npm install --omit=dev
 RUN apk add --no-cache python3 py3-pip unzip && pip3 install --break-system-packages asn1tools 'psycopg[binary]'
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/src/db/schema.sql ./dist/src/db/schema.sql
+COPY --from=build /app/src/db/sections-schema.sql ./dist/src/db/sections-schema.sql
 COPY --from=build /app/spec ./spec
 COPY --from=build /app/scripts ./scripts
 EXPOSE 8787
