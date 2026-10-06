@@ -3,7 +3,7 @@ import { URL } from "node:url";
 import { currentUser, hasActiveAccess, sessionCookie, clearSessionCookie, revokeCurrentSession, audit } from "../auth/security.js";
 import { registerUser, loginUser } from "../auth/service.js";
 import { createCheckout, handleStripeWebhook } from "../billing/stripe.js";
-import { searchCandidates, compareCandidates, topTerritories, partyVotes, sourceStatus, sectionMap, sectionMetrics } from "../tools/queries.js";
+import { searchCandidates, compareCandidates, topTerritories, partyVotes, sourceStatus, sectionMap, sectionMetrics, candidateTerritoryOverview, territorialLevel } from "../tools/queries.js";
 import { sql } from "../db/index.js";
 import { homePage, authPage, plansPage, appPage, adminPage } from "./pages.js";
 
@@ -39,6 +39,31 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
   if(url.pathname==="/checkout"&&req.method==="POST"){if(!user){redirect(res,"/login");return true}try{const d=await readBody(req) as any;const plan=d.plan==="lifetime"?"lifetime":"monthly";const target=await createCheckout({id:Number(user.id),email:user.email},plan);await audit(req,"CHECKOUT_STARTED",Number(user.id),{plan});if(!target)throw new Error("Checkout indisponível.");redirect(res,target);}catch(e:any){html(res,plansPage(user),400)}return true}
   if(url.pathname==="/app"&&req.method==="GET"){if(!user){redirect(res,"/login");return true}const active=await hasActiveAccess(Number(user.id));html(res,appPage(user,active));return true}
   if(url.pathname==="/api/candidates"&&req.method==="GET"){if(!user){json(res,{error:"Não autenticado."},401);return true}if(!await hasActiveAccess(Number(user.id))){json(res,{error:"Assinatura inativa."},402);return true}const q=url.searchParams.get("q")??"";const office=Number(url.searchParams.get("office")||0)||undefined;const uf=url.searchParams.get("uf")?.toUpperCase()||undefined;const rows=await searchCandidates({query:q,officeCode:office,uf,limit:50});await sql("INSERT INTO search_history(user_id,query,filters) VALUES($1,$2,$3)",[Number(user.id),q,JSON.stringify({office,uf})]);await audit(req,"SEARCH_CANDIDATE",Number(user.id),{q,office,uf});json(res,{rows});return true}
+  if(url.pathname==="/api/candidate-overview"&&req.method==="GET"){
+    if(!user){json(res,{error:"Não autenticado."},401);return true}
+    if(!await hasActiveAccess(Number(user.id))){json(res,{error:"Assinatura inativa."},402);return true}
+    const candidateId=Number(url.searchParams.get("candidateId"));
+    if(!candidateId){json(res,{error:"Candidato inválido."},400);return true}
+    const data=await candidateTerritoryOverview(candidateId);
+    if(!data){json(res,{error:"Candidato não encontrado."},404);return true}
+    json(res,data);return true
+  }
+  if(url.pathname==="/api/territory"&&req.method==="GET"){
+    if(!user){json(res,{error:"Não autenticado."},401);return true}
+    if(!await hasActiveAccess(Number(user.id))){json(res,{error:"Assinatura inativa."},402);return true}
+    const candidateId=Number(url.searchParams.get("candidateId"));
+    const level=(url.searchParams.get("level")??"municipality") as any;
+    const allowed=["municipality","zone","neighborhood","polling_place","section"];
+    if(!candidateId||!allowed.includes(level)){json(res,{error:"Consulta territorial inválida."},400);return true}
+    const rows=await territorialLevel({
+      candidateId,level,
+      municipalityCode:url.searchParams.get("municipality")||undefined,
+      neighborhood:url.searchParams.get("neighborhood")||undefined,
+      zone:Number(url.searchParams.get("zone")||0)||undefined,
+      limit:Number(url.searchParams.get("limit")||500)
+    });
+    json(res,{rows});return true
+  }
   if(url.pathname==="/api/compare"&&req.method==="GET"){
     if(!user){json(res,{error:"Não autenticado."},401);return true}
     if(!await hasActiveAccess(Number(user.id))){json(res,{error:"Assinatura inativa."},402);return true}
