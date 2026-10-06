@@ -38,25 +38,21 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
     html(res,resetPasswordPage(token));return true
   }
   if(url.pathname==="/redefinir-senha"&&req.method==="POST"){
+    const d=await readBody(req) as any;
+    const token=String(d.token??"");
     try{
-      const d=await readBody(req) as any;
-      const token=String(d.token??"");
       const password=String(d.password??"");
       const confirm=String(d.confirm??"");
       if(password!==confirm) throw new Error("As senhas não conferem.");
       const reset=(await sql<any>("SELECT id,user_id FROM password_reset_tokens WHERE token_hash=$1 AND used_at IS NULL AND expires_at>now() LIMIT 1",[hashToken(token)])).rows[0];
       if(!reset) throw new Error("Link inválido ou expirado.");
       const passwordHash=await hashPassword(password);
-      await sql("BEGIN");
-      try{
-        await sql("UPDATE users SET password_hash=$1,updated_at=now() WHERE id=$2",[passwordHash,Number(reset.user_id)]);
-        await sql("UPDATE password_reset_tokens SET used_at=now() WHERE id=$1",[Number(reset.id)]);
-        await sql("UPDATE user_sessions SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL",[Number(reset.user_id)]);
-        await sql("COMMIT");
-      }catch(e){await sql("ROLLBACK");throw e}
+      await sql("UPDATE users SET password_hash=$1,updated_at=now() WHERE id=$2",[passwordHash,Number(reset.user_id)]);
+      await sql("UPDATE password_reset_tokens SET used_at=now() WHERE id=$1",[Number(reset.id)]);
+      await sql("UPDATE user_sessions SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL",[Number(reset.user_id)]);
       html(res,resetPasswordPage("", "", true));return true
     }catch(e:any){
-      html(res,resetPasswordPage(String((await readBody(req) as any)?.token??""),e.message),400);return true
+      html(res,resetPasswordPage(token,e.message),400);return true
     }
   }
   if(url.pathname==="/cadastro"&&req.method==="POST"){try{const d=await readBody(req) as any;const x=await registerUser(req,d);redirect(res,"/planos",sessionCookie(x.token,process.env.NODE_ENV==="production"));}catch(e:any){html(res,authPage("cadastro",e.message),400)}return true}
