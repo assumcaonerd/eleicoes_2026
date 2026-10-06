@@ -340,24 +340,32 @@ export async function territorialLevel(args:{
     `,[uf,office,number,municipality,limit])).rows;
   } else if(args.level==="polling_place"){
     rows=(await sectionsSql<any>(`
-      SELECT sv.municipality_code,sv.municipality_name,sv.polling_place_code,
-        MAX(p.polling_place_name) AS polling_place_name,MAX(p.address) AS address,
-        MAX(p.neighborhood) AS neighborhood,MAX(p.cep) AS cep,
+      SELECT sv.municipality_code,sv.municipality_name,
+        COALESCE(NULLIF(p.polling_place_code,''),'SEM-CODIGO') AS polling_place_code,
+        MAX(p.polling_place_name) AS polling_place_name,
+        MAX(p.address) AS address,
+        MAX(p.neighborhood) AS neighborhood,
+        MAX(p.cep) AS cep,
+        MAX(p.latitude) AS latitude,
+        MAX(p.longitude) AS longitude,
         SUM(sv.votes)::int AS votes
       FROM section_votes sv
       LEFT JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code
         AND p.zone=sv.zone AND p.section=sv.section
       WHERE sv.uf=$1 AND sv.office_code=$2 AND sv.candidate_number=$3
         AND ($4::text IS NULL OR sv.municipality_code=$4)
-      GROUP BY sv.municipality_code,sv.municipality_name,sv.polling_place_code
+      GROUP BY sv.municipality_code,sv.municipality_name,
+        COALESCE(NULLIF(p.polling_place_code,''),'SEM-CODIGO')
       ORDER BY votes DESC
       LIMIT $5
     `,[uf,office,number,municipality,limit])).rows;
   } else {
     rows=(await sectionsSql<any>(`
-      SELECT sv.municipality_code,sv.municipality_name,sv.zone,sv.section,sv.polling_place_code,
+      SELECT sv.municipality_code,sv.municipality_name,sv.zone,sv.section,
+        MAX(COALESCE(NULLIF(p.polling_place_code,''),sv.polling_place_code)) AS polling_place_code,
         MAX(p.polling_place_name) AS polling_place_name,MAX(p.address) AS address,
-        MAX(p.neighborhood) AS neighborhood,SUM(sv.votes)::int AS votes
+        MAX(p.neighborhood) AS neighborhood,MAX(p.cep) AS cep,
+        SUM(sv.votes)::int AS votes
       FROM section_votes sv
       LEFT JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code
         AND p.zone=sv.zone AND p.section=sv.section
