@@ -7,8 +7,13 @@ export async function searchCandidates(args: { query: string; officeCode?: numbe
     FROM candidates
     WHERE ($1::text IS NULL OR uf=$1)
       AND ($2::int IS NULL OR office_code=$2)
-      AND (number=$3 OR ballot_name ILIKE '%' || $3 || '%' OR similarity(ballot_name,$3) > 0.25)
-    ORDER BY CASE WHEN number=$3 THEN 0 ELSE 1 END, similarity(ballot_name,$3) DESC, ballot_name
+      AND (
+        number=$3
+        OR unaccent(ballot_name) ILIKE '%' || unaccent($3) || '%'
+        OR unaccent(COALESCE(full_name,'')) ILIKE '%' || unaccent($3) || '%'
+        OR similarity(unaccent(ballot_name),unaccent($3)) > 0.25
+      )
+    ORDER BY CASE WHEN number=$3 THEN 0 ELSE 1 END, similarity(unaccent(ballot_name),unaccent($3)) DESC, ballot_name
     LIMIT $4
   `, [args.uf?.toUpperCase() ?? null, args.officeCode ?? null, q, Math.min(args.limit ?? 20, 50)]);
   return rows;
