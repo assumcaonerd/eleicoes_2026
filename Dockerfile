@@ -14,5 +14,6 @@ RUN apk add --no-cache python3 py3-pip && pip3 install --break-system-packages a
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/src/db/schema.sql ./dist/src/db/schema.sql
 COPY --from=build /app/spec ./spec
+COPY --from=build /app/scripts ./scripts
 EXPOSE 8787
 CMD ["node", "dist/src/server.js"]
