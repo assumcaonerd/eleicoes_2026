@@ -19,5 +19,5 @@ try {
   }));
 } finally {
   await pool.end();
-  if (sectionsPool !== pool) await sectionsPool.end();
+  if (sectionsPool && sectionsPool !== pool) await sectionsPool.end();
 }
