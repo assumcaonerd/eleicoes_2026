@@ -4,7 +4,8 @@ FORMAT_URL="https://www.tse.jus.br/eleicoes/eleicoes-2026-content/arquivos/forma
 BASE="https://resultados.tse.jus.br/oficial/ele2026/arquivo-urna/3220"
 UF="es"; MUN="56006"; ZONE="0046"; SEC="0059"
 
-req=urllib.request.Request(FORMAT_URL,headers={"User-Agent":"Mozilla/5.0"})\nwith urllib.request.urlopen(req,timeout=30) as r:
+req=urllib.request.Request(FORMAT_URL,headers={"User-Agent":"Mozilla/5.0"})
+with urllib.request.urlopen(req,timeout=30) as r:
     z=zipfile.ZipFile(io.BytesIO(r.read()))
     spec_data=z.read("spec/bu.asn1").decode("utf-8")
 with tempfile.NamedTemporaryFile("w",suffix=".asn1",delete=False,encoding="utf-8") as f:
@@ -35,5 +36,5 @@ for eleicao in decoded.get("resultadosVotacaoPorEleicao",[]):
                 if str(numero)=="22190":
                     found.append({"cargo":cargo,"voto":voto})
 print("FOUND="+json.dumps(found,ensure_ascii=False,default=str))
-print("SAMPLE="+json.dumps(sample_votes[:12],ensure_ascii=False,default=str))
+print("SAMPLE="+json.dumps(sample_votes[:20],ensure_ascii=False,default=str))
 os.unlink(spec)
