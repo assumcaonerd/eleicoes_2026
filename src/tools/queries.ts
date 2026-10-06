@@ -370,22 +370,4 @@ export async function territorialLevel(args:{
     `,[uf,office,number,municipality,args.zone??null,limit])).rows;
   }
   return rows.map((r:any,i:number)=>({...r,rank:i+1,pct_total:total>0?Number(((Number(r.votes)/total)*100).toFixed(2)):0}));
-}) {
-  const summary=await candidateSummary(args.candidateId);
-  const total=Number((summary.totals as any)?.total_votes??0);
-  const rows=await votesByLevel({
-    candidateId:args.candidateId,
-    level:args.level,
-    municipalityCode:args.municipalityCode,
-    neighborhood:args.neighborhood,
-    zone:args.zone,
-    limit:args.limit??500
-  });
-  return rows
-    .sort((a:any,b:any)=>Number(b.votes)-Number(a.votes))
-    .map((r:any,i:number)=>({
-      ...r,
-      rank:i+1,
-      pct_total:total>0?Number(((Number(r.votes)/total)*100).toFixed(2)):0
-    }));
 }
