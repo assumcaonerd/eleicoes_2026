@@ -13,7 +13,8 @@ RPS=max(1,float(os.getenv("TSE_RPS","8")))
 SLEEP=1.0/RPS
 SECTION_LIMIT=max(0,int(os.getenv("SECTION_LIMIT","0")))
 SPEC=os.getenv("BU_SPEC","spec/bu-v2.asn1")
-DATABASE_URL=os.environ["DATABASE_URL"]
+CORE_DATABASE_URL=os.environ["DATABASE_URL"]
+SECTIONS_DATABASE_URL=os.environ.get("SECTIONS_DATABASE_URL",CORE_DATABASE_URL)
 
 CARGO_MAP={
  "presidente":1,"vicePresidente":2,"governador":3,"viceGovernador":4,
@@ -81,6 +82,27 @@ def ensure_schema(conn):
     CREATE INDEX IF NOT EXISTS places_municipality_idx ON places(uf, municipality_code);
     CREATE INDEX IF NOT EXISTS places_neighborhood_idx ON places(uf, municipality_name, neighborhood);
     CREATE INDEX IF NOT EXISTS places_section_idx ON places(uf, municipality_code, zone, section);
+    CREATE TABLE IF NOT EXISTS section_votes (
+      id BIGSERIAL PRIMARY KEY,
+      election_id INTEGER NOT NULL,
+      round INTEGER NOT NULL DEFAULT 1,
+      office_code INTEGER NOT NULL,
+      uf CHAR(2) NOT NULL,
+      municipality_code TEXT NOT NULL,
+      municipality_name TEXT,
+      zone INTEGER NOT NULL,
+      section INTEGER NOT NULL,
+      polling_place_code TEXT NOT NULL DEFAULT '',
+      candidate_number TEXT NOT NULL,
+      party_number TEXT,
+      votes INTEGER NOT NULL CHECK(votes>=0),
+      source_file TEXT,
+      source_updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE(election_id,round,office_code,uf,municipality_code,zone,section,polling_place_code,candidate_number)
+    );
+    CREATE INDEX IF NOT EXISTS sv_candidate_idx ON section_votes(uf,office_code,candidate_number);
+    CREATE INDEX IF NOT EXISTS sv_municipality_idx ON section_votes(uf,office_code,candidate_number,municipality_code);
+    CREATE INDEX IF NOT EXISTS sv_section_idx ON section_votes(uf,municipality_code,zone,section);
     """
     with conn.cursor() as cur:
         cur.execute(ddl)
@@ -89,10 +111,10 @@ def ensure_schema(conn):
 def load_candidate_map(conn):
     out={}
     with conn.cursor() as cur:
-        cur.execute("""SELECT id,election_id,office_code,uf,number FROM candidates
+        cur.execute("""SELECT election_id,office_code,uf,number,party_number FROM candidates
                        WHERE uf = ANY(%s)""",(UF_LIST,))
-        for cid,eid,office,uf,num in cur.fetchall():
-            out[(int(eid),int(office),str(uf).upper(),norm_num(num))]=int(cid)
+        for eid,office,uf,num,party in cur.fetchall():
+            out[(int(eid),int(office),str(uf).upper(),norm_num(num))]=str(party or "")
     return out
 
 def import_places(conn):
@@ -181,16 +203,15 @@ def decode_bu(codec, raw):
     bu=codec.decode("EntidadeBoletimUrna",env["conteudo"])
     return env,bu
 
-def import_sections(conn):
+def import_sections(conn, candidate_map):
     codec=asn1tools.compile_files(SPEC,codec="ber")
-    cmap=load_candidate_map(conn)
-    insert_sql="""INSERT INTO vote_facts
-      (election_id,office_code,candidate_id,uf,municipality_code,municipality_name,
-       zone,section,polling_place_code,votes,source_kind,source_file,source_updated_at)
-      VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'tse_section_bu',%s,now())
-      ON CONFLICT (election_id,round,office_code,candidate_id,uf,
-        municipality_code,neighborhood,zone,section,polling_place_code,source_kind)
-      DO UPDATE SET votes=EXCLUDED.votes,source_file=EXCLUDED.source_file,source_updated_at=now()"""
+    insert_sql="""INSERT INTO section_votes
+      (election_id,office_code,uf,municipality_code,municipality_name,
+       zone,section,polling_place_code,candidate_number,party_number,votes,source_file,source_updated_at)
+      VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,now())
+      ON CONFLICT (election_id,round,office_code,uf,municipality_code,zone,section,polling_place_code,candidate_number)
+      DO UPDATE SET votes=EXCLUDED.votes,party_number=EXCLUDED.party_number,
+        source_file=EXCLUDED.source_file,source_updated_at=now()"""
     total_sections=0; total_rows=0; missing=0; unknown=0
     for uf in UF_LIST:
         sections=sections_for_uf(uf)
@@ -210,18 +231,20 @@ def import_sections(conn):
                     for rv in election.get("resultadosVotacao",[]) or []:
                         for totals in rv.get("totaisVotosCargo",[]) or []:
                             office=cargo_code(totals.get("codigoCargo"))
-                            if office not in (1,3,5,6,7,8): continue
+                            app_office=7 if office==8 else office
+                            if app_office not in (1,3,5,6,7): continue
                             for vv in totals.get("votosVotaveis",[]) or []:
                                 t=tipo_nome(vv.get("tipoVoto")).lower()
-                                if "nominal" not in t and t not in ("1","tipoVoto.nominal"): continue
+                                if "nominal" not in t and t!="1": continue
                                 identv=vv.get("identificacaoVotavel",{}) or {}
                                 num=norm_num(identv.get("codigo"))
                                 votes=as_int(vv.get("quantidadeVotos"))
-                                cid=cmap.get((eid,office,uf,num))
-                                if not cid:
+                                key=(eid,app_office,uf,num)
+                                if key not in candidate_map:
                                     unknown+=1; continue
-                                rows.append((eid,office,cid,uf,sec["municipality"],sec["municipality_name"],
-                                             as_int(sec["zone"]),as_int(sec["section"]),local,votes,filename))
+                                party=candidate_map.get(key,"")
+                                rows.append((eid,app_office,uf,sec["municipality"],sec["municipality_name"],
+                                             as_int(sec["zone"]),as_int(sec["section"]),local,num,party,votes,filename))
                 if rows:
                     with conn.cursor() as cur: cur.executemany(insert_sql,rows)
                     total_rows+=len(rows)
@@ -238,10 +261,13 @@ def import_sections(conn):
 
 def main():
     print("GRANULAR_IMPORT_START="+json.dumps({"ufs":UF_LIST,"places":IMPORT_PLACES,"sections":IMPORT_SECTIONS}),flush=True)
-    with psycopg.connect(DATABASE_URL) as conn:
-        ensure_schema(conn)
-        places=import_places(conn) if IMPORT_PLACES else 0
-        rows=import_sections(conn) if IMPORT_SECTIONS else 0
+    with psycopg.connect(CORE_DATABASE_URL) as core_conn:
+        candidate_map=load_candidate_map(core_conn)
+        print("CANDIDATE_MAP="+str(len(candidate_map)),flush=True)
+    with psycopg.connect(SECTIONS_DATABASE_URL) as sections_conn:
+        ensure_schema(sections_conn)
+        places=import_places(sections_conn) if IMPORT_PLACES else 0
+        rows=import_sections(sections_conn,candidate_map) if IMPORT_SECTIONS else 0
         print("GRANULAR_IMPORT_DONE="+json.dumps({"places":places,"vote_rows":rows}),flush=True)
 
 if __name__=="__main__":
