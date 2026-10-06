@@ -71,20 +71,30 @@ function makeMcpServer() {
 }
 
 const server = createServer(async (req, res) => {
-  if (req.url === "/health") {
-    res.writeHead(200, { "content-type": "application/json" });
-    res.end(JSON.stringify({ ok: true, app: "Votos por Seção", year: 2026 }));
-    return;
+  try {
+    if (req.url === "/health") {
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify({ ok: true, app: "Votos por Seção", year: 2026 }));
+      return;
+    }
+    if (await handleWeb(req, res)) return;
+    if (req.url !== "/mcp" || process.env.ENABLE_MCP !== "true") {
+      res.writeHead(404); res.end("Not found"); return;
+    }
+    const mcp = makeMcpServer();
+    const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+    res.on("close", () => { transport.close(); mcp.close(); });
+    await mcp.connect(transport);
+    await transport.handleRequest(req, res);
+  } catch (error:any) {
+    console.error("HTTP_ERROR", error);
+    if (!res.headersSent) {
+      res.writeHead(500, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+    }
+    if (!res.writableEnded) {
+      res.end(JSON.stringify({ error: "Falha interna na consulta. Tente novamente." }));
+    }
   }
-  if (await handleWeb(req, res)) return;
-  if (req.url !== "/mcp" || process.env.ENABLE_MCP !== "true") {
-    res.writeHead(404); res.end("Not found"); return;
-  }
-  const mcp = makeMcpServer();
-  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
-  res.on("close", () => { transport.close(); mcp.close(); });
-  await mcp.connect(transport);
-  await transport.handleRequest(req, res);
 });
 
 server.listen(config.port, () => console.log(`Votos por Seção MCP: http://localhost:${config.port}/mcp`));
