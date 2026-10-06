@@ -39,7 +39,7 @@ export async function votesByLevel(args: {
   limit?: number;
   offset?: number;
 }) {
-  const limit = Math.min(args.limit ?? 100, 500);
+  const limit = Math.min(args.limit ?? 100, 1000);
   const offset = Math.max(args.offset ?? 0, 0);
 
   if (args.level === "municipality") {
@@ -48,7 +48,7 @@ export async function votesByLevel(args: {
       FROM vote_facts
       WHERE candidate_id=$1 AND municipality_code <> '' AND zone = -1 AND section = -1
       GROUP BY municipality_code, municipality_name
-      ORDER BY municipality_name
+      ORDER BY votes DESC, municipality_name
       LIMIT $2 OFFSET $3
     `, [args.candidateId, limit, offset]);
     return rows;
@@ -56,35 +56,74 @@ export async function votesByLevel(args: {
 
   if (args.level === "zone") {
     const { rows } = await sql(`
-      SELECT municipality_code, municipality_name, zone, MAX(votes)::int AS votes
-      FROM vote_facts
-      WHERE candidate_id=$1 AND zone >= 0 AND section = -1
-        AND ($2::text IS NULL OR municipality_code=$2)
-      GROUP BY municipality_code, municipality_name, zone
-      ORDER BY municipality_name, zone
+      SELECT v.municipality_code, MAX(v.municipality_name) AS municipality_name,
+             v.zone, SUM(v.votes)::int AS votes
+      FROM vote_facts v
+      WHERE v.candidate_id=$1
+        AND v.source_kind='tse_section_bu'
+        AND v.section>=0
+        AND ($2::text IS NULL OR v.municipality_code=$2)
+      GROUP BY v.municipality_code,v.zone
+      ORDER BY votes DESC,v.zone
       LIMIT $3 OFFSET $4
-    `, [args.candidateId, args.municipalityCode ?? null, limit, offset]);
+    `, [args.candidateId,args.municipalityCode??null,limit,offset]);
     return rows;
   }
 
-  const detailPredicate = args.level === "neighborhood"
-    ? "neighborhood <> ''"
-    : args.level === "polling_place"
-      ? "polling_place_code <> ''"
-      : "section >= 0";
+  if (args.level === "neighborhood") {
+    const { rows } = await sql(`
+      SELECT v.municipality_code,MAX(v.municipality_name) AS municipality_name,
+             p.neighborhood,SUM(v.votes)::int AS votes
+      FROM vote_facts v
+      JOIN places p ON p.uf=v.uf AND p.municipality_code=v.municipality_code
+        AND p.zone=v.zone AND p.section=v.section
+        AND p.polling_place_code=v.polling_place_code
+      WHERE v.candidate_id=$1 AND v.source_kind='tse_section_bu'
+        AND p.neighborhood<>''
+        AND ($2::text IS NULL OR v.municipality_code=$2)
+      GROUP BY v.municipality_code,p.neighborhood
+      ORDER BY votes DESC,p.neighborhood
+      LIMIT $3 OFFSET $4
+    `,[args.candidateId,args.municipalityCode??null,limit,offset]);
+    return rows;
+  }
+
+  if (args.level === "polling_place") {
+    const { rows } = await sql(`
+      SELECT v.municipality_code,MAX(v.municipality_name) AS municipality_name,
+             p.neighborhood,p.polling_place_code,p.polling_place_name,p.address,p.cep,
+             p.latitude,p.longitude,SUM(v.votes)::int AS votes
+      FROM vote_facts v
+      JOIN places p ON p.uf=v.uf AND p.municipality_code=v.municipality_code
+        AND p.zone=v.zone AND p.section=v.section
+        AND p.polling_place_code=v.polling_place_code
+      WHERE v.candidate_id=$1 AND v.source_kind='tse_section_bu'
+        AND ($2::text IS NULL OR v.municipality_code=$2)
+        AND ($3::text IS NULL OR p.neighborhood=$3)
+      GROUP BY v.municipality_code,p.neighborhood,p.polling_place_code,p.polling_place_name,
+               p.address,p.cep,p.latitude,p.longitude
+      ORDER BY votes DESC,p.polling_place_name
+      LIMIT $4 OFFSET $5
+    `,[args.candidateId,args.municipalityCode??null,args.neighborhood??null,limit,offset]);
+    return rows;
+  }
 
   const { rows } = await sql(`
-    SELECT municipality_code, municipality_name, neighborhood, zone, polling_place_code, section, SUM(votes)::int AS votes
-    FROM vote_facts
-    WHERE candidate_id=$1
-      AND ${detailPredicate}
-      AND ($2::text IS NULL OR municipality_code=$2)
-      AND ($3::text IS NULL OR neighborhood=$3)
-      AND ($4::int IS NULL OR zone=$4)
-    GROUP BY municipality_code, municipality_name, neighborhood, zone, polling_place_code, section
-    ORDER BY municipality_name, neighborhood, zone, section
-    LIMIT $5 OFFSET $6
-  `, [args.candidateId, args.municipalityCode ?? null, args.neighborhood ?? null, args.zone ?? null, limit, offset]);
+    SELECT v.municipality_code,v.municipality_name,v.zone,v.section,
+           v.polling_place_code,p.polling_place_name,p.address,p.neighborhood,p.cep,
+           p.latitude,p.longitude,SUM(v.votes)::int AS votes
+    FROM vote_facts v
+    LEFT JOIN places p ON p.uf=v.uf AND p.municipality_code=v.municipality_code
+      AND p.zone=v.zone AND p.section=v.section
+      AND p.polling_place_code=v.polling_place_code
+    WHERE v.candidate_id=$1 AND v.source_kind='tse_section_bu' AND v.section>=0
+      AND ($2::text IS NULL OR v.municipality_code=$2)
+      AND ($3::int IS NULL OR v.zone=$3)
+    GROUP BY v.municipality_code,v.municipality_name,v.zone,v.section,v.polling_place_code,
+             p.polling_place_name,p.address,p.neighborhood,p.cep,p.latitude,p.longitude
+    ORDER BY votes DESC,v.zone,v.section
+    LIMIT $4 OFFSET $5
+  `,[args.candidateId,args.municipalityCode??null,args.zone??null,limit,offset]);
   return rows;
 }
 
