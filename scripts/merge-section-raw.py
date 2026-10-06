@@ -42,7 +42,15 @@ DO UPDATE SET
 """
 
 def connect():
-    return psycopg.connect(DB, connect_timeout=30)
+    last=None
+    for attempt in range(1,9):
+        try:
+            return psycopg.connect(DB, connect_timeout=20)
+        except Exception as e:
+            last=e
+            print(f"DB_CONNECT_RETRY={attempt} error={e}",flush=True)
+            time.sleep(min(attempt*2,12))
+    raise last
 
 def main():
     conn=connect()
