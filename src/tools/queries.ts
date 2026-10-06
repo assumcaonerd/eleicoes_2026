@@ -221,3 +221,57 @@ export async function sectionMetrics(args:{candidateId:number;municipalityCode:s
   `,[args.candidateId,args.municipalityCode,args.zone,args.section]);
   return rows[0]??null;
 }
+
+
+export async function candidateTerritoryOverview(candidateId:number) {
+  const summary=await candidateSummary(candidateId);
+  if(!summary.candidate) return null;
+  const total=Number((summary.totals as any)?.total_votes??0);
+  const {rows}=await sql<any>(`
+    SELECT municipality_code, municipality_name, MAX(votes)::int AS votes
+    FROM vote_facts
+    WHERE candidate_id=$1 AND municipality_code<>'' AND zone=-1 AND section=-1
+    GROUP BY municipality_code,municipality_name
+    ORDER BY votes DESC,municipality_name
+  `,[candidateId]);
+  const municipalities=rows.map((r:any,i:number)=>({
+    ...r,
+    rank:i+1,
+    pct_total: total>0 ? Number(((Number(r.votes)/total)*100).toFixed(2)) : 0
+  }));
+  return {
+    candidate:summary.candidate,
+    total_votes:total,
+    municipalities_count:municipalities.length,
+    updated_at:(summary.totals as any)?.updated_at??null,
+    strongest:municipalities.slice(0,5),
+    municipalities
+  };
+}
+
+export async function territorialLevel(args:{
+  candidateId:number;
+  level:"municipality"|"zone"|"neighborhood"|"polling_place"|"section";
+  municipalityCode?:string;
+  neighborhood?:string;
+  zone?:number;
+  limit?:number;
+}) {
+  const summary=await candidateSummary(args.candidateId);
+  const total=Number((summary.totals as any)?.total_votes??0);
+  const rows=await votesByLevel({
+    candidateId:args.candidateId,
+    level:args.level,
+    municipalityCode:args.municipalityCode,
+    neighborhood:args.neighborhood,
+    zone:args.zone,
+    limit:args.limit??500
+  });
+  return rows
+    .sort((a:any,b:any)=>Number(b.votes)-Number(a.votes))
+    .map((r:any,i:number)=>({
+      ...r,
+      rank:i+1,
+      pct_total:total>0?Number(((Number(r.votes)/total)*100).toFixed(2)):0
+    }));
+}
