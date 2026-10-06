@@ -1,24 +1,19 @@
 import { pool, sql } from "../src/db/index.js";
 
 try {
-  const counts = await sql<any>(`
-    SELECT
-      (SELECT count(*) FROM candidates)::int AS candidates,
-      (SELECT count(*) FROM vote_facts)::int AS vote_facts,
-      (SELECT count(DISTINCT municipality_code) FROM vote_facts WHERE municipality_code<>'')::int AS municipalities
+  const rows = await sql<any>(`
+    SELECT c.id,c.election_id,c.office_code,c.office_name,c.uf,c.number,c.ballot_name,c.full_name,c.party_abbr,c.status,
+      (SELECT count(*)::int FROM vote_facts v WHERE v.candidate_id=c.id) AS fact_rows,
+      (SELECT COALESCE(MAX(v.votes),0)::int FROM vote_facts v
+       WHERE v.candidate_id=c.id AND v.municipality_code='' AND v.zone=-1) AS total_votes,
+      (SELECT count(DISTINCT v.municipality_code)::int FROM vote_facts v
+       WHERE v.candidate_id=c.id AND v.municipality_code<>'') AS municipalities
+    FROM candidates c
+    WHERE c.uf='ES' AND c.office_code=7
+      AND (c.number='22190' OR c.ballot_name ILIKE '%ASSUM%' OR c.full_name ILIKE '%ASSUM%')
+    ORDER BY c.number,c.ballot_name
   `);
-
-  const matches = await sql<any>(`
-    SELECT id,election_id,office_code,office_name,uf,number,ballot_name,full_name,party_abbr,status
-    FROM candidates
-    WHERE ballot_name ILIKE '%ASSUM%'
-       OR full_name ILIKE '%ASSUM%'
-       OR number IN ('22190','2219','2190')
-    ORDER BY uf,office_code,ballot_name
-    LIMIT 100
-  `);
-
-  console.log(JSON.stringify({counts:counts.rows[0],matches:matches.rows}, null, 2));
+  console.log("DIAG="+JSON.stringify(rows.rows));
 } finally {
   await pool.end();
 }
