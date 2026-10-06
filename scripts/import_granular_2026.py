@@ -296,7 +296,8 @@ def main():
         ensure_schema(sections_conn)
         places=import_places(sections_conn) if IMPORT_PLACES else 0
         rows=import_sections(sections_conn,candidate_map) if IMPORT_SECTIONS else 0
-        print("GRANULAR_IMPORT_DONE="+json.dumps({"places":places,"vote_rows":rows}),flush=True)\n        verify_granular(sections_conn)
+        print("GRANULAR_IMPORT_DONE="+json.dumps({"places":places,"vote_rows":rows}),flush=True)
+        verify_granular(sections_conn)
 
 if __name__=="__main__":
     main()
