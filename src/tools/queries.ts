@@ -1,4 +1,5 @@
 import { sql } from "../db/index.js";
+import { sectionsSql } from "../db/sections.js";
 
 export async function searchCandidates(args: { query: string; officeCode?: number; uf?: string; limit?: number }) {
   const q = args.query.trim();
@@ -295,6 +296,80 @@ export async function territorialLevel(args:{
   neighborhood?:string;
   zone?:number;
   limit?:number;
+}) {
+  const summary=await candidateSummary(args.candidateId);
+  if(!summary.candidate) return [];
+  const total=Number((summary.totals as any)?.total_votes??0);
+  if(args.level==="municipality"){
+    const rows=await votesByLevel({candidateId:args.candidateId,level:"municipality",limit:args.limit??500});
+    return rows.sort((a:any,b:any)=>Number(b.votes)-Number(a.votes)).map((r:any,i:number)=>({
+      ...r,rank:i+1,pct_total:total>0?Number(((Number(r.votes)/total)*100).toFixed(2)):0
+    }));
+  }
+
+  const cand:any=summary.candidate;
+  const office=Number(cand.office_code);
+  const uf=String(cand.uf);
+  const number=String(cand.number);
+  const municipality=args.municipalityCode??null;
+  const limit=Math.min(args.limit??500,1000);
+
+  let rows:any[]=[];
+  if(args.level==="zone"){
+    rows=(await sectionsSql<any>(`
+      SELECT municipality_code,municipality_name,zone,SUM(votes)::int AS votes
+      FROM section_votes
+      WHERE uf=$1 AND office_code=$2 AND candidate_number=$3
+        AND ($4::text IS NULL OR municipality_code=$4)
+      GROUP BY municipality_code,municipality_name,zone
+      ORDER BY votes DESC
+      LIMIT $5
+    `,[uf,office,number,municipality,limit])).rows;
+  } else if(args.level==="neighborhood"){
+    rows=(await sectionsSql<any>(`
+      SELECT sv.municipality_code,sv.municipality_name,COALESCE(p.neighborhood,'') AS neighborhood,SUM(sv.votes)::int AS votes
+      FROM section_votes sv
+      LEFT JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code
+        AND p.zone=sv.zone AND p.section=sv.section AND p.polling_place_code=sv.polling_place_code
+      WHERE sv.uf=$1 AND sv.office_code=$2 AND sv.candidate_number=$3
+        AND ($4::text IS NULL OR sv.municipality_code=$4)
+        AND COALESCE(p.neighborhood,'')<>''
+      GROUP BY sv.municipality_code,sv.municipality_name,p.neighborhood
+      ORDER BY votes DESC
+      LIMIT $5
+    `,[uf,office,number,municipality,limit])).rows;
+  } else if(args.level==="polling_place"){
+    rows=(await sectionsSql<any>(`
+      SELECT sv.municipality_code,sv.municipality_name,sv.polling_place_code,
+        MAX(p.polling_place_name) AS polling_place_name,MAX(p.address) AS address,
+        MAX(p.neighborhood) AS neighborhood,MAX(p.cep) AS cep,
+        SUM(sv.votes)::int AS votes
+      FROM section_votes sv
+      LEFT JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code
+        AND p.zone=sv.zone AND p.section=sv.section AND p.polling_place_code=sv.polling_place_code
+      WHERE sv.uf=$1 AND sv.office_code=$2 AND sv.candidate_number=$3
+        AND ($4::text IS NULL OR sv.municipality_code=$4)
+      GROUP BY sv.municipality_code,sv.municipality_name,sv.polling_place_code
+      ORDER BY votes DESC
+      LIMIT $5
+    `,[uf,office,number,municipality,limit])).rows;
+  } else {
+    rows=(await sectionsSql<any>(`
+      SELECT sv.municipality_code,sv.municipality_name,sv.zone,sv.section,sv.polling_place_code,
+        MAX(p.polling_place_name) AS polling_place_name,MAX(p.address) AS address,
+        MAX(p.neighborhood) AS neighborhood,SUM(sv.votes)::int AS votes
+      FROM section_votes sv
+      LEFT JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code
+        AND p.zone=sv.zone AND p.section=sv.section AND p.polling_place_code=sv.polling_place_code
+      WHERE sv.uf=$1 AND sv.office_code=$2 AND sv.candidate_number=$3
+        AND ($4::text IS NULL OR sv.municipality_code=$4)
+        AND ($5::int IS NULL OR sv.zone=$5)
+      GROUP BY sv.municipality_code,sv.municipality_name,sv.zone,sv.section,sv.polling_place_code
+      ORDER BY votes DESC
+      LIMIT $6
+    `,[uf,office,number,municipality,args.zone??null,limit])).rows;
+  }
+  return rows.map((r:any,i:number)=>({...r,rank:i+1,pct_total:total>0?Number(((Number(r.votes)/total)*100).toFixed(2)):0}));
 }) {
   const summary=await candidateSummary(args.candidateId);
   const total=Number((summary.totals as any)?.total_votes??0);
