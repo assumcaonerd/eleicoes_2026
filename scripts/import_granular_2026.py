@@ -245,9 +245,10 @@ def import_sections(conn, candidate_map):
                             num=norm_num(identv.get("codigo"))
                             votes=as_int(vv.get("quantidadeVotos"))
                             key=(eid,app_office,sec["uf"],num)
-                            if key not in candidate_map:
-                                unknown+=1; continue
-                            party=candidate_map.get(key,"")
+                            party=candidate_map.get(key)
+                            if party is None:
+                                unknown+=1
+                                party=norm_num(identv.get("partido")) if identv.get("partido") is not None else ""
                             rows.append((eid,app_office,sec["uf"],sec["municipality"],sec["municipality_name"],
                                          as_int(sec["zone"]),as_int(sec["section"]),local,num,party,votes,filename))
             return {"missing":0,"unknown":unknown,"rows":rows}
