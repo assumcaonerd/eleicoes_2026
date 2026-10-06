@@ -26,241 +26,97 @@ export function appPage(user:any,active:boolean){
   if(!active) return layout("Aplicativo",'<div class="card"><h1>Assinatura necessária</h1><p class="muted">Sua conta está autenticada, mas ainda não possui uma assinatura ativa.</p><a class="btn" href="/planos">Escolher plano</a></div>',user);
   var body = `
 <style>
-  .searchbox{margin-bottom:22px}
-  .candidate-list{display:grid;gap:10px;margin-top:18px}
-  .candidate-item{width:100%;text-align:left;border:1px solid #e2e6ea;background:#fff;border-radius:14px;padding:16px;cursor:pointer}
-  .candidate-item:hover{border-color:#111;background:#fafafa}
-  .candidate-name{font-size:18px;font-weight:850}
-  .candidate-meta{color:#68717a;font-size:14px;margin-top:4px}
-  .dash{display:none}
-  .dash-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}
-  .dash-title h2{margin:0 0 4px;font-size:28px}
-  .metrics{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:12px;margin:18px 0}
-  .metric-card{background:#fff;border:1px solid #e5e8eb;border-radius:16px;padding:18px}
-  .metric-card .n{font-size:28px;font-weight:900;margin-top:5px}
-  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
-  .tab{border:1px solid #d9dde1;background:#fff;border-radius:999px;padding:10px 14px;font-weight:800;cursor:pointer}
-  .tab.active{background:#111;color:#fff;border-color:#111}
-  .scopebar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:12px 0 18px}
-  .scopebar .field{min-width:260px;margin:0}
-  .territory-card{overflow:hidden}
-  .strength{display:inline-block;border-radius:999px;padding:5px 9px;background:#edf0f3;font-size:12px;font-weight:800}
-  .empty{padding:28px;text-align:center;border:1px dashed #ccd2d7;border-radius:14px;color:#68717a;background:#fafbfc}
-  .topline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .rank{font-weight:900;color:#68717a}
-  @media(max-width:760px){
-    .metrics{grid-template-columns:repeat(2,1fr)}
-    .metric-card .n{font-size:24px}
-    .territory-card{overflow-x:auto}
-    table{min-width:650px}
-  }
+.searchbox{margin-bottom:22px}.candidate-list{display:grid;gap:10px;margin-top:18px}.candidate-item{width:100%;text-align:left;border:1px solid #e2e6ea;background:#fff;border-radius:14px;padding:16px;cursor:pointer}.candidate-item:hover{border-color:#111;background:#fafafa}.candidate-name{font-size:18px;font-weight:850}.candidate-meta{color:#68717a;font-size:14px;margin-top:4px}.dash{display:none}.dash-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}.dash-title h2{margin:0 0 4px;font-size:28px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:12px;margin:18px 0}.metric-card{background:#fff;border:1px solid #e5e8eb;border-radius:16px;padding:18px}.metric-card .n{font-size:28px;font-weight:900;margin-top:5px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.tab{border:1px solid #d9dde1;background:#fff;border-radius:999px;padding:10px 14px;font-weight:800;cursor:pointer}.tab.active{background:#111;color:#fff;border-color:#111}.scopebar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:12px 0 18px}.scopebar .field{min-width:260px;margin:0}.territory-card{overflow:hidden}.strength{display:inline-block;border-radius:999px;padding:5px 9px;background:#edf0f3;font-size:12px;font-weight:800}.empty{padding:28px;text-align:center;border:1px dashed #ccd2d7;border-radius:14px;color:#68717a;background:#fafbfc}.topline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rank{font-weight:900;color:#68717a}@media(max-width:760px){.metrics{grid-template-columns:repeat(2,1fr)}.metric-card .n{font-size:24px}.territory-card{overflow-x:auto}table{min-width:650px}}
 </style>
-
 <h1>Siga o Voto 2026</h1>
 <p class="muted">Escolha um candidato e descubra onde a votação foi forte, média ou fraca.</p>
-
 <div class="card searchbox">
-  <form id="search">
-    <div class="grid">
-      <label class="field">Candidato
-        <input name="q" placeholder="Digite o nome ou número" required autocomplete="off">
-      </label>
-      <label class="field">Cargo
-        <select name="office">
-          <option value="">Todos</option>
-          <option value="1">Presidente</option>
-          <option value="3">Governador</option>
-          <option value="5">Senador</option>
-          <option value="6">Deputado Federal</option>
-          <option value="7">Deputado Estadual/Distrital</option>
-        </select>
-      </label>
-      <label class="field">Estado
-        <input name="uf" maxlength="2" placeholder="ES">
-      </label>
-    </div>
-    <button class="btn">Encontrar candidato</button>
-  </form>
-  <div id="searchResults" class="candidate-list"></div>
+<form id="search"><div class="grid">
+<label class="field">Candidato<input name="q" placeholder="Digite o nome ou número" required autocomplete="off"></label>
+<label class="field">Cargo<select name="office"><option value="">Todos</option><option value="1">Presidente</option><option value="3">Governador</option><option value="5">Senador</option><option value="6">Deputado Federal</option><option value="7">Deputado Estadual/Distrital</option></select></label>
+<label class="field">Estado<input name="uf" maxlength="2" placeholder="ES"></label>
+</div><button class="btn">Encontrar candidato</button></form>
+<div id="searchResults" class="candidate-list"></div>
 </div>
-
-<section id="dashboard" class="dash">
-  <div class="card">
-    <div class="dash-head">
-      <div class="dash-title">
-        <div class="tag">Raio-X eleitoral</div>
-        <h2 id="candName"></h2>
-        <div class="muted" id="candMeta"></div>
-      </div>
-      <button class="btn secondary" type="button" id="newSearch">Trocar candidato</button>
-    </div>
-
-    <div class="metrics">
-      <div class="metric-card"><div class="muted">Votos totais</div><div class="n" id="totalVotes">0</div></div>
-      <div class="metric-card"><div class="muted">Municípios com votos</div><div class="n" id="municipalitiesCount">0</div></div>
-      <div class="metric-card"><div class="muted">Melhor município</div><div class="n" style="font-size:19px" id="bestCity">-</div></div>
-      <div class="metric-card"><div class="muted">% no melhor município</div><div class="n" id="bestPct">0%</div></div>
-    </div>
-
-    <div class="tabs" id="tabs">
-      <button class="tab active" data-level="municipality">Municípios</button>
-      <button class="tab" data-level="zone">Zonas</button>
-      <button class="tab" data-level="neighborhood">Bairros</button>
-      <button class="tab" data-level="polling_place">Rua / Local</button>
-      <button class="tab" data-level="section">Seções</button>
-    </div>
-
-    <div class="scopebar" id="scopebar" style="display:none">
-      <label class="field">Município
-        <select id="municipalitySelect"></select>
-      </label>
-    </div>
-
-    <div id="territoryTitle" class="topline"><h3 style="margin:0">Ranking por município</h3></div>
-    <div id="territoryContent" class="territory-card" style="margin-top:12px"></div>
-  </div>
-</section>
-
+<section id="dashboard" class="dash"><div class="card">
+<div class="dash-head"><div class="dash-title"><div class="tag">Raio-X eleitoral</div><h2 id="candName"></h2><div class="muted" id="candMeta"></div></div><button class="btn secondary" type="button" id="newSearch">Trocar candidato</button></div>
+<div class="metrics">
+<div class="metric-card"><div class="muted">Votos totais</div><div class="n" id="totalVotes">0</div></div>
+<div class="metric-card"><div class="muted">Municípios com votos</div><div class="n" id="municipalitiesCount">0</div></div>
+<div class="metric-card"><div class="muted">Melhor município</div><div class="n" style="font-size:19px" id="bestCity">-</div></div>
+<div class="metric-card"><div class="muted">% no melhor município</div><div class="n" id="bestPct">0%</div></div>
+</div>
+<div class="tabs" id="tabs">
+<button class="tab active" data-level="municipality">Municípios</button>
+<button class="tab" data-level="zone">Zonas</button>
+<button class="tab" data-level="neighborhood">Bairros</button>
+<button class="tab" data-level="polling_place">Rua / Local</button>
+<button class="tab" data-level="section">Seções</button>
+</div>
+<div class="scopebar" id="scopebar" style="display:none"><label class="field">Município<select id="municipalitySelect"></select></label></div>
+<div id="territoryTitle" class="topline"><h3 style="margin:0">Ranking por município</h3></div>
+<div id="territoryContent" class="territory-card" style="margin-top:12px"></div>
+</div></section>
 <script>
-let currentCandidate=null;
-let overview=null;
-let currentLevel="municipality";
-
-const fmt=n=>new Intl.NumberFormat("pt-BR").format(Number(n||0));
-const pct=n=>Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+"%";
-const escHtml=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
-
-function strength(rank,total){
-  if(!total) return "";
-  const p=rank/total;
-  if(p<=.10) return "Muito forte";
-  if(p<=.30) return "Forte";
-  if(p<=.70) return "Médio";
-  return "Fraco";
-}
-
+var currentCandidate=null,overview=null,currentLevel="municipality";
+function fmt(n){return new Intl.NumberFormat("pt-BR").format(Number(n||0))}
+function pct(n){return Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+"%"}
+function escHtml(s){return String(s==null?"":s).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]})}
+function strength(rank,total){if(!total)return "";var p=rank/total;if(p<=.10)return "Muito forte";if(p<=.30)return "Forte";if(p<=.70)return "Médio";return "Fraco"}
 function candidateButtons(rows){
-  if(!rows.length) return '<div class="empty">Nenhum candidato encontrado com esses filtros.</div>';
-  return rows.map(x=>`
-    <button class="candidate-item" type="button" data-id="${x.id}">
-      <div class="candidate-name">${escHtml(x.ballot_name)}</div>
-      <div class="candidate-meta">Nº ${escHtml(x.number)} · ${escHtml(x.party_abbr||"")} · ${escHtml(x.office_name)} · ${escHtml(x.uf)}</div>
-    </button>`).join("");
+ if(!rows.length)return '<div class="empty">Nenhum candidato encontrado com esses filtros.</div>';
+ return rows.map(function(x){
+  return '<button class="candidate-item" type="button" data-id="'+x.id+'"><div class="candidate-name">'+escHtml(x.ballot_name)+'</div><div class="candidate-meta">Nº '+escHtml(x.number)+' · '+escHtml(x.party_abbr||"")+' · '+escHtml(x.office_name)+' · '+escHtml(x.uf)+'</div></button>';
+ }).join("");
 }
-
-document.getElementById("search").addEventListener("submit",async e=>{
-  e.preventDefault();
-  const f=new FormData(e.target),p=new URLSearchParams();
-  for(const [k,v] of f.entries()) if(v) p.set(k,String(v));
-  const box=document.getElementById("searchResults");
-  box.innerHTML='<div class="muted">Buscando...</div>';
-  const r=await fetch("/api/candidates?"+p.toString());
-  const d=await r.json();
-  if(!r.ok){box.innerHTML='<div class="error">'+escHtml(d.error)+'</div>';return}
-  box.innerHTML=candidateButtons(d.rows||[]);
-  box.querySelectorAll(".candidate-item").forEach(b=>b.addEventListener("click",()=>openCandidate(Number(b.dataset.id))));
+document.getElementById("search").addEventListener("submit",async function(e){
+ e.preventDefault();var f=new FormData(e.target),p=new URLSearchParams();for(var pair of f.entries())if(pair[1])p.set(pair[0],String(pair[1]));
+ var box=document.getElementById("searchResults");box.innerHTML='<div class="muted">Buscando...</div>';
+ var r=await fetch("/api/candidates?"+p.toString()),d=await r.json();if(!r.ok){box.innerHTML='<div class="error">'+escHtml(d.error)+'</div>';return}
+ box.innerHTML=candidateButtons(d.rows||[]);box.querySelectorAll(".candidate-item").forEach(function(b){b.addEventListener("click",function(){openCandidate(Number(b.dataset.id))})});
 });
-
 async function openCandidate(id){
-  const r=await fetch("/api/candidate-overview?candidateId="+id);
-  const d=await r.json();
-  if(!r.ok){document.getElementById("searchResults").innerHTML='<div class="error">'+escHtml(d.error)+'</div>';return}
-  currentCandidate=d.candidate;
-  overview=d;
-  document.getElementById("candName").textContent=d.candidate.ballot_name;
-  document.getElementById("candMeta").textContent="Nº "+d.candidate.number+" · "+(d.candidate.party_abbr||"")+" · "+d.candidate.office_name+" · "+d.candidate.uf;
-  document.getElementById("totalVotes").textContent=fmt(d.total_votes);
-  document.getElementById("municipalitiesCount").textContent=fmt(d.municipalities_count);
-  document.getElementById("bestCity").textContent=d.strongest?.[0]?.municipality_name||"-";
-  document.getElementById("bestPct").textContent=pct(d.strongest?.[0]?.pct_total||0);
-
-  const sel=document.getElementById("municipalitySelect");
-  sel.innerHTML='<option value="">Selecione um município</option>'+d.municipalities.map(x=>'<option value="'+escHtml(x.municipality_code)+'">'+escHtml(x.municipality_name)+'</option>').join("");
-
-  document.getElementById("dashboard").style.display="block";
-  document.getElementById("searchResults").innerHTML="";
-  await showLevel("municipality");
-  document.getElementById("dashboard").scrollIntoView({behavior:"smooth",block:"start"});
+ var r=await fetch("/api/candidate-overview?candidateId="+id),d=await r.json();if(!r.ok){document.getElementById("searchResults").innerHTML='<div class="error">'+escHtml(d.error)+'</div>';return}
+ currentCandidate=d.candidate;overview=d;
+ document.getElementById("candName").textContent=d.candidate.ballot_name;
+ document.getElementById("candMeta").textContent="Nº "+d.candidate.number+" · "+(d.candidate.party_abbr||"")+" · "+d.candidate.office_name+" · "+d.candidate.uf;
+ document.getElementById("totalVotes").textContent=fmt(d.total_votes);
+ document.getElementById("municipalitiesCount").textContent=fmt(d.municipalities_count);
+ document.getElementById("bestCity").textContent=(d.strongest&&d.strongest[0]?d.strongest[0].municipality_name:"-");
+ document.getElementById("bestPct").textContent=pct(d.strongest&&d.strongest[0]?d.strongest[0].pct_total:0);
+ var sel=document.getElementById("municipalitySelect");sel.innerHTML='<option value="">Selecione um município</option>'+d.municipalities.map(function(x){return '<option value="'+escHtml(x.municipality_code)+'">'+escHtml(x.municipality_name)+'</option>'}).join("");
+ document.getElementById("dashboard").style.display="block";document.getElementById("searchResults").innerHTML="";await showLevel("municipality");document.getElementById("dashboard").scrollIntoView({behavior:"smooth",block:"start"});
 }
-
 function municipalityTable(rows){
-  const total=rows.length;
-  return '<table><thead><tr><th>Posição</th><th>Município</th><th>Votos</th><th>% dos seus votos</th><th>Força</th></tr></thead><tbody>'+
-    rows.map(x=>'<tr class="municipality-row" data-code="'+escHtml(x.municipality_code)+'" style="cursor:pointer"><td class="rank">#'+x.rank+'</td><td><b>'+escHtml(x.municipality_name)+'</b></td><td>'+fmt(x.votes)+'</td><td>'+pct(x.pct_total)+'</td><td><span class="strength">'+strength(x.rank,total)+'</span></td></tr>').join("")+
-    '</tbody></table>';
+ var total=rows.length;
+ return '<table><thead><tr><th>Posição</th><th>Município</th><th>Votos</th><th>% dos seus votos</th><th>Força</th></tr></thead><tbody>'+rows.map(function(x){return '<tr class="municipality-row" data-code="'+escHtml(x.municipality_code)+'" style="cursor:pointer"><td class="rank">#'+x.rank+'</td><td><b>'+escHtml(x.municipality_name)+'</b></td><td>'+fmt(x.votes)+'</td><td>'+pct(x.pct_total)+'</td><td><span class="strength">'+strength(x.rank,total)+'</span></td></tr>'}).join("")+'</tbody></table>';
 }
-
 function genericTable(rows,level){
-  if(!rows.length){
-    if(["neighborhood","polling_place","section"].includes(level)){
-      return '<div class="empty"><b>O detalhamento de 2026 neste nível ainda não está disponível na base oficial consolidada do TSE.</b><br><br>Assim que o TSE liberar os resultados granulares por seção, esta área será preenchida com os votos do candidato.</div>';
-    }
-    return '<div class="empty">Ainda não há dados deste nível para o município selecionado.</div>';
-  }
-  const total=rows.length;
-  let label="Território";
-  if(level==="zone") label="Zona";
-  if(level==="neighborhood") label="Bairro";
-  if(level==="polling_place") label="Local";
-  if(level==="section") label="Seção";
-  return '<table><thead><tr><th>Posição</th><th>'+label+'</th><th>Votos</th><th>% dos seus votos</th><th>Força</th></tr></thead><tbody>'+
-    rows.map(x=>{
-      let name="";
-      if(level==="zone") name="Zona "+x.zone;
-      else if(level==="neighborhood") name=x.neighborhood||"Sem bairro informado";
-      else if(level==="polling_place") name=x.polling_place_name||x.polling_place_code||"Local de votação";
-      else name="Seção "+x.section+(x.zone>=0?" · Zona "+x.zone:"");
-      return '<tr><td class="rank">#'+x.rank+'</td><td><b>'+escHtml(name)+'</b></td><td>'+fmt(x.votes)+'</td><td>'+pct(x.pct_total)+'</td><td><span class="strength">'+strength(x.rank,total)+'</span></td></tr>';
-    }).join("")+'</tbody></table>';
+ if(!rows.length){
+  if(level==="neighborhood"||level==="polling_place"||level==="section")return '<div class="empty"><b>O detalhamento de 2026 neste nível ainda não está disponível na base oficial consolidada do TSE.</b><br><br>Assim que o TSE liberar os resultados granulares por seção, esta área será preenchida com os votos do candidato.</div>';
+  return '<div class="empty">Ainda não há dados deste nível para o município selecionado.</div>';
+ }
+ var total=rows.length,label="Território";if(level==="zone")label="Zona";if(level==="neighborhood")label="Bairro";if(level==="polling_place")label="Local";if(level==="section")label="Seção";
+ return '<table><thead><tr><th>Posição</th><th>'+label+'</th><th>Votos</th><th>% dos seus votos</th><th>Força</th></tr></thead><tbody>'+rows.map(function(x){var name="";if(level==="zone")name="Zona "+x.zone;else if(level==="neighborhood")name=x.neighborhood||"Sem bairro informado";else if(level==="polling_place")name=x.polling_place_name||x.polling_place_code||"Local de votação";else name="Seção "+x.section+(x.zone>=0?" · Zona "+x.zone:"");return '<tr><td class="rank">#'+x.rank+'</td><td><b>'+escHtml(name)+'</b></td><td>'+fmt(x.votes)+'</td><td>'+pct(x.pct_total)+'</td><td><span class="strength">'+strength(x.rank,total)+'</span></td></tr>'}).join("")+'</tbody></table>';
 }
-
 async function showLevel(level){
-  currentLevel=level;
-  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.level===level));
-  const scope=document.getElementById("scopebar");
-  const title=document.getElementById("territoryTitle");
-  const content=document.getElementById("territoryContent");
-
-  if(level==="municipality"){
-    scope.style.display="none";
-    title.innerHTML="<h3 style='margin:0'>Onde sua votação foi mais forte</h3><span class='muted'>Clique em um município para aprofundar</span>";
-    content.innerHTML=municipalityTable(overview.municipalities||[]);
-    content.querySelectorAll(".municipality-row").forEach(r=>r.addEventListener("click",async()=>{
-      document.getElementById("municipalitySelect").value=r.dataset.code;
-      await showLevel("zone");
-    }));
-    return;
-  }
-
-  scope.style.display="flex";
-  const labels={zone:"Zonas eleitorais",neighborhood:"Bairros",polling_place:"Ruas e locais de votação",section:"Seções eleitorais"};
-  title.innerHTML="<h3 style='margin:0'>"+labels[level]+"</h3>";
-  await loadTerritory();
+ currentLevel=level;document.querySelectorAll(".tab").forEach(function(t){t.classList.toggle("active",t.dataset.level===level)});
+ var scope=document.getElementById("scopebar"),title=document.getElementById("territoryTitle"),content=document.getElementById("territoryContent");
+ if(level==="municipality"){
+  scope.style.display="none";title.innerHTML="<h3 style='margin:0'>Onde sua votação foi mais forte</h3><span class='muted'>Clique em um município para aprofundar</span>";content.innerHTML=municipalityTable(overview.municipalities||[]);
+  content.querySelectorAll(".municipality-row").forEach(function(r){r.addEventListener("click",async function(){document.getElementById("municipalitySelect").value=r.dataset.code;await showLevel("zone")})});return;
+ }
+ scope.style.display="flex";var labels={zone:"Zonas eleitorais",neighborhood:"Bairros",polling_place:"Ruas e locais de votação",section:"Seções eleitorais"};title.innerHTML="<h3 style='margin:0'>"+labels[level]+"</h3>";await loadTerritory();
 }
-
 async function loadTerritory(){
-  if(!currentCandidate) return;
-  const code=document.getElementById("municipalitySelect").value;
-  const content=document.getElementById("territoryContent");
-  if(currentLevel!=="municipality"&&!code){
-    content.innerHTML='<div class="empty">Selecione um município para aprofundar a votação.</div>';return;
-  }
-  content.innerHTML='<div class="muted">Carregando...</div>';
-  const p=new URLSearchParams({candidateId:String(currentCandidate.id),level:currentLevel});
-  if(code) p.set("municipality",code);
-  const r=await fetch("/api/territory?"+p.toString());
-  const d=await r.json();
-  if(!r.ok){content.innerHTML='<div class="error">'+escHtml(d.error)+'</div>';return}
-  content.innerHTML=genericTable(d.rows||[],currentLevel);
+ if(!currentCandidate)return;var code=document.getElementById("municipalitySelect").value,content=document.getElementById("territoryContent");
+ if(currentLevel!=="municipality"&&!code){content.innerHTML='<div class="empty">Selecione um município para aprofundar a votação.</div>';return}
+ content.innerHTML='<div class="muted">Carregando...</div>';var p=new URLSearchParams({candidateId:String(currentCandidate.id),level:currentLevel});if(code)p.set("municipality",code);
+ var r=await fetch("/api/territory?"+p.toString()),d=await r.json();if(!r.ok){content.innerHTML='<div class="error">'+escHtml(d.error)+'</div>';return}content.innerHTML=genericTable(d.rows||[],currentLevel);
 }
-
-document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>showLevel(t.dataset.level)));
+document.querySelectorAll(".tab").forEach(function(t){t.addEventListener("click",function(){showLevel(t.dataset.level)})});
 document.getElementById("municipalitySelect").addEventListener("change",loadTerritory);
-document.getElementById("newSearch").addEventListener("click",()=>{
-  document.getElementById("dashboard").style.display="none";
-  document.querySelector("input[name=q]").focus();
-  window.scrollTo({top:0,behavior:"smooth"});
-});
+document.getElementById("newSearch").addEventListener("click",function(){document.getElementById("dashboard").style.display="none";document.querySelector("input[name=q]").focus();window.scrollTo({top:0,behavior:"smooth"})});
 </script>`;
   return layout("Aplicativo",body,user);
 }
