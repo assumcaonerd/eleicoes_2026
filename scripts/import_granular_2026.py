@@ -295,22 +295,41 @@ def verify_granular(conn):
           SELECT count(*) FROM section_votes sv
           JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code
             AND p.zone=sv.zone AND p.section=sv.section
-          WHERE sv.uf='ES'
         """)
-        joined=cur.fetchone()[0]
+        joined_loose=cur.fetchone()[0]
         cur.execute("""
-          SELECT sv.municipality_name,sv.zone,sv.section,sv.candidate_number,sv.votes,
-                 p.polling_place_name,p.address,p.neighborhood
+          SELECT count(*) FROM section_votes sv
+          JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code
+            AND p.zone=sv.zone AND p.section=sv.section
+            AND p.polling_place_code=sv.polling_place_code
+        """)
+        joined_exact=cur.fetchone()[0]
+        cur.execute("""
+          SELECT count(*) FROM section_votes
+          WHERE uf='ES' AND office_code=7 AND candidate_number='22190'
+        """)
+        cand_rows=cur.fetchone()[0]
+        cur.execute("""
+          SELECT COALESCE(sum(votes),0) FROM section_votes
+          WHERE uf='ES' AND office_code=7 AND candidate_number='22190'
+        """)
+        cand_votes=cur.fetchone()[0]
+        cur.execute("""
+          SELECT sv.municipality_name,sv.zone,sv.section,sv.polling_place_code,sv.candidate_number,sv.votes,
+                 p.polling_place_code,p.polling_place_name,p.address,p.neighborhood
           FROM section_votes sv
           LEFT JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code
             AND p.zone=sv.zone AND p.section=sv.section
-          WHERE sv.uf='ES'
-          ORDER BY sv.id DESC LIMIT 1
+            AND p.polling_place_code=sv.polling_place_code
+          WHERE sv.uf='ES' AND sv.office_code=7 AND sv.candidate_number='22190'
+          ORDER BY sv.votes DESC LIMIT 1
         """)
         sample=cur.fetchone()
     print("GRANULAR_VERIFY="+json.dumps({
-      "places":places_count,"vote_rows":votes_count,"joined_rows":joined,
-      "sample":sample
+      "places":places_count,"vote_rows":votes_count,
+      "joined_loose":joined_loose,"joined_exact":joined_exact,
+      "candidate_22190_rows":cand_rows,"candidate_22190_votes":cand_votes,
+      "sample_22190":sample
     },ensure_ascii=False,default=str),flush=True)
 
 def main():
