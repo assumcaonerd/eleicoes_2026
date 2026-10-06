@@ -11,6 +11,7 @@ IMPORT_PLACES=os.getenv("IMPORT_PLACES","true").lower()=="true"
 IMPORT_SECTIONS=os.getenv("IMPORT_SECTIONS","true").lower()=="true"
 RPS=max(1,float(os.getenv("TSE_RPS","8")))
 SLEEP=1.0/RPS
+SECTION_LIMIT=max(0,int(os.getenv("SECTION_LIMIT","0")))
 SPEC=os.getenv("BU_SPEC","spec/bu-v2.asn1")
 DATABASE_URL=os.environ["DATABASE_URL"]
 
@@ -167,6 +168,7 @@ def import_sections(conn):
     total_sections=0; total_rows=0; missing=0; unknown=0
     for uf in UF_LIST:
         sections=sections_for_uf(uf)
+        if SECTION_LIMIT: sections=sections[:SECTION_LIMIT]
         print(f"SECTIONS_INDEX_{uf}={len(sections)}",flush=True)
         for idx,sec in enumerate(sections,1):
             try:
