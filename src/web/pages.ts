@@ -4,7 +4,7 @@ function esc(v:unknown){return String(v??"").replace(/[&<>"']/g,function(c){retu
 
 export function layout(title:string,body:string,user?:any){
   var actions = user ? '<a class="btn secondary" href="/app">Painel</a><form method="post" action="/logout"><button class="btn secondary">Sair</button></form>' : '<a class="btn secondary" href="/login">Entrar</a><a class="btn" href="/cadastro">Assinar</a>';
-  return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(title)+' | Votos por Seção</title><style>'+css+'</style></head><body><div class="wrap"><div class="nav"><a href="/" class="brand" style="text-decoration:none">Votos por Seção <span class="tag">2026</span></a><div class="row">'+actions+'</div></div>'+body+'<div class="footer">Fonte original dos dados eleitorais: Tribunal Superior Eleitoral. Plataforma independente.</div></div></body></html>';
+  return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(title)+' | Siga o Voto</title><style>'+css+'</style></head><body><div class="wrap"><div class="nav"><a href="/" class="brand" style="text-decoration:none">Siga o Voto <span class="tag">2026</span></a><div class="row">'+actions+'</div></div>'+body+'<div class="footer">Fonte original dos dados eleitorais: Tribunal Superior Eleitoral. Plataforma independente.</div></div></body></html>';
 }
 
 export function homePage(user?:any){
