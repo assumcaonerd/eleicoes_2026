@@ -1,11 +1,11 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { URL } from "node:url";
-import { currentUser, hasActiveAccess, sessionCookie, clearSessionCookie, revokeCurrentSession, audit } from "../auth/security.js";
+import { currentUser, hasActiveAccess, sessionCookie, clearSessionCookie, revokeCurrentSession, audit, hashPassword, hashToken } from "../auth/security.js";
 import { registerUser, loginUser } from "../auth/service.js";
 import { createCheckout, handleStripeWebhook } from "../billing/stripe.js";
 import { searchCandidates, compareCandidates, topTerritories, partyVotes, sourceStatus, sectionMap, sectionMetrics, candidateTerritoryOverview, territorialLevel } from "../tools/queries.js";
 import { sql } from "../db/index.js";
-import { homePage, authPage, plansPage, appPage, adminPage } from "./pages.js";
+import { homePage, authPage, plansPage, appPage, adminPage, resetPasswordPage } from "./pages.js";
 
 async function readBody(req:IncomingMessage,raw=false){
   const chunks:Buffer[]=[];
@@ -30,6 +30,35 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
   if(url.pathname==="/"&&req.method==="GET"){const user=await currentUser(req);html(res,homePage(user));return true}
   if(url.pathname==="/login"&&req.method==="GET"){html(res,authPage("login"));return true}
   if(url.pathname==="/cadastro"&&req.method==="GET"){html(res,authPage("cadastro"));return true}
+  if(url.pathname==="/redefinir-senha"&&req.method==="GET"){
+    const token=url.searchParams.get("token")??"";
+    if(!token){html(res,resetPasswordPage("", "Link inválido."),400);return true}
+    const row=(await sql<any>("SELECT 1 FROM password_reset_tokens WHERE token_hash=$1 AND used_at IS NULL AND expires_at>now() LIMIT 1",[hashToken(token)])).rows[0];
+    if(!row){html(res,resetPasswordPage("", "Link inválido ou expirado."),400);return true}
+    html(res,resetPasswordPage(token));return true
+  }
+  if(url.pathname==="/redefinir-senha"&&req.method==="POST"){
+    try{
+      const d=await readBody(req) as any;
+      const token=String(d.token??"");
+      const password=String(d.password??"");
+      const confirm=String(d.confirm??"");
+      if(password!==confirm) throw new Error("As senhas não conferem.");
+      const reset=(await sql<any>("SELECT id,user_id FROM password_reset_tokens WHERE token_hash=$1 AND used_at IS NULL AND expires_at>now() LIMIT 1",[hashToken(token)])).rows[0];
+      if(!reset) throw new Error("Link inválido ou expirado.");
+      const passwordHash=await hashPassword(password);
+      await sql("BEGIN");
+      try{
+        await sql("UPDATE users SET password_hash=$1,updated_at=now() WHERE id=$2",[passwordHash,Number(reset.user_id)]);
+        await sql("UPDATE password_reset_tokens SET used_at=now() WHERE id=$1",[Number(reset.id)]);
+        await sql("UPDATE user_sessions SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL",[Number(reset.user_id)]);
+        await sql("COMMIT");
+      }catch(e){await sql("ROLLBACK");throw e}
+      html(res,resetPasswordPage("", "", true));return true
+    }catch(e:any){
+      html(res,resetPasswordPage(String((await readBody(req) as any)?.token??""),e.message),400);return true
+    }
+  }
   if(url.pathname==="/cadastro"&&req.method==="POST"){try{const d=await readBody(req) as any;const x=await registerUser(req,d);redirect(res,"/planos",sessionCookie(x.token,process.env.NODE_ENV==="production"));}catch(e:any){html(res,authPage("cadastro",e.message),400)}return true}
   if(url.pathname==="/login"&&req.method==="POST"){try{const d=await readBody(req) as any;const x=await loginUser(req,d);redirect(res,"/app",sessionCookie(x.token,process.env.NODE_ENV==="production"));}catch(e:any){html(res,authPage("login",e.message),401)}return true}
   if(url.pathname==="/logout"&&req.method==="POST"){await revokeCurrentSession(req);redirect(res,"/",clearSessionCookie());return true}
