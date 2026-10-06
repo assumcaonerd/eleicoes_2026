@@ -60,6 +60,32 @@ def norm_num(v):
     try:return str(int(s))
     except:return s.lstrip("0") or "0"
 
+def ensure_schema(conn):
+    ddl="""
+    CREATE TABLE IF NOT EXISTS places (
+      id BIGSERIAL PRIMARY KEY,
+      uf CHAR(2) NOT NULL,
+      municipality_code TEXT NOT NULL,
+      municipality_name TEXT NOT NULL,
+      zone INTEGER NOT NULL DEFAULT -1,
+      section INTEGER NOT NULL DEFAULT -1,
+      polling_place_code TEXT NOT NULL DEFAULT '',
+      polling_place_name TEXT,
+      address TEXT,
+      neighborhood TEXT NOT NULL DEFAULT '',
+      cep TEXT,
+      latitude NUMERIC(9,6),
+      longitude NUMERIC(9,6),
+      UNIQUE (uf, municipality_code, zone, section, polling_place_code)
+    );
+    CREATE INDEX IF NOT EXISTS places_municipality_idx ON places(uf, municipality_code);
+    CREATE INDEX IF NOT EXISTS places_neighborhood_idx ON places(uf, municipality_name, neighborhood);
+    CREATE INDEX IF NOT EXISTS places_section_idx ON places(uf, municipality_code, zone, section);
+    """
+    with conn.cursor() as cur:
+        cur.execute(ddl)
+    conn.commit()
+
 def load_candidate_map(conn):
     out={}
     with conn.cursor() as cur:
@@ -213,6 +239,7 @@ def import_sections(conn):
 def main():
     print("GRANULAR_IMPORT_START="+json.dumps({"ufs":UF_LIST,"places":IMPORT_PLACES,"sections":IMPORT_SECTIONS}),flush=True)
     with psycopg.connect(DATABASE_URL) as conn:
+        ensure_schema(conn)
         places=import_places(conn) if IMPORT_PLACES else 0
         rows=import_sections(conn) if IMPORT_SECTIONS else 0
         print("GRANULAR_IMPORT_DONE="+json.dumps({"places":places,"vote_rows":rows}),flush=True)
