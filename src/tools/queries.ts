@@ -330,7 +330,7 @@ export async function territorialLevel(args:{
       SELECT sv.municipality_code,sv.municipality_name,COALESCE(p.neighborhood,'') AS neighborhood,SUM(sv.votes)::int AS votes
       FROM section_votes sv
       LEFT JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code
-        AND p.zone=sv.zone AND p.section=sv.section AND p.polling_place_code=sv.polling_place_code
+        AND p.zone=sv.zone AND p.section=sv.section
       WHERE sv.uf=$1 AND sv.office_code=$2 AND sv.candidate_number=$3
         AND ($4::text IS NULL OR sv.municipality_code=$4)
         AND COALESCE(p.neighborhood,'')<>''
@@ -346,7 +346,7 @@ export async function territorialLevel(args:{
         SUM(sv.votes)::int AS votes
       FROM section_votes sv
       LEFT JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code
-        AND p.zone=sv.zone AND p.section=sv.section AND p.polling_place_code=sv.polling_place_code
+        AND p.zone=sv.zone AND p.section=sv.section
       WHERE sv.uf=$1 AND sv.office_code=$2 AND sv.candidate_number=$3
         AND ($4::text IS NULL OR sv.municipality_code=$4)
       GROUP BY sv.municipality_code,sv.municipality_name,sv.polling_place_code
@@ -360,7 +360,7 @@ export async function territorialLevel(args:{
         MAX(p.neighborhood) AS neighborhood,SUM(sv.votes)::int AS votes
       FROM section_votes sv
       LEFT JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code
-        AND p.zone=sv.zone AND p.section=sv.section AND p.polling_place_code=sv.polling_place_code
+        AND p.zone=sv.zone AND p.section=sv.section
       WHERE sv.uf=$1 AND sv.office_code=$2 AND sv.candidate_number=$3
         AND ($4::text IS NULL OR sv.municipality_code=$4)
         AND ($5::int IS NULL OR sv.zone=$5)
