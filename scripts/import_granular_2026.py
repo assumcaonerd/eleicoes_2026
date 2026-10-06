@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-import csv, io, json, os, sys, time, urllib.request, zipfile
+import csv, io, json, os, sys, time, urllib.request, zipfile, threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 import asn1tools
 import psycopg
@@ -11,6 +12,9 @@ IMPORT_PLACES=os.getenv("IMPORT_PLACES","true").lower()=="true"
 IMPORT_SECTIONS=os.getenv("IMPORT_SECTIONS","true").lower()=="true"
 RPS=max(1,float(os.getenv("TSE_RPS","8")))
 SLEEP=1.0/RPS
+SECTION_CONCURRENCY=max(1,int(os.getenv("SECTION_CONCURRENCY","12")))
+_rate_lock=threading.Lock()
+_next_request=[0.0]
 SECTION_LIMIT=max(0,int(os.getenv("SECTION_LIMIT","0")))
 SPEC=os.getenv("BU_SPEC","spec/bu-v2.asn1")
 CORE_DATABASE_URL=os.environ["DATABASE_URL"]
@@ -26,11 +30,16 @@ CARGO_MAP={
 def fetch(url:str, binary=False):
     last=None
     for attempt in range(5):
+        with _rate_lock:
+            now=time.monotonic()
+            when=max(now,_next_request[0])
+            _next_request[0]=when+SLEEP
+        if when>now:
+            time.sleep(when-now)
         try:
             req=urllib.request.Request(url,headers={"User-Agent":"siga-o-voto/1.0"})
             with urllib.request.urlopen(req, timeout=60) as r:
                 data=r.read()
-                time.sleep(SLEEP)
                 return data if binary else data.decode("utf-8")
         except Exception as e:
             last=e
@@ -212,50 +221,66 @@ def import_sections(conn, candidate_map):
       ON CONFLICT (election_id,round,office_code,uf,municipality_code,zone,section,polling_place_code,candidate_number)
       DO UPDATE SET votes=EXCLUDED.votes,party_number=EXCLUDED.party_number,
         source_file=EXCLUDED.source_file,source_updated_at=now()"""
+
+    def process_one(sec):
+        try:
+            raw,filename=fetch_bu(sec)
+            if not raw:
+                return {"missing":1,"unknown":0,"rows":[]}
+            env,bu=decode_bu(codec,raw)
+            ident=bu.get("identificacaoSecao",{}) or {}
+            local=str(ident.get("localVotacao") or "")
+            rows=[]; unknown=0
+            for election in bu.get("resultadosVotacaoPorEleicao",[]) or []:
+                eid=as_int(election.get("idEleicao"))
+                for rv in election.get("resultadosVotacao",[]) or []:
+                    for totals in rv.get("totaisVotosCargo",[]) or []:
+                        office=cargo_code(totals.get("codigoCargo"))
+                        app_office=7 if office==8 else office
+                        if app_office not in (1,3,5,6,7): continue
+                        for vv in totals.get("votosVotaveis",[]) or []:
+                            t=tipo_nome(vv.get("tipoVoto")).lower()
+                            if "nominal" not in t and t!="1": continue
+                            identv=vv.get("identificacaoVotavel",{}) or {}
+                            num=norm_num(identv.get("codigo"))
+                            votes=as_int(vv.get("quantidadeVotos"))
+                            key=(eid,app_office,sec["uf"],num)
+                            if key not in candidate_map:
+                                unknown+=1; continue
+                            party=candidate_map.get(key,"")
+                            rows.append((eid,app_office,sec["uf"],sec["municipality"],sec["municipality_name"],
+                                         as_int(sec["zone"]),as_int(sec["section"]),local,num,party,votes,filename))
+            return {"missing":0,"unknown":unknown,"rows":rows}
+        except Exception as e:
+            return {"missing":1,"unknown":0,"rows":[],"error":str(e),"sec":sec}
+
     total_sections=0; total_rows=0; missing=0; unknown=0
     for uf in UF_LIST:
         sections=sections_for_uf(uf)
         if SECTION_LIMIT: sections=sections[:SECTION_LIMIT]
-        print(f"SECTIONS_INDEX_{uf}={len(sections)}",flush=True)
-        for idx,sec in enumerate(sections,1):
-            try:
-                raw,filename=fetch_bu(sec)
-                if not raw:
-                    missing+=1; continue
-                env,bu=decode_bu(codec,raw)
-                ident=bu.get("identificacaoSecao",{}) or {}
-                local=str(ident.get("localVotacao") or "")
-                rows=[]
-                for election in bu.get("resultadosVotacaoPorEleicao",[]) or []:
-                    eid=as_int(election.get("idEleicao"))
-                    for rv in election.get("resultadosVotacao",[]) or []:
-                        for totals in rv.get("totaisVotosCargo",[]) or []:
-                            office=cargo_code(totals.get("codigoCargo"))
-                            app_office=7 if office==8 else office
-                            if app_office not in (1,3,5,6,7): continue
-                            for vv in totals.get("votosVotaveis",[]) or []:
-                                t=tipo_nome(vv.get("tipoVoto")).lower()
-                                if "nominal" not in t and t!="1": continue
-                                identv=vv.get("identificacaoVotavel",{}) or {}
-                                num=norm_num(identv.get("codigo"))
-                                votes=as_int(vv.get("quantidadeVotos"))
-                                key=(eid,app_office,uf,num)
-                                if key not in candidate_map:
-                                    unknown+=1; continue
-                                party=candidate_map.get(key,"")
-                                rows.append((eid,app_office,uf,sec["municipality"],sec["municipality_name"],
-                                             as_int(sec["zone"]),as_int(sec["section"]),local,num,party,votes,filename))
+        print(f"SECTIONS_INDEX_{uf}={len(sections)} concurrency={SECTION_CONCURRENCY} rps={RPS}",flush=True)
+        with ThreadPoolExecutor(max_workers=SECTION_CONCURRENCY) as executor:
+            futures={executor.submit(process_one,sec):sec for sec in sections}
+            pending_rows=[]
+            for idx,future in enumerate(as_completed(futures),1):
+                result=future.result()
+                missing+=result.get("missing",0)
+                unknown+=result.get("unknown",0)
+                if result.get("error"):
+                    sec=result.get("sec",{})
+                    print("SECTION_ERROR="+json.dumps({"uf":uf,"m":sec.get("municipality"),"z":sec.get("zone"),"s":sec.get("section"),"error":result["error"]},ensure_ascii=False),flush=True)
+                rows=result.get("rows",[])
                 if rows:
-                    with conn.cursor() as cur: cur.executemany(insert_sql,rows)
+                    pending_rows.extend(rows)
                     total_rows+=len(rows)
                 total_sections+=1
-                if idx%100==0:
+                if len(pending_rows)>=5000 or idx%100==0 or idx==len(sections):
+                    if pending_rows:
+                        with conn.cursor() as cur: cur.executemany(insert_sql,pending_rows)
+                        pending_rows=[]
                     conn.commit()
+                if idx%100==0 or idx==len(sections):
                     print(f"SECTION_PROGRESS_{uf}={idx}/{len(sections)} rows={total_rows} missing={missing} unknown={unknown}",flush=True)
-            except Exception as e:
-                missing+=1
-                print("SECTION_ERROR="+json.dumps({"uf":uf,"m":sec["municipality"],"z":sec["zone"],"s":sec["section"],"error":str(e)},ensure_ascii=False),flush=True)
-        conn.commit()
     print("SECTIONS_DONE="+json.dumps({"sections":total_sections,"rows":total_rows,"missing":missing,"unknown":unknown}),flush=True)
     return total_rows
 
