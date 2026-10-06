@@ -39,7 +39,20 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
   if(url.pathname==="/checkout"&&req.method==="POST"){if(!user){redirect(res,"/login");return true}try{const d=await readBody(req) as any;const plan=d.plan==="lifetime"?"lifetime":"monthly";const target=await createCheckout({id:Number(user.id),email:user.email},plan);await audit(req,"CHECKOUT_STARTED",Number(user.id),{plan});if(!target)throw new Error("Checkout indisponível.");redirect(res,target);}catch(e:any){html(res,plansPage(user),400)}return true}
   if(url.pathname==="/app"&&req.method==="GET"){if(!user){redirect(res,"/login");return true}const active=await hasActiveAccess(Number(user.id));html(res,appPage(user,active));return true}
   if(url.pathname==="/api/candidates"&&req.method==="GET"){if(!user){json(res,{error:"Não autenticado."},401);return true}if(!await hasActiveAccess(Number(user.id))){json(res,{error:"Assinatura inativa."},402);return true}const q=url.searchParams.get("q")??"";const office=Number(url.searchParams.get("office")||0)||undefined;const uf=url.searchParams.get("uf")?.toUpperCase()||undefined;const rows=await searchCandidates({query:q,officeCode:office,uf,limit:50});await sql("INSERT INTO search_history(user_id,query,filters) VALUES($1,$2,$3)",[Number(user.id),q,JSON.stringify({office,uf})]);await audit(req,"SEARCH_CANDIDATE",Number(user.id),{q,office,uf});json(res,{rows});return true}
-  if(url.pathname==="/api/compare"&&req.method==="GET"){if(!user){json(res,{error:"Não autenticado."},401);return true}if(!await hasActiveAccess(Number(user.id))){json(res,{error:"Assinatura inativa."},402);return true}const ids=(url.searchParams.get("ids")??"").split(",").map(Number).filter(Number.isFinite);const level=(url.searchParams.get("level")??"municipality") as any;const rows=await compareCandidates({candidateIds:ids,level,municipalityCode:url.searchParams.get("municipality")||undefined,zone:Number(url.searchParams.get("zone")||0)||undefined});json(res,{rows});return true}
+  if(url.pathname==="/api/compare"&&req.method==="GET"){
+    if(!user){json(res,{error:"Não autenticado."},401);return true}
+    if(!await hasActiveAccess(Number(user.id))){json(res,{error:"Assinatura inativa."},402);return true}
+    const ids=(url.searchParams.get("ids")??"").split(",").map(Number).filter(Number.isFinite);
+    if(ids.length<2||ids.length>3){json(res,{error:"Selecione 2 ou 3 candidatos para comparar."},400);return true}
+    const level=(url.searchParams.get("level")??"municipality") as any;
+    try{
+      const rows=await compareCandidates({candidateIds:ids,level,municipalityCode:url.searchParams.get("municipality")||undefined,zone:Number(url.searchParams.get("zone")||0)||undefined});
+      json(res,{rows});
+    }catch(e:any){
+      json(res,{error:e?.message??"Falha ao comparar candidatos."},400);
+    }
+    return true
+  }
   if(url.pathname==="/api/top-territories"&&req.method==="GET"){if(!user){json(res,{error:"Não autenticado."},401);return true}if(!await hasActiveAccess(Number(user.id))){json(res,{error:"Assinatura inativa."},402);return true}const candidateId=Number(url.searchParams.get("candidateId"));const level=(url.searchParams.get("level")??"municipality") as any;const rows=await topTerritories({candidateId,level,limit:Number(url.searchParams.get("limit")||20)});json(res,{rows});return true}
   if(url.pathname==="/api/party-votes"&&req.method==="GET"){if(!user){json(res,{error:"Não autenticado."},401);return true}if(!await hasActiveAccess(Number(user.id))){json(res,{error:"Assinatura inativa."},402);return true}const row=await partyVotes({partyAbbr:url.searchParams.get("party")??"",officeCode:Number(url.searchParams.get("office")||0),uf:url.searchParams.get("uf")??""});json(res,{row});return true}
   if(url.pathname==="/api/data-status"&&req.method==="GET"){if(!user){json(res,{error:"Não autenticado."},401);return true}const rows=await sourceStatus();json(res,{rows});return true}
