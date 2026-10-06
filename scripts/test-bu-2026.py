@@ -1,24 +1,16 @@
-import json, urllib.request, asn1tools, zipfile, io, tempfile, os
+import json, urllib.request, asn1tools, os
 
-FORMAT_URL="https://www.tse.jus.br/eleicoes/eleicoes-2026-content/arquivos/formato-arquivos-de-bu-rdv-e-assinatura-digital"
+SPEC="/tmp/tse2026/spec/bu.asn1"
 BASE="https://resultados.tse.jus.br/oficial/ele2026/arquivo-urna/3220"
 UF="es"; MUN="56006"; ZONE="0046"; SEC="0059"
 
-req=urllib.request.Request(FORMAT_URL,headers={"User-Agent":"Mozilla/5.0"})
-with urllib.request.urlopen(req,timeout=30) as r:
-    z=zipfile.ZipFile(io.BytesIO(r.read()))
-    spec_data=z.read("spec/bu.asn1").decode("utf-8")
-with tempfile.NamedTemporaryFile("w",suffix=".asn1",delete=False,encoding="utf-8") as f:
-    f.write(spec_data); spec=f.name
-conv=asn1tools.compile_files(spec,codec="ber")
-
+conv=asn1tools.compile_files(SPEC,codec="ber")
 aux_url=f"{BASE}/dados/{UF}/{MUN}/{ZONE}/{SEC}/p003220-{UF}-m{MUN}-z{ZONE}-s{SEC}-aux.json"
 with urllib.request.urlopen(aux_url,timeout=30) as r: aux=json.load(r)
 h=aux["hashes"][0]
 bu=next(x for x in h["arq"] if x.get("tp")=="bu")
 bu_url=f"{BASE}/dados/{UF}/{MUN}/{ZONE}/{SEC}/{h['hash']}/{bu['nm']}"
 with urllib.request.urlopen(bu_url,timeout=30) as r: raw=r.read()
-
 env=conv.decode("EntidadeEnvelopeGenerico",raw)
 decoded=conv.decode("EntidadeBoletimUrna",env["conteudo"])
 print("SECTION="+json.dumps(decoded.get("identificacaoSecao"),ensure_ascii=False,default=str))
@@ -33,8 +25,6 @@ for eleicao in decoded.get("resultadosVotacaoPorEleicao",[]):
                 sample_votes.append({"cargo":cargo,"tipo":voto.get("tipoVoto"),"ident":ident,"q":voto.get("quantidadeVotos")})
                 numero=ident.get("codigo")
                 if numero is None: numero=ident.get("numeroVotavel")
-                if str(numero)=="22190":
-                    found.append({"cargo":cargo,"voto":voto})
+                if str(numero)=="22190": found.append({"cargo":cargo,"voto":voto})
 print("FOUND="+json.dumps(found,ensure_ascii=False,default=str))
-print("SAMPLE="+json.dumps(sample_votes[:20],ensure_ascii=False,default=str))
-os.unlink(spec)
+print("SAMPLE="+json.dumps(sample_votes[:30],ensure_ascii=False,default=str))
