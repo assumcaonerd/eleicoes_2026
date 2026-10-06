@@ -124,3 +124,10 @@ document.getElementById("newSearch").addEventListener("click",function(){documen
 export function adminPage(user:any,stats:any){
   return layout("Administração",'<h1>Painel administrativo</h1><div class="grid"><div class="card"><div class="muted">Usuários</div><div class="metric">'+esc(stats.users)+'</div></div><div class="card"><div class="muted">Assinaturas ativas</div><div class="metric">'+esc(stats.active)+'</div></div><div class="card"><div class="muted">Importações concluídas</div><div class="metric">'+esc(stats.imports)+'</div></div></div>',user);
 }
+
+
+export function resetPasswordPage(token:string,error="",done=false){
+  if(done) return layout("Senha redefinida",'<div class="auth card"><h1>Senha redefinida</h1><p class="muted">Sua senha foi atualizada com sucesso.</p><a class="btn" href="/login">Entrar</a></div>');
+  var err=error?'<div class="error">'+esc(error)+'</div>':'';
+  return layout("Redefinir senha",'<div class="auth card"><h1>Redefinir senha</h1>'+err+'<form method="post" action="/redefinir-senha"><input type="hidden" name="token" value="'+esc(token)+'"><label class="field">Nova senha<input type="password" name="password" required minlength="12" autocomplete="new-password"></label><label class="field">Confirmar nova senha<input type="password" name="confirm" required minlength="12" autocomplete="new-password"></label><button class="btn" style="width:100%">Salvar nova senha</button></form></div>');
+}
