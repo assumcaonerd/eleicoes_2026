@@ -259,6 +259,34 @@ def import_sections(conn, candidate_map):
     print("SECTIONS_DONE="+json.dumps({"sections":total_sections,"rows":total_rows,"missing":missing,"unknown":unknown}),flush=True)
     return total_rows
 
+def verify_granular(conn):
+    with conn.cursor() as cur:
+        cur.execute("SELECT count(*) FROM places WHERE uf='ES'")
+        places_count=cur.fetchone()[0]
+        cur.execute("SELECT count(*) FROM section_votes WHERE uf='ES'")
+        votes_count=cur.fetchone()[0]
+        cur.execute("""
+          SELECT count(*) FROM section_votes sv
+          JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code
+            AND p.zone=sv.zone AND p.section=sv.section
+          WHERE sv.uf='ES'
+        """)
+        joined=cur.fetchone()[0]
+        cur.execute("""
+          SELECT sv.municipality_name,sv.zone,sv.section,sv.candidate_number,sv.votes,
+                 p.polling_place_name,p.address,p.neighborhood
+          FROM section_votes sv
+          LEFT JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code
+            AND p.zone=sv.zone AND p.section=sv.section
+          WHERE sv.uf='ES'
+          ORDER BY sv.id DESC LIMIT 1
+        """)
+        sample=cur.fetchone()
+    print("GRANULAR_VERIFY="+json.dumps({
+      "places":places_count,"vote_rows":votes_count,"joined_rows":joined,
+      "sample":sample
+    },ensure_ascii=False,default=str),flush=True)
+
 def main():
     print("GRANULAR_IMPORT_START="+json.dumps({"ufs":UF_LIST,"places":IMPORT_PLACES,"sections":IMPORT_SECTIONS}),flush=True)
     with psycopg.connect(CORE_DATABASE_URL) as core_conn:
@@ -268,7 +296,7 @@ def main():
         ensure_schema(sections_conn)
         places=import_places(sections_conn) if IMPORT_PLACES else 0
         rows=import_sections(sections_conn,candidate_map) if IMPORT_SECTIONS else 0
-        print("GRANULAR_IMPORT_DONE="+json.dumps({"places":places,"vote_rows":rows}),flush=True)
+        print("GRANULAR_IMPORT_DONE="+json.dumps({"places":places,"vote_rows":rows}),flush=True)\n        verify_granular(sections_conn)
 
 if __name__=="__main__":
     main()
