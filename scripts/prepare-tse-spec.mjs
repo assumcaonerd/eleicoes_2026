@@ -7,3 +7,5 @@ await writeFile("/tmp/tse2026.zip",Buffer.from(await r.arrayBuffer()));
 await mkdir("/tmp/tse2026",{recursive:true});
 execFileSync("unzip",["-o","/tmp/tse2026.zip","spec/bu.asn1","-d","/tmp/tse2026"],{stdio:"inherit"});
 console.log("SPEC_READY=/tmp/tse2026/spec/bu.asn1");
+
+execFileSync("python3",["scripts/test-bu-2026.py"],{stdio:"inherit"});
