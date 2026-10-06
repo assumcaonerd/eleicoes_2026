@@ -193,3 +193,23 @@ CREATE TABLE IF NOT EXISTS section_stats (
   UNIQUE(election_id, round, uf, municipality_code, zone, section, polling_place_code, source_kind)
 );
 CREATE INDEX IF NOT EXISTS section_stats_scope_idx ON section_stats(uf, municipality_code, zone, section);
+
+
+CREATE TABLE IF NOT EXISTS section_vote_raw (
+  election_id INTEGER NOT NULL,
+  round INTEGER NOT NULL DEFAULT 1,
+  office_code INTEGER NOT NULL,
+  uf CHAR(2) NOT NULL,
+  municipality_code TEXT NOT NULL,
+  municipality_name TEXT,
+  zone INTEGER NOT NULL,
+  section INTEGER NOT NULL,
+  polling_place_code TEXT NOT NULL DEFAULT '',
+  candidate_number TEXT NOT NULL,
+  party_number TEXT,
+  votes INTEGER NOT NULL CHECK (votes >= 0),
+  source_file TEXT,
+  source_updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS section_vote_raw_candidate_idx ON section_vote_raw(uf, office_code, candidate_number);
+CREATE INDEX IF NOT EXISTS section_vote_raw_scope_idx ON section_vote_raw(uf, municipality_code, zone, section);
