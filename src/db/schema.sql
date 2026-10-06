@@ -18,31 +18,9 @@ CREATE TABLE IF NOT EXISTS candidates (
   source_updated_at TIMESTAMPTZ,
   UNIQUE (election_id, office_code, uf, number, tse_candidate_id)
 );
-
 CREATE INDEX IF NOT EXISTS candidates_name_trgm_idx ON candidates USING gin (ballot_name gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS candidates_number_idx ON candidates(number);
 CREATE INDEX IF NOT EXISTS candidates_scope_idx ON candidates(election_id, office_code, uf);
-
-CREATE TABLE IF NOT EXISTS places (
-  id BIGSERIAL PRIMARY KEY,
-  uf CHAR(2) NOT NULL,
-  municipality_code TEXT NOT NULL,
-  municipality_name TEXT NOT NULL,
-  zone INTEGER NOT NULL DEFAULT -1,
-  section INTEGER NOT NULL DEFAULT -1,
-  polling_place_code TEXT NOT NULL DEFAULT '',
-  polling_place_name TEXT,
-  address TEXT,
-  neighborhood TEXT NOT NULL DEFAULT '',
-  cep TEXT,
-  latitude NUMERIC(9,6),
-  longitude NUMERIC(9,6),
-  UNIQUE (uf, municipality_code, zone, section, polling_place_code)
-);
-
-CREATE INDEX IF NOT EXISTS places_municipality_idx ON places(uf, municipality_code);
-CREATE INDEX IF NOT EXISTS places_neighborhood_idx ON places(uf, municipality_name, neighborhood);
-CREATE INDEX IF NOT EXISTS places_section_idx ON places(uf, municipality_code, zone, section);
 
 CREATE TABLE IF NOT EXISTS vote_facts (
   id BIGSERIAL PRIMARY KEY,
@@ -61,17 +39,10 @@ CREATE TABLE IF NOT EXISTS vote_facts (
   source_kind TEXT NOT NULL,
   source_file TEXT,
   source_updated_at TIMESTAMPTZ,
-  UNIQUE (
-    election_id, round, office_code, candidate_id, uf,
-    municipality_code, neighborhood, zone, section, polling_place_code, source_kind
-  )
+  UNIQUE (election_id,round,office_code,candidate_id,uf,municipality_code,neighborhood,zone,section,polling_place_code,source_kind)
 );
-
 CREATE INDEX IF NOT EXISTS vote_candidate_idx ON vote_facts(candidate_id);
 CREATE INDEX IF NOT EXISTS vote_municipality_idx ON vote_facts(candidate_id, municipality_code);
-CREATE INDEX IF NOT EXISTS vote_neighborhood_idx ON vote_facts(candidate_id, municipality_code, neighborhood);
-CREATE INDEX IF NOT EXISTS vote_zone_idx ON vote_facts(candidate_id, municipality_code, zone);
-CREATE INDEX IF NOT EXISTS vote_section_idx ON vote_facts(candidate_id, municipality_code, zone, section);
 
 CREATE TABLE IF NOT EXISTS import_runs (
   id BIGSERIAL PRIMARY KEY,
@@ -84,7 +55,6 @@ CREATE TABLE IF NOT EXISTS import_runs (
   notes TEXT
 );
 
-
 CREATE TABLE IF NOT EXISTS users (
   id BIGSERIAL PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,
@@ -96,7 +66,6 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 CREATE TABLE IF NOT EXISTS user_sessions (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -134,7 +103,6 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
   used_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 CREATE TABLE IF NOT EXISTS login_attempts (
   id BIGSERIAL PRIMARY KEY,
   email TEXT,
@@ -143,7 +111,6 @@ CREATE TABLE IF NOT EXISTS login_attempts (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS login_attempts_recent_idx ON login_attempts(created_at DESC);
-
 CREATE TABLE IF NOT EXISTS audit_logs (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
@@ -153,15 +120,12 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS audit_logs_user_idx ON audit_logs(user_id, created_at DESC);
-
-
 CREATE TABLE IF NOT EXISTS favorites (
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   candidate_id BIGINT NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY(user_id, candidate_id)
 );
-
 CREATE TABLE IF NOT EXISTS search_history (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -170,46 +134,3 @@ CREATE TABLE IF NOT EXISTS search_history (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS search_history_user_idx ON search_history(user_id, created_at DESC);
-
-
-CREATE TABLE IF NOT EXISTS section_stats (
-  id BIGSERIAL PRIMARY KEY,
-  election_id INTEGER NOT NULL,
-  round INTEGER NOT NULL DEFAULT 1,
-  uf CHAR(2) NOT NULL,
-  municipality_code TEXT NOT NULL,
-  municipality_name TEXT,
-  zone INTEGER NOT NULL,
-  section INTEGER NOT NULL,
-  polling_place_code TEXT NOT NULL DEFAULT '',
-  electorate INTEGER,
-  turnout INTEGER,
-  abstentions INTEGER,
-  valid_votes INTEGER,
-  blank_votes INTEGER,
-  null_votes INTEGER,
-  source_kind TEXT NOT NULL,
-  source_updated_at TIMESTAMPTZ,
-  UNIQUE(election_id, round, uf, municipality_code, zone, section, polling_place_code, source_kind)
-);
-CREATE INDEX IF NOT EXISTS section_stats_scope_idx ON section_stats(uf, municipality_code, zone, section);
-
-
-CREATE TABLE IF NOT EXISTS section_vote_raw (
-  election_id INTEGER NOT NULL,
-  round INTEGER NOT NULL DEFAULT 1,
-  office_code INTEGER NOT NULL,
-  uf CHAR(2) NOT NULL,
-  municipality_code TEXT NOT NULL,
-  municipality_name TEXT,
-  zone INTEGER NOT NULL,
-  section INTEGER NOT NULL,
-  polling_place_code TEXT NOT NULL DEFAULT '',
-  candidate_number TEXT NOT NULL,
-  party_number TEXT,
-  votes INTEGER NOT NULL CHECK (votes >= 0),
-  source_file TEXT,
-  source_updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-CREATE INDEX IF NOT EXISTS section_vote_raw_candidate_idx ON section_vote_raw(uf, office_code, candidate_number);
-CREATE INDEX IF NOT EXISTS section_vote_raw_scope_idx ON section_vote_raw(uf, municipality_code, zone, section);
