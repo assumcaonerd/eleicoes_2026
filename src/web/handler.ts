@@ -38,6 +38,71 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
   if(url.pathname==="/planos"&&req.method==="GET"){if(!user){redirect(res,"/login");return true}html(res,plansPage(user));return true}
   if(url.pathname==="/checkout"&&req.method==="POST"){if(!user){redirect(res,"/login");return true}try{const d=await readBody(req) as any;const plan=d.plan==="lifetime"?"lifetime":"monthly";const target=await createCheckout({id:Number(user.id),email:user.email},plan);await audit(req,"CHECKOUT_STARTED",Number(user.id),{plan});if(!target)throw new Error("Checkout indisponível.");redirect(res,target);}catch(e:any){html(res,plansPage(user),400)}return true}
   if(url.pathname==="/app"&&req.method==="GET"){if(!user){redirect(res,"/login");return true}const active=await hasActiveAccess(Number(user.id));html(res,appPage(user,active));return true}
+  if(url.pathname==="/ops/merge-section-batch"&&req.method==="POST"){
+    const key=String(req.headers["x-ops-key"]??"");
+    if(!process.env.OPS_MERGE_TOKEN||key!==process.env.OPS_MERGE_TOKEN){json(res,{error:"Negado."},403);return true}
+    const d=await readBody(req) as any;
+    const offset=Math.max(0,Number(d.offset||0));
+    const limit=Math.max(1,Math.min(10,Number(d.limit||5)));
+    const ms=(await sql<any>("SELECT DISTINCT municipality_code FROM section_vote_raw WHERE uf='ES' ORDER BY municipality_code OFFSET $1 LIMIT $2",[offset,limit])).rows;
+    let affected=0;
+    for(const m of ms){
+      const r=await sql<any>(`
+        INSERT INTO vote_facts (
+          election_id,round,office_code,candidate_id,uf,municipality_code,municipality_name,
+          neighborhood,zone,section,polling_place_code,votes,source_kind,source_file,source_updated_at
+        )
+        SELECT
+          r.election_id,r.round,r.office_code,c.id,r.uf,r.municipality_code,r.municipality_name,
+          COALESCE(p.neighborhood,''),r.zone,r.section,r.polling_place_code,r.votes,
+          'tse_section_bu',r.source_file,now()
+        FROM section_vote_raw r
+        JOIN LATERAL (
+          SELECT c0.id FROM candidates c0
+          WHERE c0.election_id=r.election_id AND c0.office_code=r.office_code
+            AND c0.number=r.candidate_number
+            AND ((r.office_code=1 AND c0.uf='BR') OR (r.office_code<>1 AND c0.uf=r.uf))
+          ORDER BY c0.id LIMIT 1
+        ) c ON true
+        LEFT JOIN places p ON p.uf=r.uf AND p.municipality_code=r.municipality_code
+          AND p.zone=r.zone AND p.section=r.section AND p.polling_place_code=r.polling_place_code
+        WHERE r.uf='ES' AND r.municipality_code=$1
+        ON CONFLICT (
+          election_id,round,office_code,candidate_id,uf,municipality_code,neighborhood,
+          zone,section,polling_place_code,source_kind
+        )
+        DO UPDATE SET votes=EXCLUDED.votes,source_file=EXCLUDED.source_file,source_updated_at=now()
+        RETURNING 1
+      `,[m.municipality_code]);
+      affected+=r.rowCount??0;
+    }
+    json(res,{ok:true,offset,limit,municipalities:ms.map((x:any)=>x.municipality_code),affected});return true
+  }
+  if(url.pathname==="/ops/section-status"&&req.method==="GET"){
+    const key=String(req.headers["x-ops-key"]??"");
+    if(!process.env.OPS_MERGE_TOKEN||key!==process.env.OPS_MERGE_TOKEN){json(res,{error:"Negado."},403);return true}
+    const counts=(await sql<any>(`
+      SELECT
+        (SELECT COUNT(*)::bigint FROM section_vote_raw WHERE uf='ES') AS raw,
+        (SELECT COUNT(*)::bigint FROM vote_facts WHERE uf='ES' AND source_kind='tse_section_bu') AS merged,
+        (SELECT COUNT(*)::bigint FROM places WHERE uf='ES') AS places,
+        (SELECT COUNT(DISTINCT neighborhood)::int FROM places WHERE uf='ES' AND neighborhood<>'') AS neighborhoods,
+        (SELECT COUNT(DISTINCT polling_place_code)::int FROM places WHERE uf='ES' AND polling_place_code<>'') AS locations
+    `)).rows[0];
+    const candidate=(await sql<any>(`
+      SELECT c.id,c.ballot_name,c.number,
+        COUNT(*)::int AS rows,
+        COUNT(DISTINCT (v.municipality_code,v.zone,v.section))::int AS sections,
+        COALESCE(SUM(v.votes),0)::int AS votes,
+        COUNT(DISTINCT NULLIF(v.neighborhood,''))::int AS neighborhoods,
+        COUNT(DISTINCT NULLIF(v.polling_place_code,''))::int AS locations
+      FROM vote_facts v JOIN candidates c ON c.id=v.candidate_id
+      WHERE v.uf='ES' AND v.source_kind='tse_section_bu'
+        AND c.office_code=7 AND c.number='22190'
+      GROUP BY c.id,c.ballot_name,c.number
+    `)).rows;
+    json(res,{counts,candidate});return true
+  }
   if(url.pathname==="/api/candidates"&&req.method==="GET"){if(!user){json(res,{error:"Não autenticado."},401);return true}if(!await hasActiveAccess(Number(user.id))){json(res,{error:"Assinatura inativa."},402);return true}const q=url.searchParams.get("q")??"";const office=Number(url.searchParams.get("office")||0)||undefined;const uf=url.searchParams.get("uf")?.toUpperCase()||undefined;const rows=await searchCandidates({query:q,officeCode:office,uf,limit:50});await sql("INSERT INTO search_history(user_id,query,filters) VALUES($1,$2,$3)",[Number(user.id),q,JSON.stringify({office,uf})]);await audit(req,"SEARCH_CANDIDATE",Number(user.id),{q,office,uf});json(res,{rows});return true}
   if(url.pathname==="/api/candidate-overview"&&req.method==="GET"){
     if(!user){json(res,{error:"Não autenticado."},401);return true}
