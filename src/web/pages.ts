@@ -93,11 +93,11 @@ function municipalityTable(rows){
 }
 function genericTable(rows,level){
  if(!rows.length){
-  if(level==="neighborhood"||level==="polling_place"||level==="section")return '<div class="empty"><b>O detalhamento de 2026 neste nível ainda não está disponível na base oficial consolidada do TSE.</b><br><br>Assim que o TSE liberar os resultados granulares por seção, esta área será preenchida com os votos do candidato.</div>';
+  if(level==="neighborhood"||level==="polling_place"||level==="section")return '<div class="empty">Nenhum dado encontrado neste nível para o município selecionado.</div>';
   return '<div class="empty">Ainda não há dados deste nível para o município selecionado.</div>';
  }
  var total=rows.length,label="Território";if(level==="zone")label="Zona";if(level==="neighborhood")label="Bairro";if(level==="polling_place")label="Local";if(level==="section")label="Seção";
- return '<table><thead><tr><th>Posição</th><th>'+label+'</th><th>Votos</th><th>% dos seus votos</th><th>Força</th></tr></thead><tbody>'+rows.map(function(x){var name="";if(level==="zone")name="Zona "+x.zone;else if(level==="neighborhood")name=x.neighborhood||"Sem bairro informado";else if(level==="polling_place")name=x.polling_place_name||x.polling_place_code||"Local de votação";else name="Seção "+x.section+(x.zone>=0?" · Zona "+x.zone:"");return '<tr><td class="rank">#'+x.rank+'</td><td><b>'+escHtml(name)+'</b></td><td>'+fmt(x.votes)+'</td><td>'+pct(x.pct_total)+'</td><td><span class="strength">'+strength(x.rank,total)+'</span></td></tr>'}).join("")+'</tbody></table>';
+ return '<table><thead><tr><th>Posição</th><th>'+label+'</th><th>Votos</th><th>% dos seus votos</th><th>Força</th></tr></thead><tbody>'+rows.map(function(x){var name="";if(level==="zone")name="Zona "+x.zone;else if(level==="neighborhood")name=x.neighborhood||"Sem bairro informado";else if(level==="polling_place")name=(x.polling_place_name||x.polling_place_code||"Local de votação")+(x.address?" · "+x.address:"")+(x.neighborhood?" · "+x.neighborhood:"");else name="Seção "+x.section+(x.zone>=0?" · Zona "+x.zone:"")+(x.polling_place_name?" · "+x.polling_place_name:"")+(x.neighborhood?" · "+x.neighborhood:"");return '<tr><td class="rank">#'+x.rank+'</td><td><b>'+escHtml(name)+'</b></td><td>'+fmt(x.votes)+'</td><td>'+pct(x.pct_total)+'</td><td><span class="strength">'+strength(x.rank,total)+'</span></td></tr>'}).join("")+'</tbody></table>';
 }
 async function showLevel(level){
  currentLevel=level;document.querySelectorAll(".tab").forEach(function(t){t.classList.toggle("active",t.dataset.level===level)});
