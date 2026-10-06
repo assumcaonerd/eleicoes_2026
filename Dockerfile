@@ -10,7 +10,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY package*.json ./
 RUN npm install --omit=dev
-RUN apk add --no-cache python3 py3-pip unzip && pip3 install --break-system-packages asn1tools
+RUN apk add --no-cache python3 py3-pip unzip && pip3 install --break-system-packages asn1tools 'psycopg[binary]'
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/src/db/schema.sql ./dist/src/db/schema.sql
 COPY --from=build /app/spec ./spec
