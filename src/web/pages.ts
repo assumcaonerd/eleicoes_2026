@@ -26,7 +26,7 @@ export function appPage(user:any,active:boolean){
   if(!active) return layout("Aplicativo",'<div class="card"><h1>Assinatura necessária</h1><p class="muted">Sua conta está autenticada, mas ainda não possui uma assinatura ativa.</p><a class="btn" href="/planos">Escolher plano</a></div>',user);
   var body = `
 <style>
-.searchbox{margin-bottom:22px}.candidate-list{display:grid;gap:10px;margin-top:18px}.candidate-item{width:100%;text-align:left;border:1px solid #e2e6ea;background:#fff;border-radius:14px;padding:16px;cursor:pointer}.candidate-item:hover{border-color:#111;background:#fafafa}.candidate-name{font-size:18px;font-weight:850}.candidate-meta{color:#68717a;font-size:14px;margin-top:4px}.dash{display:none}.dash-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}.dash-title h2{margin:0 0 4px;font-size:28px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:12px;margin:18px 0}.metric-card{background:#fff;border:1px solid #e5e8eb;border-radius:16px;padding:18px}.metric-card .n{font-size:28px;font-weight:900;margin-top:5px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.tab{border:1px solid #d9dde1;background:#fff;border-radius:999px;padding:10px 14px;font-weight:800;cursor:pointer}.tab.active{background:#111;color:#fff;border-color:#111}.scopebar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:12px 0 18px}.scopebar .field{min-width:260px;margin:0}.territory-card{overflow:hidden}.strength{display:inline-block;border-radius:999px;padding:5px 9px;background:#edf0f3;font-size:12px;font-weight:800}.empty{padding:28px;text-align:center;border:1px dashed #ccd2d7;border-radius:14px;color:#68717a;background:#fafbfc}.topline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rank{font-weight:900;color:#68717a}.map-wrap{display:none;margin-top:14px}.map-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.map-canvas{height:620px;border:1px solid #dfe3e6;border-radius:16px;overflow:hidden}.map-note{font-size:13px;color:#68717a;margin-top:8px}.leaflet-popup-content{min-width:250px}.popup-title{font-weight:900;font-size:15px;margin-bottom:5px}.popup-meta{font-size:12px;color:#68717a;margin-bottom:8px}.popup-total{font-weight:900;margin-bottom:8px}.popup-sections{max-height:180px;overflow:auto;border-top:1px solid #eee;padding-top:6px}.popup-section{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:12px;border-bottom:1px solid #f1f1f1}@media(max-width:760px){.metrics{grid-template-columns:repeat(2,1fr)}.metric-card .n{font-size:24px}.territory-card{overflow-x:auto}table{min-width:650px}}
+.searchbox{margin-bottom:22px}.candidate-list{display:grid;gap:10px;margin-top:18px}.candidate-item{width:100%;text-align:left;border:1px solid #e2e6ea;background:#fff;border-radius:14px;padding:16px;cursor:pointer}.candidate-item:hover{border-color:#111;background:#fafafa}.candidate-name{font-size:18px;font-weight:850}.candidate-meta{color:#68717a;font-size:14px;margin-top:4px}.dash{display:none}.dash-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}.dash-title h2{margin:0 0 4px;font-size:28px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:12px;margin:18px 0}.metric-card{background:#fff;border:1px solid #e5e8eb;border-radius:16px;padding:18px}.metric-card .n{font-size:28px;font-weight:900;margin-top:5px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.tab{border:1px solid #d9dde1;background:#fff;border-radius:999px;padding:10px 14px;font-weight:800;cursor:pointer}.tab.active{background:#111;color:#fff;border-color:#111}.scopebar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:12px 0 18px}.scopebar .field{min-width:260px;margin:0}.territory-card{overflow:hidden}.strength{display:inline-block;border-radius:999px;padding:5px 9px;background:#edf0f3;font-size:12px;font-weight:800}.empty{padding:28px;text-align:center;border:1px dashed #ccd2d7;border-radius:14px;color:#68717a;background:#fafbfc}.topline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rank{font-weight:900;color:#68717a}.map-wrap{display:none;margin-top:14px}.map-filters{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:10px;margin-bottom:12px}.map-filters .field{margin:0}.map-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.map-canvas{height:620px;border:1px solid #dfe3e6;border-radius:16px;overflow:hidden}.map-note{font-size:13px;color:#68717a;margin-top:8px}.leaflet-popup-content{min-width:250px}.popup-title{font-weight:900;font-size:15px;margin-bottom:5px}.popup-meta{font-size:12px;color:#68717a;margin-bottom:8px}.popup-total{font-weight:900;margin-bottom:8px}.popup-sections{max-height:180px;overflow:auto;border-top:1px solid #eee;padding-top:6px}.popup-section{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:12px;border-bottom:1px solid #f1f1f1}@media(max-width:760px){.map-filters{grid-template-columns:1fr 1fr}.metrics{grid-template-columns:repeat(2,1fr)}.metric-card .n{font-size:24px}.territory-card{overflow-x:auto}table{min-width:650px}}
 </style>
 <h1>Siga o Voto 2026</h1>
 <p class="muted">Escolha um candidato e descubra onde a votação foi forte, média ou fraca.</p>
@@ -58,6 +58,13 @@ export function appPage(user:any,active:boolean){
 <div id="territoryTitle" class="topline"><h3 style="margin:0">Ranking por município</h3></div>
 <div id="territoryContent" class="territory-card" style="margin-top:12px"></div>
 <div id="mapWrap" class="map-wrap">
+  <div class="map-filters">
+    <label class="field">Município<select id="mapMunicipality"><option value="">Todos os municípios</option></select></label>
+    <label class="field">Zona<select id="mapZone" disabled><option value="">Todas as zonas</option></select></label>
+    <label class="field">Bairro<select id="mapNeighborhood" disabled><option value="">Todos os bairros</option></select></label>
+    <label class="field">Rua / Local<select id="mapPlace" disabled><option value="">Todas as ruas / locais</option></select></label>
+    <label class="field">Seção<select id="mapSection" disabled><option value="">Todas as seções</option></select></label>
+  </div>
   <div class="map-toolbar">
     <button class="btn secondary" type="button" id="locateMe">Minha localização</button>
     <button class="btn secondary" type="button" id="fitBrazil">Ver Brasil</button>
@@ -68,7 +75,7 @@ export function appPage(user:any,active:boolean){
 </div>
 </div></section>
 <script>
-var currentCandidate=null,overview=null,currentLevel="municipality",voteMap=null,mapLayer=null,userMarker=null;
+var currentCandidate=null,overview=null,currentLevel="municipality",voteMap=null,mapLayer=null,userMarker=null,mapRows=[];
 function fmt(n){return new Intl.NumberFormat("pt-BR").format(Number(n||0))}
 function pct(n){return Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+"%"}
 function escHtml(s){return String(s==null?"":s).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]})}
@@ -95,6 +102,7 @@ async function openCandidate(id){
  document.getElementById("bestCity").textContent=(d.strongest&&d.strongest[0]?d.strongest[0].municipality_name:"-");
  document.getElementById("bestPct").textContent=pct(d.strongest&&d.strongest[0]?d.strongest[0].pct_total:0);
  var sel=document.getElementById("municipalitySelect");sel.innerHTML='<option value="">Selecione um município</option>'+d.municipalities.map(function(x){return '<option value="'+escHtml(x.municipality_code)+'">'+escHtml(x.municipality_name)+'</option>'}).join("");
+ var mapSel=document.getElementById("mapMunicipality");mapSel.innerHTML='<option value="">Todos os municípios</option>'+d.municipalities.map(function(x){return '<option value="'+escHtml(x.municipality_code)+'">'+escHtml(x.municipality_name)+'</option>'}).join("");
  document.getElementById("dashboard").style.display="block";document.getElementById("searchResults").innerHTML="";await showLevel("municipality");document.getElementById("dashboard").scrollIntoView({behavior:"smooth",block:"start"});
 }
 function municipalityTable(rows){
@@ -114,9 +122,11 @@ async function showLevel(level){
  var scope=document.getElementById("scopebar"),title=document.getElementById("territoryTitle"),content=document.getElementById("territoryContent"),mapWrap=document.getElementById("mapWrap");
  mapWrap.style.display="none";content.style.display="block";
  if(level==="map"){
-  scope.style.display="flex";
-  title.innerHTML="<h3 style='margin:0'>Mapa da votação</h3><span class='muted'>Pinos por local de votação</span>";
+  scope.style.display="none";
+  title.innerHTML="<h3 style='margin:0'>Mapa da votação</h3><span class='muted'>Filtre por município, zona, bairro, rua/local ou seção</span>";
   content.style.display="none";mapWrap.style.display="block";
+  var generalMunicipality=document.getElementById("municipalitySelect").value;
+  if(generalMunicipality)document.getElementById("mapMunicipality").value=generalMunicipality;
   await loadMap();
   return;
  }
@@ -146,6 +156,85 @@ function popupHtml(x){
   '<div class="popup-total">'+fmt(x.votes)+' votos neste local</div>'+
   '<div class="popup-sections">'+sectionHtml+'</div>';
 }
+function uniqueSorted(values,numeric){
+ var seen={},out=[];
+ values.forEach(function(v){if(v===null||v===undefined||v==="")return;var k=String(v);if(!seen[k]){seen[k]=1;out.push(v)}});
+ return out.sort(function(a,b){return numeric?Number(a)-Number(b):String(a).localeCompare(String(b),"pt-BR")});
+}
+function currentMapSelections(){
+ return {
+  municipality:document.getElementById("mapMunicipality").value,
+  zone:document.getElementById("mapZone").value,
+  neighborhood:document.getElementById("mapNeighborhood").value,
+  place:document.getElementById("mapPlace").value,
+  section:document.getElementById("mapSection").value
+ };
+}
+function rowMatchesMapFilters(x,ignore){
+ var f=currentMapSelections(),sections=Array.isArray(x.sections)?x.sections:[];
+ if(ignore!=="neighborhood"&&f.neighborhood&&String(x.neighborhood||"")!==f.neighborhood)return false;
+ if(ignore!=="place"&&f.place&&String(x.polling_place_code||"")!==f.place)return false;
+ if(ignore!=="zone"&&f.zone&&!sections.some(function(s){return String(s.zone)===f.zone}))return false;
+ if(ignore!=="section"&&f.section&&!sections.some(function(s){
+   if(String(s.section)!==f.section)return false;
+   return !f.zone||String(s.zone)===f.zone;
+ }))return false;
+ return true;
+}
+function setSelectOptions(id,label,items,valueFn,labelFn,keep){
+ var el=document.getElementById(id),old=keep?el.value:"";
+ el.innerHTML='<option value="">'+label+'</option>'+items.map(function(x){return '<option value="'+escHtml(valueFn(x))+'">'+escHtml(labelFn(x))+'</option>'}).join("");
+ if(old&&items.some(function(x){return String(valueFn(x))===old}))el.value=old;
+ el.disabled=items.length===0;
+}
+function rebuildMapFilters(changed){
+ var zoneRows=mapRows.filter(function(x){return rowMatchesMapFilters(x,"zone")});
+ var zones=uniqueSorted([].concat.apply([],zoneRows.map(function(x){return (x.sections||[]).map(function(s){return s.zone})})),true);
+ setSelectOptions("mapZone","Todas as zonas",zones,function(x){return x},function(x){return "Zona "+x},changed!=="municipality");
+
+ var neighborhoodRows=mapRows.filter(function(x){return rowMatchesMapFilters(x,"neighborhood")});
+ var neighborhoods=uniqueSorted(neighborhoodRows.map(function(x){return x.neighborhood||""}),false);
+ setSelectOptions("mapNeighborhood","Todos os bairros",neighborhoods,function(x){return x},function(x){return x},changed!=="municipality"&&changed!=="zone");
+
+ var placeRows=mapRows.filter(function(x){return rowMatchesMapFilters(x,"place")});
+ var places=[],seen={};
+ placeRows.forEach(function(x){var k=String(x.polling_place_code||"");if(!k||seen[k])return;seen[k]=1;places.push(x)});
+ places.sort(function(a,b){return String(a.address||a.polling_place_name||"").localeCompare(String(b.address||b.polling_place_name||""),"pt-BR")});
+ setSelectOptions("mapPlace","Todas as ruas / locais",places,function(x){return x.polling_place_code},function(x){return (x.address||x.polling_place_name||"Local")+(x.polling_place_name&&x.address?" · "+x.polling_place_name:"")},changed!=="municipality"&&changed!=="zone"&&changed!=="neighborhood");
+
+ var sectionRows=mapRows.filter(function(x){return rowMatchesMapFilters(x,"section")});
+ var sectionPairs=[],pairSeen={};
+ sectionRows.forEach(function(x){(x.sections||[]).forEach(function(s){
+   var f=currentMapSelections();if(f.zone&&String(s.zone)!==f.zone)return;
+   var k=String(s.zone)+"-"+String(s.section);if(pairSeen[k])return;pairSeen[k]=1;sectionPairs.push(s);
+ })});
+ sectionPairs.sort(function(a,b){return Number(a.zone)-Number(b.zone)||Number(a.section)-Number(b.section)});
+ setSelectOptions("mapSection","Todas as seções",sectionPairs,function(x){return x.section},function(x){return "Seção "+x.section+" · Zona "+x.zone},changed!=="municipality"&&changed!=="zone"&&changed!=="neighborhood"&&changed!=="place");
+}
+function renderMapRows(){
+ if(!voteMap||!mapLayer)return;
+ mapLayer.clearLayers();
+ var L=window.L,f=currentMapSelections(),bounds=[],shown=0;
+ mapRows.forEach(function(x){
+  if(!rowMatchesMapFilters(x,""))return;
+  var lat=Number(x.latitude),lng=Number(x.longitude);if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
+  var filteredSections=(x.sections||[]).filter(function(s){
+    if(f.zone&&String(s.zone)!==f.zone)return false;
+    if(f.section&&String(s.section)!==f.section)return false;
+    return true;
+  });
+  if((f.zone||f.section)&&!filteredSections.length)return;
+  var copy=Object.assign({},x,{sections:filteredSections.length?filteredSections:x.sections});
+  if(f.zone||f.section)copy.votes=filteredSections.reduce(function(sum,s){return sum+Number(s.votes||0)},0);
+  var radius=Math.max(6,Math.min(18,5+Math.sqrt(Number(copy.votes||0))));
+  var marker=L.circleMarker([lat,lng],{radius:radius,weight:1,fillOpacity:.72});
+  marker.bindPopup(popupHtml(copy),{maxWidth:360});marker.addTo(mapLayer);bounds.push([lat,lng]);shown++;
+ });
+ document.getElementById("mapCount").textContent=fmt(shown)+" locais com votos";
+ if(bounds.length){
+  if(f.municipality||f.zone||f.neighborhood||f.place||f.section)voteMap.fitBounds(bounds,{padding:[25,25],maxZoom:15});
+ } else if(f.municipality)document.getElementById("mapCount").textContent="Nenhum local encontrado com esses filtros";
+}
 async function loadMap(){
  if(!currentCandidate)return;
  var L;
@@ -154,33 +243,28 @@ async function loadMap(){
   voteMap=L.map("map",{preferCanvas:true}).setView([-14.235,-51.9253],4);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap"}).addTo(voteMap);
  } else {setTimeout(function(){voteMap.invalidateSize()},50)}
- if(mapLayer){mapLayer.clearLayers()}else{mapLayer=L.layerGroup().addTo(voteMap)}
- var code=document.getElementById("municipalitySelect").value;
+ if(!mapLayer)mapLayer=L.layerGroup().addTo(voteMap);
+ var code=document.getElementById("mapMunicipality").value;
  var p=new URLSearchParams({candidateId:String(currentCandidate.id),limit:"10000"});if(code)p.set("municipality",code);
  document.getElementById("mapCount").textContent="Carregando pinos...";
  var r=await fetch("/api/map?"+p.toString()),d=await r.json();
  if(!r.ok){document.getElementById("mapCount").textContent=d.error||"Falha ao carregar mapa";return}
- var rows=d.rows||[],bounds=[];
- rows.forEach(function(x){
-  var lat=Number(x.latitude),lng=Number(x.longitude);if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
-  var radius=Math.max(6,Math.min(18,5+Math.sqrt(Number(x.votes||0))));
-  var marker=L.circleMarker([lat,lng],{radius:radius,weight:1,fillOpacity:.72});
-  marker.bindPopup(popupHtml(x),{maxWidth:360});
-  marker.addTo(mapLayer);bounds.push([lat,lng]);
- });
- document.getElementById("mapCount").textContent=fmt(rows.length)+" locais com votos";
- if(code&&bounds.length)voteMap.fitBounds(bounds,{padding:[25,25],maxZoom:13});
- else voteMap.setView([-14.235,-51.9253],4);
+ mapRows=d.rows||[];
+ ["mapZone","mapNeighborhood","mapPlace","mapSection"].forEach(function(id){var el=document.getElementById(id);el.value="";});
+ rebuildMapFilters("municipality");renderMapRows();
+ if(!code)voteMap.setView([-14.235,-51.9253],4);
  setTimeout(function(){voteMap.invalidateSize()},100);
 }
-async function loadTerritory(){
- if(!currentCandidate)return;var code=document.getElementById("municipalitySelect").value,content=document.getElementById("territoryContent");
- if(currentLevel!=="municipality"&&!code){content.innerHTML='<div class="empty">Selecione um município para aprofundar a votação.</div>';return}
- content.innerHTML='<div class="muted">Carregando...</div>';var p=new URLSearchParams({candidateId:String(currentCandidate.id),level:currentLevel});if(code)p.set("municipality",code);
- var r=await fetch("/api/territory?"+p.toString()),d=await r.json();if(!r.ok){content.innerHTML='<div class="error">'+escHtml(d.error)+'</div>';return}content.innerHTML=genericTable(d.rows||[],currentLevel);
+function applyMapFilter(changed){
+ rebuildMapFilters(changed);renderMapRows();
 }
 document.querySelectorAll(".tab").forEach(function(t){t.addEventListener("click",function(){showLevel(t.dataset.level)})});
-document.getElementById("municipalitySelect").addEventListener("change",function(){if(currentLevel==="map")loadMap();else loadTerritory()});
+document.getElementById("municipalitySelect").addEventListener("change",loadTerritory);
+document.getElementById("mapMunicipality").addEventListener("change",loadMap);
+document.getElementById("mapZone").addEventListener("change",function(){applyMapFilter("zone")});
+document.getElementById("mapNeighborhood").addEventListener("change",function(){applyMapFilter("neighborhood")});
+document.getElementById("mapPlace").addEventListener("change",function(){applyMapFilter("place")});
+document.getElementById("mapSection").addEventListener("change",function(){applyMapFilter("section")});
 document.getElementById("fitBrazil").addEventListener("click",function(){if(voteMap)voteMap.setView([-14.235,-51.9253],4)});
 document.getElementById("locateMe").addEventListener("click",function(){
  if(!navigator.geolocation){alert("Geolocalização não disponível neste navegador.");return}
