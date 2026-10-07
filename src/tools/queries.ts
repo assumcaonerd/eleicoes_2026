@@ -1,5 +1,5 @@
 import { sql } from "../db/index.js";
-import { sectionsSql } from "../db/sections.js";
+import { sectionsSqlForUf } from "../db/sections.js";
 
 export async function searchCandidates(args: { query: string; officeCode?: number; uf?: string; limit?: number }) {
   const q = args.query.trim();
@@ -236,7 +236,7 @@ export async function sectionMap(args:{candidateId:number;municipalityCode?:stri
   const municipality=args.municipalityCode??null;
   const limit=Math.min(args.limit??5000,10000);
 
-  const {rows}=await sectionsSql<any>(`
+  const {rows}=await sectionsSqlForUf<any>(uf,`
     WITH base AS (
       SELECT sv.municipality_code,MAX(sv.municipality_name) AS municipality_name,
         p.polling_place_code,MAX(p.polling_place_name) AS polling_place_name,
@@ -337,7 +337,7 @@ export async function territorialLevel(args:{
 
   let rows:any[]=[];
   if(args.level==="zone"){
-    rows=(await sectionsSql<any>(`
+    rows=(await sectionsSqlForUf<any>(uf,`
       SELECT municipality_code,municipality_name,zone,SUM(votes)::int AS votes
       FROM section_votes
       WHERE uf=$1 AND office_code=$2 AND candidate_number=$3
@@ -347,7 +347,7 @@ export async function territorialLevel(args:{
       LIMIT $5
     `,[uf,office,number,municipality,limit])).rows;
   } else if(args.level==="neighborhood"){
-    rows=(await sectionsSql<any>(`
+    rows=(await sectionsSqlForUf<any>(uf,`
       SELECT sv.municipality_code,sv.municipality_name,COALESCE(p.neighborhood,'') AS neighborhood,SUM(sv.votes)::int AS votes
       FROM section_votes sv
       LEFT JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code
@@ -360,7 +360,7 @@ export async function territorialLevel(args:{
       LIMIT $5
     `,[uf,office,number,municipality,limit])).rows;
   } else if(args.level==="polling_place"){
-    rows=(await sectionsSql<any>(`
+    rows=(await sectionsSqlForUf<any>(uf,`
       SELECT sv.municipality_code,sv.municipality_name,
         COALESCE(NULLIF(p.polling_place_code,''),'SEM-CODIGO') AS polling_place_code,
         MAX(p.polling_place_name) AS polling_place_name,
@@ -381,7 +381,7 @@ export async function territorialLevel(args:{
       LIMIT $5
     `,[uf,office,number,municipality,limit])).rows;
   } else {
-    rows=(await sectionsSql<any>(`
+    rows=(await sectionsSqlForUf<any>(uf,`
       SELECT sv.municipality_code,sv.municipality_name,sv.zone,sv.section,
         MAX(COALESCE(NULLIF(p.polling_place_code,''),sv.polling_place_code)) AS polling_place_code,
         MAX(p.polling_place_name) AS polling_place_name,MAX(p.address) AS address,
