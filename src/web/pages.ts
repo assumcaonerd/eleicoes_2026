@@ -26,7 +26,7 @@ export function appPage(user:any,active:boolean){
   if(!active) return layout("Aplicativo",'<div class="card"><h1>Assinatura necessária</h1><p class="muted">Sua conta está autenticada, mas ainda não possui uma assinatura ativa.</p><a class="btn" href="/planos">Escolher plano</a></div>',user);
   var body = `
 <style>
-.searchbox{margin-bottom:22px}.candidate-list{display:grid;gap:10px;margin-top:18px}.candidate-item{width:100%;text-align:left;border:1px solid #e2e6ea;background:#fff;border-radius:14px;padding:16px;cursor:pointer}.candidate-item:hover{border-color:#111;background:#fafafa}.candidate-name{font-size:18px;font-weight:850}.candidate-meta{color:#68717a;font-size:14px;margin-top:4px}.dash{display:none}.dash-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}.dash-title h2{margin:0 0 4px;font-size:28px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:12px;margin:18px 0}.metric-card{background:#fff;border:1px solid #e5e8eb;border-radius:16px;padding:18px}.metric-card .n{font-size:28px;font-weight:900;margin-top:5px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.tab{border:1px solid #d9dde1;background:#fff;border-radius:999px;padding:10px 14px;font-weight:800;cursor:pointer}.tab.active{background:#111;color:#fff;border-color:#111}.scopebar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:12px 0 18px}.scopebar .field{min-width:260px;margin:0}.territory-card{overflow:hidden}.strength{display:inline-block;border-radius:999px;padding:5px 9px;background:#edf0f3;font-size:12px;font-weight:800}.empty{padding:28px;text-align:center;border:1px dashed #ccd2d7;border-radius:14px;color:#68717a;background:#fafbfc}.topline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rank{font-weight:900;color:#68717a}.map-wrap{display:none;margin-top:14px}.map-filters{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:10px;margin-bottom:12px}.map-filters .field{margin:0}.map-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.map-canvas{height:620px;border:1px solid #dfe3e6;border-radius:16px;overflow:hidden}.map-note{font-size:13px;color:#68717a;margin-top:8px}.leaflet-popup-content{min-width:250px}.popup-title{font-weight:900;font-size:15px;margin-bottom:5px}.popup-meta{font-size:12px;color:#68717a;margin-bottom:8px}.popup-total{font-weight:900;margin-bottom:8px}.popup-sections{max-height:180px;overflow:auto;border-top:1px solid #eee;padding-top:6px}.popup-section{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:12px;border-bottom:1px solid #f1f1f1}@media(max-width:760px){.map-filters{grid-template-columns:1fr 1fr}.metrics{grid-template-columns:repeat(2,1fr)}.metric-card .n{font-size:24px}.territory-card{overflow-x:auto}table{min-width:650px}}
+.searchbox{margin-bottom:22px}.candidate-list{display:grid;gap:10px;margin-top:18px}.candidate-item{width:100%;text-align:left;border:1px solid #e2e6ea;background:#fff;border-radius:14px;padding:16px;cursor:pointer}.candidate-item:hover{border-color:#111;background:#fafafa}.candidate-name{font-size:18px;font-weight:850}.candidate-meta{color:#68717a;font-size:14px;margin-top:4px}.dash{display:none}.dash-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}.dash-title h2{margin:0 0 4px;font-size:28px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:12px;margin:18px 0}.metric-card{background:#fff;border:1px solid #e5e8eb;border-radius:16px;padding:18px}.metric-card .n{font-size:28px;font-weight:900;margin-top:5px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.tab{border:1px solid #d9dde1;background:#fff;border-radius:999px;padding:10px 14px;font-weight:800;cursor:pointer}.tab.active{background:#111;color:#fff;border-color:#111}.scopebar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:12px 0 18px}.scopebar .field{min-width:260px;margin:0}.territory-card{overflow:hidden}.strength{display:inline-block;border-radius:999px;padding:5px 9px;background:#edf0f3;font-size:12px;font-weight:800}.empty{padding:28px;text-align:center;border:1px dashed #ccd2d7;border-radius:14px;color:#68717a;background:#fafbfc}.topline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rank{font-weight:900;color:#68717a}.map-wrap{display:none;margin-top:14px}.map-filters{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:10px;margin-bottom:12px}.map-filters .field{margin:0}.map-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.map-canvas{height:620px;border:1px solid #dfe3e6;border-radius:16px;overflow:hidden}.map-note{font-size:13px;color:#68717a;margin-top:8px}.leaflet-popup-content{min-width:250px}.popup-title{font-weight:900;font-size:15px;margin-bottom:5px}.popup-meta{font-size:12px;color:#68717a;margin-bottom:8px}.popup-total{font-weight:900;margin-bottom:8px}.popup-sections{max-height:180px;overflow:auto;border-top:1px solid #eee;padding-top:6px}.popup-section{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:12px;border-bottom:1px solid #f1f1f1}@media(max-width:760px){.map-filters{grid-template-columns:1fr 1fr}.metrics{grid-template-columns:repeat(2,1fr)}.metric-card .n{font-size:24px}.territory-card{overflow-x:auto}table{min-width:650px}}
 </style>
 <h1>Siga o Voto 2026</h1>
 <p class="muted">Escolha um candidato e descubra onde a votação foi forte, média ou fraca.</p>
@@ -59,6 +59,7 @@ export function appPage(user:any,active:boolean){
 <div id="territoryContent" class="territory-card" style="margin-top:12px"></div>
 <div id="mapWrap" class="map-wrap">
   <div class="map-filters">
+    <label class="field">Estado<select id="mapState" disabled><option value="">Estado</option></select></label>
     <label class="field">Município<select id="mapMunicipality"><option value="">Todos os municípios</option></select></label>
     <label class="field">Zona<select id="mapZone" disabled><option value="">Todas as zonas</option></select></label>
     <label class="field">Bairro<select id="mapNeighborhood" disabled><option value="">Todos os bairros</option></select></label>
@@ -66,16 +67,15 @@ export function appPage(user:any,active:boolean){
     <label class="field">Seção<select id="mapSection" disabled><option value="">Todas as seções</option></select></label>
   </div>
   <div class="map-toolbar">
-    <button class="btn secondary" type="button" id="locateMe">Minha localização</button>
-    <button class="btn secondary" type="button" id="fitBrazil">Ver Brasil</button>
+    <strong id="mapScope">Estado inteiro</strong>
     <span class="muted" id="mapCount"></span>
   </div>
   <div id="map" class="map-canvas"></div>
-  <div class="map-note">Cada pino representa um local de votação onde o candidato recebeu votos. Abra o pino para ver as seções e os votos em cada urna.</div>
+  <div class="map-note">O mapa acompanha o filtro selecionado. Ao escolher município, zona, bairro, rua/local ou seção, somente aquele recorte eleitoral permanece visível.</div>
 </div>
 </div></section>
 <script>
-var currentCandidate=null,overview=null,currentLevel="municipality",voteMap=null,mapLayer=null,userMarker=null,mapRows=[];
+var currentCandidate=null,overview=null,currentLevel="municipality",voteMap=null,mapLayer=null,mapRows=[];
 function fmt(n){return new Intl.NumberFormat("pt-BR").format(Number(n||0))}
 function pct(n){return Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+"%"}
 function escHtml(s){return String(s==null?"":s).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]})}
@@ -102,6 +102,7 @@ async function openCandidate(id){
  document.getElementById("bestCity").textContent=(d.strongest&&d.strongest[0]?d.strongest[0].municipality_name:"-");
  document.getElementById("bestPct").textContent=pct(d.strongest&&d.strongest[0]?d.strongest[0].pct_total:0);
  var sel=document.getElementById("municipalitySelect");sel.innerHTML='<option value="">Selecione um município</option>'+d.municipalities.map(function(x){return '<option value="'+escHtml(x.municipality_code)+'">'+escHtml(x.municipality_name)+'</option>'}).join("");
+ var stateSel=document.getElementById("mapState");stateSel.innerHTML='<option value="'+escHtml(d.candidate.uf)+'">'+escHtml(d.candidate.uf)+'</option>';stateSel.value=d.candidate.uf;
  var mapSel=document.getElementById("mapMunicipality");mapSel.innerHTML='<option value="">Todos os municípios</option>'+d.municipalities.map(function(x){return '<option value="'+escHtml(x.municipality_code)+'">'+escHtml(x.municipality_name)+'</option>'}).join("");
  document.getElementById("dashboard").style.display="block";document.getElementById("searchResults").innerHTML="";await showLevel("municipality");document.getElementById("dashboard").scrollIntoView({behavior:"smooth",block:"start"});
 }
@@ -211,10 +212,28 @@ function rebuildMapFilters(changed){
  sectionPairs.sort(function(a,b){return Number(a.zone)-Number(b.zone)||Number(a.section)-Number(b.section)});
  setSelectOptions("mapSection","Todas as seções",sectionPairs,function(x){return x.section},function(x){return "Seção "+x.section+" · Zona "+x.zone},changed!=="municipality"&&changed!=="zone"&&changed!=="neighborhood"&&changed!=="place");
 }
+function mapScopeLabel(){
+ var f=currentMapSelections();
+ if(f.section){
+   var st=document.getElementById("mapSection"),txt=st.options[st.selectedIndex]?st.options[st.selectedIndex].text:"Seção";
+   return txt;
+ }
+ if(f.place){
+   var pl=document.getElementById("mapPlace"),pt=pl.options[pl.selectedIndex]?pl.options[pl.selectedIndex].text:"Rua / Local";
+   return pt;
+ }
+ if(f.neighborhood)return "Bairro "+f.neighborhood;
+ if(f.zone)return "Zona "+f.zone;
+ if(f.municipality){
+   var m=document.getElementById("mapMunicipality"),mt=m.options[m.selectedIndex]?m.options[m.selectedIndex].text:"Município";
+   return mt;
+ }
+ return currentCandidate&&currentCandidate.uf==="BR"?"Brasil":"Estado "+(currentCandidate?currentCandidate.uf:"");
+}
 function renderMapRows(){
  if(!voteMap||!mapLayer)return;
  mapLayer.clearLayers();
- var L=window.L,f=currentMapSelections(),bounds=[],shown=0;
+ var L=window.L,f=currentMapSelections(),bounds=[],shown=0,onlyPoint=null;
  mapRows.forEach(function(x){
   if(!rowMatchesMapFilters(x,""))return;
   var lat=Number(x.latitude),lng=Number(x.longitude);if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
@@ -227,13 +246,41 @@ function renderMapRows(){
   var copy=Object.assign({},x,{sections:filteredSections.length?filteredSections:x.sections});
   if(f.zone||f.section)copy.votes=filteredSections.reduce(function(sum,s){return sum+Number(s.votes||0)},0);
   var radius=Math.max(6,Math.min(18,5+Math.sqrt(Number(copy.votes||0))));
-  var marker=L.circleMarker([lat,lng],{radius:radius,weight:1,fillOpacity:.72});
-  marker.bindPopup(popupHtml(copy),{maxWidth:360});marker.addTo(mapLayer);bounds.push([lat,lng]);shown++;
+  var marker=L.circleMarker([lat,lng],{radius:radius,weight:1,fillOpacity:.78});
+  marker.bindPopup(popupHtml(copy),{maxWidth:360});
+  marker.addTo(mapLayer);
+  bounds.push([lat,lng]);shown++;onlyPoint=[lat,lng];
  });
  document.getElementById("mapCount").textContent=fmt(shown)+" locais com votos";
- if(bounds.length){
-  if(f.municipality||f.zone||f.neighborhood||f.place||f.section)voteMap.fitBounds(bounds,{padding:[25,25],maxZoom:15});
- } else if(f.municipality)document.getElementById("mapCount").textContent="Nenhum local encontrado com esses filtros";
+ document.getElementById("mapScope").textContent=mapScopeLabel();
+
+ if(!bounds.length){
+   document.getElementById("mapCount").textContent="Nenhum local encontrado com esses filtros";
+   return;
+ }
+
+ voteMap.setMaxBounds(null);
+ voteMap.options.minZoom=3;
+
+ var leafletBounds=L.latLngBounds(bounds);
+
+ if(f.place||f.section||bounds.length===1){
+   voteMap.setView(onlyPoint,17,{animate:true});
+   var tight=L.latLngBounds(
+     [onlyPoint[0]-0.01,onlyPoint[1]-0.01],
+     [onlyPoint[0]+0.01,onlyPoint[1]+0.01]
+   );
+   voteMap.setMaxBounds(tight.pad(.35));
+   voteMap.options.minZoom=15;
+   return;
+ }
+
+ var maxZoom=f.neighborhood?15:(f.zone?14:(f.municipality?13:9));
+ voteMap.fitBounds(leafletBounds,{padding:[28,28],maxZoom:maxZoom,animate:true});
+
+ var pad=f.neighborhood?.12:(f.zone?.16:(f.municipality?.22:.35));
+ voteMap.setMaxBounds(leafletBounds.pad(pad));
+ voteMap.options.minZoom=Math.max(3,voteMap.getZoom()-1);
 }
 async function loadMap(){
  if(!currentCandidate)return;
@@ -245,14 +292,14 @@ async function loadMap(){
  } else {setTimeout(function(){voteMap.invalidateSize()},50)}
  if(!mapLayer)mapLayer=L.layerGroup().addTo(voteMap);
  var code=document.getElementById("mapMunicipality").value;
- var p=new URLSearchParams({candidateId:String(currentCandidate.id),limit:"10000"});if(code)p.set("municipality",code);
+ voteMap.setMaxBounds(null);voteMap.options.minZoom=3;
+ var p=new URLSearchParams({candidateId:String(currentCandidate.id),limit:"50000"});if(code)p.set("municipality",code);
  document.getElementById("mapCount").textContent="Carregando pinos...";
  var r=await fetch("/api/map?"+p.toString()),d=await r.json();
  if(!r.ok){document.getElementById("mapCount").textContent=d.error||"Falha ao carregar mapa";return}
  mapRows=d.rows||[];
  ["mapZone","mapNeighborhood","mapPlace","mapSection"].forEach(function(id){var el=document.getElementById(id);el.value="";});
  rebuildMapFilters("municipality");renderMapRows();
- if(!code)voteMap.setView([-14.235,-51.9253],4);
  setTimeout(function(){voteMap.invalidateSize()},100);
 }
 function applyMapFilter(changed){
@@ -265,16 +312,6 @@ document.getElementById("mapZone").addEventListener("change",function(){applyMap
 document.getElementById("mapNeighborhood").addEventListener("change",function(){applyMapFilter("neighborhood")});
 document.getElementById("mapPlace").addEventListener("change",function(){applyMapFilter("place")});
 document.getElementById("mapSection").addEventListener("change",function(){applyMapFilter("section")});
-document.getElementById("fitBrazil").addEventListener("click",function(){if(voteMap)voteMap.setView([-14.235,-51.9253],4)});
-document.getElementById("locateMe").addEventListener("click",function(){
- if(!navigator.geolocation){alert("Geolocalização não disponível neste navegador.");return}
- navigator.geolocation.getCurrentPosition(async function(pos){
-  var L=await loadLeaflet();if(!voteMap)await loadMap();
-  if(userMarker)voteMap.removeLayer(userMarker);
-  userMarker=L.marker([pos.coords.latitude,pos.coords.longitude]).addTo(voteMap).bindPopup("Sua localização");
-  voteMap.setView([pos.coords.latitude,pos.coords.longitude],12);userMarker.openPopup();
- },function(){alert("Não foi possível acessar sua localização. Verifique a permissão do navegador.")},{enableHighAccuracy:true,timeout:10000});
-});
 document.getElementById("newSearch").addEventListener("click",function(){document.getElementById("dashboard").style.display="none";document.querySelector("input[name=q]").focus();window.scrollTo({top:0,behavior:"smooth"})});
 </script>`;
   return layout("Aplicativo",body,user);
