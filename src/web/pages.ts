@@ -26,7 +26,7 @@ export function appPage(user:any,active:boolean){
   if(!active) return layout("Aplicativo",'<div class="card"><h1>Assinatura necessária</h1><p class="muted">Sua conta está autenticada, mas ainda não possui uma assinatura ativa.</p><a class="btn" href="/planos">Escolher plano</a></div>',user);
   var body = `
 <style>
-.searchbox{margin-bottom:22px}.candidate-list{display:grid;gap:10px;margin-top:18px}.candidate-item{width:100%;text-align:left;border:1px solid #e2e6ea;background:#fff;border-radius:14px;padding:16px;cursor:pointer}.candidate-item:hover{border-color:#111;background:#fafafa}.candidate-name{font-size:18px;font-weight:850}.candidate-meta{color:#68717a;font-size:14px;margin-top:4px}.dash{display:none}.dash-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}.dash-title h2{margin:0 0 4px;font-size:28px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:12px;margin:18px 0}.metric-card{background:#fff;border:1px solid #e5e8eb;border-radius:16px;padding:18px}.metric-card .n{font-size:28px;font-weight:900;margin-top:5px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.tab{border:1px solid #d9dde1;background:#fff;border-radius:999px;padding:10px 14px;font-weight:800;cursor:pointer}.tab.active{background:#111;color:#fff;border-color:#111}.scopebar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:12px 0 18px}.scopebar .field{min-width:260px;margin:0}.territory-card{overflow:hidden}.strength{display:inline-block;border-radius:999px;padding:5px 9px;background:#edf0f3;font-size:12px;font-weight:800}.empty{padding:28px;text-align:center;border:1px dashed #ccd2d7;border-radius:14px;color:#68717a;background:#fafbfc}.topline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rank{font-weight:900;color:#68717a}@media(max-width:760px){.metrics{grid-template-columns:repeat(2,1fr)}.metric-card .n{font-size:24px}.territory-card{overflow-x:auto}table{min-width:650px}}
+.searchbox{margin-bottom:22px}.candidate-list{display:grid;gap:10px;margin-top:18px}.candidate-item{width:100%;text-align:left;border:1px solid #e2e6ea;background:#fff;border-radius:14px;padding:16px;cursor:pointer}.candidate-item:hover{border-color:#111;background:#fafafa}.candidate-name{font-size:18px;font-weight:850}.candidate-meta{color:#68717a;font-size:14px;margin-top:4px}.dash{display:none}.dash-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}.dash-title h2{margin:0 0 4px;font-size:28px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:12px;margin:18px 0}.metric-card{background:#fff;border:1px solid #e5e8eb;border-radius:16px;padding:18px}.metric-card .n{font-size:28px;font-weight:900;margin-top:5px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.tab{border:1px solid #d9dde1;background:#fff;border-radius:999px;padding:10px 14px;font-weight:800;cursor:pointer}.tab.active{background:#111;color:#fff;border-color:#111}.scopebar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:12px 0 18px}.scopebar .field{min-width:260px;margin:0}.territory-card{overflow:hidden}.strength{display:inline-block;border-radius:999px;padding:5px 9px;background:#edf0f3;font-size:12px;font-weight:800}.empty{padding:28px;text-align:center;border:1px dashed #ccd2d7;border-radius:14px;color:#68717a;background:#fafbfc}.topline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rank{font-weight:900;color:#68717a}.map-wrap{display:none;margin-top:14px}.map-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.map-canvas{height:620px;border:1px solid #dfe3e6;border-radius:16px;overflow:hidden}.map-note{font-size:13px;color:#68717a;margin-top:8px}.leaflet-popup-content{min-width:250px}.popup-title{font-weight:900;font-size:15px;margin-bottom:5px}.popup-meta{font-size:12px;color:#68717a;margin-bottom:8px}.popup-total{font-weight:900;margin-bottom:8px}.popup-sections{max-height:180px;overflow:auto;border-top:1px solid #eee;padding-top:6px}.popup-section{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:12px;border-bottom:1px solid #f1f1f1}@media(max-width:760px){.metrics{grid-template-columns:repeat(2,1fr)}.metric-card .n{font-size:24px}.territory-card{overflow-x:auto}table{min-width:650px}}
 </style>
 <h1>Siga o Voto 2026</h1>
 <p class="muted">Escolha um candidato e descubra onde a votação foi forte, média ou fraca.</p>
@@ -52,13 +52,23 @@ export function appPage(user:any,active:boolean){
 <button class="tab" data-level="neighborhood">Bairros</button>
 <button class="tab" data-level="polling_place">Rua / Local</button>
 <button class="tab" data-level="section">Seções</button>
+<button class="tab" data-level="map">Mapa</button>
 </div>
 <div class="scopebar" id="scopebar" style="display:none"><label class="field">Município<select id="municipalitySelect"></select></label></div>
 <div id="territoryTitle" class="topline"><h3 style="margin:0">Ranking por município</h3></div>
 <div id="territoryContent" class="territory-card" style="margin-top:12px"></div>
+<div id="mapWrap" class="map-wrap">
+  <div class="map-toolbar">
+    <button class="btn secondary" type="button" id="locateMe">Minha localização</button>
+    <button class="btn secondary" type="button" id="fitBrazil">Ver Brasil</button>
+    <span class="muted" id="mapCount"></span>
+  </div>
+  <div id="map" class="map-canvas"></div>
+  <div class="map-note">Cada pino representa um local de votação onde o candidato recebeu votos. Abra o pino para ver as seções e os votos em cada urna.</div>
+</div>
 </div></section>
 <script>
-var currentCandidate=null,overview=null,currentLevel="municipality";
+var currentCandidate=null,overview=null,currentLevel="municipality",voteMap=null,mapLayer=null,userMarker=null;
 function fmt(n){return new Intl.NumberFormat("pt-BR").format(Number(n||0))}
 function pct(n){return Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+"%"}
 function escHtml(s){return String(s==null?"":s).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]})}
@@ -101,12 +111,67 @@ function genericTable(rows,level){
 }
 async function showLevel(level){
  currentLevel=level;document.querySelectorAll(".tab").forEach(function(t){t.classList.toggle("active",t.dataset.level===level)});
- var scope=document.getElementById("scopebar"),title=document.getElementById("territoryTitle"),content=document.getElementById("territoryContent");
+ var scope=document.getElementById("scopebar"),title=document.getElementById("territoryTitle"),content=document.getElementById("territoryContent"),mapWrap=document.getElementById("mapWrap");
+ mapWrap.style.display="none";content.style.display="block";
+ if(level==="map"){
+  scope.style.display="flex";
+  title.innerHTML="<h3 style='margin:0'>Mapa da votação</h3><span class='muted'>Pinos por local de votação</span>";
+  content.style.display="none";mapWrap.style.display="block";
+  await loadMap();
+  return;
+ }
  if(level==="municipality"){
   scope.style.display="none";title.innerHTML="<h3 style='margin:0'>Onde sua votação foi mais forte</h3><span class='muted'>Clique em um município para aprofundar</span>";content.innerHTML=municipalityTable(overview.municipalities||[]);
   content.querySelectorAll(".municipality-row").forEach(function(r){r.addEventListener("click",async function(){document.getElementById("municipalitySelect").value=r.dataset.code;await showLevel("zone")})});return;
  }
  scope.style.display="flex";var labels={zone:"Zonas eleitorais",neighborhood:"Bairros",polling_place:"Ruas e locais de votação",section:"Seções eleitorais"};title.innerHTML="<h3 style='margin:0'>"+labels[level]+"</h3>";await loadTerritory();
+}
+
+function loadLeaflet(){
+ return new Promise(function(resolve,reject){
+  if(window.L){resolve(window.L);return}
+  if(!document.getElementById("leaflet-css")){
+    var link=document.createElement("link");link.id="leaflet-css";link.rel="stylesheet";link.href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";document.head.appendChild(link);
+  }
+  var existing=document.getElementById("leaflet-js");
+  if(existing){existing.addEventListener("load",function(){resolve(window.L)});existing.addEventListener("error",reject);return}
+  var script=document.createElement("script");script.id="leaflet-js";script.src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";script.onload=function(){resolve(window.L)};script.onerror=reject;document.head.appendChild(script);
+ });
+}
+function popupHtml(x){
+ var sections=Array.isArray(x.sections)?x.sections:[];
+ var sectionHtml=sections.map(function(s){return '<div class="popup-section"><span>Zona '+escHtml(s.zone)+' · Seção '+escHtml(s.section)+'</span><b>'+fmt(s.votes)+' votos</b></div>'}).join("");
+ return '<div class="popup-title">'+escHtml(x.polling_place_name||"Local de votação")+'</div>'+
+  '<div class="popup-meta">'+escHtml(x.address||"")+(x.neighborhood?" · "+escHtml(x.neighborhood):"")+(x.municipality_name?" · "+escHtml(x.municipality_name):"")+'</div>'+
+  '<div class="popup-total">'+fmt(x.votes)+' votos neste local</div>'+
+  '<div class="popup-sections">'+sectionHtml+'</div>';
+}
+async function loadMap(){
+ if(!currentCandidate)return;
+ var L;
+ try{L=await loadLeaflet()}catch(e){document.getElementById("map").innerHTML='<div class="error">Não foi possível carregar o mapa.</div>';return}
+ if(!voteMap){
+  voteMap=L.map("map",{preferCanvas:true}).setView([-14.235,-51.9253],4);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap"}).addTo(voteMap);
+ } else {setTimeout(function(){voteMap.invalidateSize()},50)}
+ if(mapLayer){mapLayer.clearLayers()}else{mapLayer=L.layerGroup().addTo(voteMap)}
+ var code=document.getElementById("municipalitySelect").value;
+ var p=new URLSearchParams({candidateId:String(currentCandidate.id),limit:"10000"});if(code)p.set("municipality",code);
+ document.getElementById("mapCount").textContent="Carregando pinos...";
+ var r=await fetch("/api/map?"+p.toString()),d=await r.json();
+ if(!r.ok){document.getElementById("mapCount").textContent=d.error||"Falha ao carregar mapa";return}
+ var rows=d.rows||[],bounds=[];
+ rows.forEach(function(x){
+  var lat=Number(x.latitude),lng=Number(x.longitude);if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
+  var radius=Math.max(6,Math.min(18,5+Math.sqrt(Number(x.votes||0))));
+  var marker=L.circleMarker([lat,lng],{radius:radius,weight:1,fillOpacity:.72});
+  marker.bindPopup(popupHtml(x),{maxWidth:360});
+  marker.addTo(mapLayer);bounds.push([lat,lng]);
+ });
+ document.getElementById("mapCount").textContent=fmt(rows.length)+" locais com votos";
+ if(code&&bounds.length)voteMap.fitBounds(bounds,{padding:[25,25],maxZoom:13});
+ else voteMap.setView([-14.235,-51.9253],4);
+ setTimeout(function(){voteMap.invalidateSize()},100);
 }
 async function loadTerritory(){
  if(!currentCandidate)return;var code=document.getElementById("municipalitySelect").value,content=document.getElementById("territoryContent");
@@ -115,7 +180,17 @@ async function loadTerritory(){
  var r=await fetch("/api/territory?"+p.toString()),d=await r.json();if(!r.ok){content.innerHTML='<div class="error">'+escHtml(d.error)+'</div>';return}content.innerHTML=genericTable(d.rows||[],currentLevel);
 }
 document.querySelectorAll(".tab").forEach(function(t){t.addEventListener("click",function(){showLevel(t.dataset.level)})});
-document.getElementById("municipalitySelect").addEventListener("change",loadTerritory);
+document.getElementById("municipalitySelect").addEventListener("change",function(){if(currentLevel==="map")loadMap();else loadTerritory()});
+document.getElementById("fitBrazil").addEventListener("click",function(){if(voteMap)voteMap.setView([-14.235,-51.9253],4)});
+document.getElementById("locateMe").addEventListener("click",function(){
+ if(!navigator.geolocation){alert("Geolocalização não disponível neste navegador.");return}
+ navigator.geolocation.getCurrentPosition(async function(pos){
+  var L=await loadLeaflet();if(!voteMap)await loadMap();
+  if(userMarker)voteMap.removeLayer(userMarker);
+  userMarker=L.marker([pos.coords.latitude,pos.coords.longitude]).addTo(voteMap).bindPopup("Sua localização");
+  voteMap.setView([pos.coords.latitude,pos.coords.longitude],12);userMarker.openPopup();
+ },function(){alert("Não foi possível acessar sua localização. Verifique a permissão do navegador.")},{enableHighAccuracy:true,timeout:10000});
+});
 document.getElementById("newSearch").addEventListener("click",function(){document.getElementById("dashboard").style.display="none";document.querySelector("input[name=q]").focus();window.scrollTo({top:0,behavior:"smooth"})});
 </script>`;
   return layout("Aplicativo",body,user);
