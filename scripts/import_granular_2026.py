@@ -144,26 +144,27 @@ def import_places(conn):
         polling_place_name=EXCLUDED.polling_place_name,address=EXCLUDED.address,
         neighborhood=EXCLUDED.neighborhood,cep=EXCLUDED.cep,
         latitude=EXCLUDED.latitude,longitude=EXCLUDED.longitude"""
-    with z.open(names[0]) as f:
-        wrapper=io.TextIOWrapper(f,encoding="latin-1",newline="")
-        reader=csv.DictReader(wrapper,delimiter=";")
-        for row in reader:
-            uf=(row.get("SG_UF") or "").strip().upper()
-            if uf not in UF_LIST: continue
-            def val(k): return (row.get(k) or "").strip().strip('"')
-            lat=val("NR_LATITUDE").replace(",",".")
-            lon=val("NR_LONGITUDE").replace(",",".")
-            batch.append((
-                uf,val("CD_MUNICIPIO"),val("NM_MUNICIPIO"),as_int(val("NR_ZONA"),-1),
-                as_int(val("NR_SECAO"),-1),val("NR_LOCAL_VOTACAO"),val("NM_LOCAL_VOTACAO"),
-                val("DS_ENDERECO"),val("NM_BAIRRO"),val("NR_CEP"),
-                float(lat) if lat not in ("","#NULO","#NE","-1","-3") else None,
-                float(lon) if lon not in ("","#NULO","#NE","-1","-3") else None
-            ))
-            if len(batch)>=1000:
-                with conn.cursor() as cur: cur.executemany(sql,batch)
-                conn.commit(); total+=len(batch); batch=[]
-                if total%10000==0: print("PLACES_PROGRESS="+str(total),flush=True)
+    for csv_name in names:
+        with z.open(csv_name) as f:
+            wrapper=io.TextIOWrapper(f,encoding="latin-1",newline="")
+            reader=csv.DictReader(wrapper,delimiter=";")
+            for row in reader:
+                uf=(row.get("SG_UF") or "").strip().upper()
+                if uf not in UF_LIST: continue
+                def val(k): return (row.get(k) or "").strip().strip('"')
+                lat=val("NR_LATITUDE").replace(",",".")
+                lon=val("NR_LONGITUDE").replace(",",".")
+                batch.append((
+                    uf,val("CD_MUNICIPIO"),val("NM_MUNICIPIO"),as_int(val("NR_ZONA"),-1),
+                    as_int(val("NR_SECAO"),-1),val("NR_LOCAL_VOTACAO"),val("NM_LOCAL_VOTACAO"),
+                    val("DS_ENDERECO"),val("NM_BAIRRO"),val("NR_CEP"),
+                    float(lat) if lat not in ("","#NULO","#NE","-1","-3") else None,
+                    float(lon) if lon not in ("","#NULO","#NE","-1","-3") else None
+                ))
+                if len(batch)>=1000:
+                    with conn.cursor() as cur: cur.executemany(sql,batch)
+                    conn.commit(); total+=len(batch); batch=[]
+                    if total%10000==0: print("PLACES_PROGRESS="+str(total),flush=True)
     if batch:
         with conn.cursor() as cur: cur.executemany(sql,batch)
         conn.commit(); total+=len(batch)
