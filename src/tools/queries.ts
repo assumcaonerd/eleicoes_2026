@@ -227,26 +227,47 @@ export async function sourceStatus() {
 
 
 export async function sectionMap(args:{candidateId:number;municipalityCode?:string;limit?:number}) {
-  const {rows}=await sql(`
-    SELECT v.municipality_code,v.municipality_name,v.zone,v.section,v.polling_place_code,
-           p.polling_place_name,p.neighborhood,p.latitude,p.longitude,
-           SUM(v.votes)::int AS votes,
-           s.valid_votes,s.turnout,s.electorate,
-           CASE WHEN s.valid_votes>0 THEN ROUND((SUM(v.votes)::numeric/s.valid_votes)*100,2) ELSE NULL END AS pct_valid
-    FROM vote_facts v
-    LEFT JOIN places p ON p.uf=v.uf AND p.municipality_code=v.municipality_code AND p.zone=v.zone AND p.section=v.section
-    LEFT JOIN section_stats s ON s.election_id=v.election_id AND s.round=v.round AND s.uf=v.uf
-      AND s.municipality_code=v.municipality_code AND s.zone=v.zone AND s.section=v.section
-    WHERE v.candidate_id=$1 AND v.section>=0
-      AND ($2::text IS NULL OR v.municipality_code=$2)
-      AND p.latitude IS NOT NULL AND p.longitude IS NOT NULL
-    GROUP BY v.municipality_code,v.municipality_name,v.zone,v.section,v.polling_place_code,
-             p.polling_place_name,p.neighborhood,p.latitude,p.longitude,s.valid_votes,s.turnout,s.electorate
-    ORDER BY votes DESC
-    LIMIT $3
-  `,[args.candidateId,args.municipalityCode??null,Math.min(args.limit??2000,5000)]);
+  const summary=await candidateSummary(args.candidateId);
+  if(!summary.candidate) return [];
+  const cand:any=summary.candidate;
+  const office=Number(cand.office_code);
+  const uf=String(cand.uf);
+  const number=String(cand.number);
+  const municipality=args.municipalityCode??null;
+  const limit=Math.min(args.limit??5000,10000);
+
+  const {rows}=await sectionsSql<any>(`
+    WITH base AS (
+      SELECT sv.municipality_code,MAX(sv.municipality_name) AS municipality_name,
+        p.polling_place_code,MAX(p.polling_place_name) AS polling_place_name,
+        MAX(p.address) AS address,MAX(p.neighborhood) AS neighborhood,MAX(p.cep) AS cep,
+        MAX(p.latitude) AS latitude,MAX(p.longitude) AS longitude,SUM(sv.votes)::int AS votes
+      FROM section_votes sv
+      JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code
+        AND p.zone=sv.zone AND p.section=sv.section
+      WHERE sv.uf=$1 AND sv.office_code=$2 AND sv.candidate_number=$3 AND sv.votes>0
+        AND ($4::text IS NULL OR sv.municipality_code=$4)
+        AND p.latitude IS NOT NULL AND p.longitude IS NOT NULL
+      GROUP BY sv.municipality_code,p.polling_place_code
+    ),
+    sections AS (
+      SELECT sv.municipality_code,p.polling_place_code,
+        json_agg(json_build_object('zone',sv.zone,'section',sv.section,'votes',sv.votes)
+          ORDER BY sv.votes DESC,sv.zone,sv.section) AS sections
+      FROM section_votes sv
+      JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code
+        AND p.zone=sv.zone AND p.section=sv.section
+      WHERE sv.uf=$1 AND sv.office_code=$2 AND sv.candidate_number=$3 AND sv.votes>0
+        AND ($4::text IS NULL OR sv.municipality_code=$4)
+      GROUP BY sv.municipality_code,p.polling_place_code
+    )
+    SELECT b.*,s.sections FROM base b
+    JOIN sections s USING(municipality_code,polling_place_code)
+    ORDER BY b.votes DESC LIMIT $5
+  `,[uf,office,number,municipality,limit]);
   return rows;
 }
+
 
 export async function sectionMetrics(args:{candidateId:number;municipalityCode:string;zone:number;section:number}) {
   const {rows}=await sql(`
