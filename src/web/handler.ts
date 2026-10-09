@@ -3,7 +3,7 @@ import { URL } from "node:url";
 import { currentUser, hasActiveAccess, sessionCookie, clearSessionCookie, revokeCurrentSession, audit, hashPassword, hashToken } from "../auth/security.js";
 import { registerUser, loginUser } from "../auth/service.js";
 import { createCheckout, handleStripeWebhook } from "../billing/stripe.js";
-import { searchCandidates, compareCandidates, topTerritories, partyVotes, sourceStatus, sectionMap, sectionMetrics, candidateTerritoryOverview, territorialLevel, candidateVoteComparison } from "../tools/queries.js";
+import { searchCandidates, compareCandidates, topTerritories, partyVotes, sourceStatus, sectionMap, sectionMetrics, candidateTerritoryOverview, territorialLevel, candidateVoteComparison, comparativeTerritories } from "../tools/queries.js";
 import { sql } from "../db/index.js";
 import { homePage, authPage, plansPage, appPage, adminPage, resetPasswordPage } from "./pages.js";
 
@@ -137,6 +137,23 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
     const data=await candidateTerritoryOverview(candidateId);
     if(!data){json(res,{error:"Candidato não encontrado."},404);return true}
     json(res,data);return true
+  }
+  if(url.pathname==="/api/comparison-territories"&&req.method==="GET"){
+    if(!user){json(res,{error:"Não autenticado."},401);return true}
+    if(!await hasActiveAccess(Number(user.id))){json(res,{error:"Assinatura inativa."},402);return true}
+    const raw=(url.searchParams.get("ids")||"").split(",");
+    const ids=raw.map(Number);
+    const level=url.searchParams.get("level")||"municipality";
+    if(ids.length<2||ids.length>3||!ids.every(x=>Number.isSafeInteger(x)&&x>0)||
+       !["municipality","zone","polling_place"].includes(level)){
+       json(res,{error:"Parâmetros inválidos para comparação."},400);return true
+    }
+    try{
+      const data=await comparativeTerritories({candidateIds:ids,level:level as any,
+        municipalityCode:url.searchParams.get("municipality")||undefined});
+      json(res,data);
+    }catch(e:any){json(res,{error:e.message||"Falha na comparação territorial."},400)}
+    return true
   }
   if(url.pathname==="/api/vote-comparison"&&req.method==="GET"){
     if(!user){json(res,{error:"Não autenticado."},401);return true}
