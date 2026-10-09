@@ -130,6 +130,69 @@ async function refreshComparison(){
    '<div class="comparison-selected">Candidato consultado: '+escHtml(currentCandidate.ballot_name)+' · '+escHtml(chosen)+'</div>';
  }catch(e){if(request===comparisonRequest)box.innerHTML='<div class="muted">Comparação indisponível: '+escHtml(e.message||"Tente novamente")+'</div>'}
 }
+
+function compareScopeParams(id){
+ var p=comparisonScope();
+ p.set("candidateId",String(id));
+ return p;
+}
+function updateCompareLabels(){
+ if(!currentCandidate)return;
+ document.getElementById("compareMainName").textContent=currentCandidate.ballot_name+" · "+currentCandidate.number+" · "+(currentCandidate.party_abbr||"");
+ for(var i=0;i<2;i++){
+  var chosen=compareChoices[i],el=document.getElementById("compareChosen"+(i+1));
+  el.innerHTML=chosen?'<div class="topline"><b>'+escHtml(chosen.ballot_name)+' · '+escHtml(chosen.number)+'</b><button class="compare-remove" type="button">Remover</button></div>':"";
+  if(chosen){(function(ix){el.querySelector("button").addEventListener("click",function(){
+   compareChoices[ix]=null;document.getElementById("compareSearch"+(ix+1)).value="";
+   updateCompareLabels();renderCustomComparison();
+  })})(i)}
+ }
+}
+async function lookupCompareCandidates(index){
+ var input=document.getElementById("compareSearch"+(index+1)),box=document.getElementById("compareResults"+(index+1)),query=input.value.trim(),request=++compareSearchRequest[index];
+ if(!currentCandidate||query.length<2){box.innerHTML="";return}
+ box.innerHTML='<span class="muted">Buscando...</span>';
+ try{
+  var params=new URLSearchParams({q:query,office:String(currentCandidate.office_code),uf:String(currentCandidate.uf)});
+  var response=await fetch("/api/candidates?"+params.toString()),data=await response.json();
+  if(request!==compareSearchRequest[index])return;
+  if(!response.ok)throw new Error(data.error||"Busca indisponível");
+  var rows=(data.rows||[]).filter(function(row){
+   return Number(row.id)!==Number(currentCandidate.id)&&
+    Number(row.election_id)===Number(currentCandidate.election_id)&&
+    Number(row.round)===Number(currentCandidate.round)&&
+    !compareChoices.some(function(x){return x&&Number(x.id)===Number(row.id)});
+  }).slice(0,12);
+  box.innerHTML=rows.length?rows.map(function(row,i){return '<button type="button" class="compare-choice" data-index="'+i+'">'+escHtml(row.ballot_name)+' · '+escHtml(row.number)+' · '+escHtml(row.party_abbr||"")+'</button>'}).join(""):'<span class="muted">Nenhum candidato correspondente.</span>';
+  box.querySelectorAll("button").forEach(function(button){button.addEventListener("click",function(){
+   compareChoices[index]=rows[Number(button.dataset.index)];input.value="";
+   box.innerHTML="";updateCompareLabels();renderCustomComparison();
+  })});
+ }catch(e){if(request===compareSearchRequest[index])box.textContent=e.message||"Falha na busca"}
+}
+async function renderCustomComparison(){
+ if(currentLevel!=="compare"||!currentCandidate)return;
+ var chart=document.getElementById("compareChart"),request=++customCompareRequest;
+ var choices=[currentCandidate].concat(compareChoices.filter(Boolean));
+ document.getElementById("compareTerritory").textContent="Recorte: "+(territoryScope.section?"Seção "+territoryScope.section+" · ":"")+(territoryScope.zone?"Zona "+territoryScope.zone+" · ":"")+(territoryScope.neighborhood?"Bairro "+territoryScope.neighborhood+" · ":"")+(territoryScope.municipality?document.getElementById("compareMunicipality").selectedOptions[0]?.text||territoryScope.municipality:"Estado "+currentCandidate.uf);
+ if(choices.length<2){chart.innerHTML='<div class="empty">Busque um candidato para iniciar a comparação.</div>';return}
+ chart.innerHTML='<div class="muted">Calculando votos...</div>';
+ try{
+  var results=await Promise.all(choices.map(async function(candidate){
+    var response=await fetch("/api/vote-comparison?"+compareScopeParams(candidate.id).toString());
+    var data=await response.json();
+    if(!response.ok)throw new Error(data.error||"Consulta indisponível");
+    if(Number(data.scope.election_id)!==Number(currentCandidate.election_id)||Number(data.scope.round)!==Number(currentCandidate.round)||Number(data.scope.office_code)!==Number(currentCandidate.office_code)||String(data.scope.uf)!==String(currentCandidate.uf))throw new Error("Candidatos de eleições ou turnos diferentes.");
+    return {candidate:candidate,selected:data.selected};
+  }));
+  if(request!==customCompareRequest)return;
+  var max=Math.max(1,...results.map(function(x){return Number(x.selected?.votes||0)}));
+  chart.innerHTML=results.map(function(x){
+    var votes=x.selected?Number(x.selected.votes):null;
+    return '<div><div class="compare-row-top"><strong>'+escHtml(x.candidate.ballot_name)+' · '+escHtml(x.candidate.number)+'</strong><b>'+(votes===null?"Sem dados":fmt(votes)+" votos")+'</b></div><div class="compare-track"><div class="compare-bar" style="width:'+(votes===null?0:100*votes/max)+'%"></div></div><div class="muted" style="font-size:12px">'+(x.selected?"Posição no recorte: "+x.selected.position+"º":"Posição não disponível")+'</div></div>';
+  }).join("");
+ }catch(e){if(request===customCompareRequest)chart.innerHTML='<div class="error">'+escHtml(e.message||"Falha ao comparar")+'</div>'}
+}
 function candidateButtons(rows){
  if(!rows.length)return '<div class="empty">Nenhum candidato encontrado com esses filtros.</div>';
  return rows.map(function(x){
