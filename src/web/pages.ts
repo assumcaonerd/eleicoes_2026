@@ -296,10 +296,29 @@ function candidateButtons(rows){
  }).join("");
 }
 document.getElementById("search").addEventListener("submit",async function(e){
- e.preventDefault();var f=new FormData(e.target),p=new URLSearchParams();for(var pair of f.entries())if(pair[1])p.set(pair[0],String(pair[1]));
- var box=document.getElementById("searchResults");box.innerHTML='<div class="muted">Buscando...</div>';
- var r=await fetch("/api/candidates?"+p.toString()),d=await r.json();if(!r.ok){box.innerHTML='<div class="error">'+escHtml(d.error)+'</div>';return}
- box.innerHTML=candidateButtons(d.rows||[]);box.querySelectorAll(".candidate-item").forEach(function(b){b.addEventListener("click",function(){openCandidate(Number(b.dataset.id))})});
+ e.preventDefault();
+ var box=document.getElementById("searchResults"),button=e.target.querySelector("button[type=submit],button:not([type])");
+ box.innerHTML='<div class="muted" role="status">Buscando candidatos...</div>';
+ if(button)button.disabled=true;
+ try{
+  var f=new FormData(e.target),p=new URLSearchParams();
+  for(var pair of f.entries())if(pair[1])p.set(pair[0],String(pair[1]));
+  if(!p.get("q")||!p.get("q").trim())throw new Error("Informe o nome ou número do candidato.");
+  var response=await fetch("/api/candidates?"+p.toString(),{cache:"no-store"});
+  if(!response.ok){
+   var errorResult=await response.json().catch(function(){return {}});
+   throw new Error(errorResult.error||"A consulta não respondeu corretamente (HTTP "+response.status+").");
+  }
+  var data=await response.json();
+  box.innerHTML=candidateButtons(Array.isArray(data.rows)?data.rows:[]);
+  box.querySelectorAll(".candidate-item").forEach(function(b){
+   b.addEventListener("click",function(){openCandidate(Number(b.dataset.id))})
+  });
+ }catch(error){
+  box.innerHTML='<div class="error" role="alert">Não foi possível concluir a busca: '+escHtml(error.message||"Tente novamente.")+'</div>';
+ }finally{
+  if(button)button.disabled=false;
+ }
 });
 async function openCandidate(id){
  var r=await fetch("/api/candidate-overview?candidateId="+id),d=await r.json();if(!r.ok){document.getElementById("searchResults").innerHTML='<div class="error">'+escHtml(d.error)+'</div>';return}
