@@ -145,7 +145,7 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
     const ids=raw.map(Number);
     const level=url.searchParams.get("level")||"municipality";
     if(ids.length<2||ids.length>3||!ids.every(x=>Number.isSafeInteger(x)&&x>0)||
-       !["municipality","zone","polling_place"].includes(level)){
+       !["municipality","neighborhood","zone","polling_place","section"].includes(level)){
        json(res,{error:"Parâmetros inválidos para comparação."},400);return true
     }
     try{
