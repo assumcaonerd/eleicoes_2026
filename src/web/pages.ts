@@ -26,7 +26,7 @@ export function appPage(user:any,active:boolean){
   if(!active) return layout("Aplicativo",'<div class="card"><h1>Assinatura necessária</h1><p class="muted">Sua conta está autenticada, mas ainda não possui uma assinatura ativa.</p><a class="btn" href="/planos">Escolher plano</a></div>',user);
   var body = `
 <style>
-.searchbox{margin-bottom:22px}.candidate-list{display:grid;gap:10px;margin-top:18px}.candidate-item{width:100%;text-align:left;border:1px solid #e2e6ea;background:#fff;border-radius:14px;padding:16px;cursor:pointer}.candidate-item:hover{border-color:#111;background:#fafafa}.candidate-name{font-size:18px;font-weight:850}.candidate-meta{color:#68717a;font-size:14px;margin-top:4px}.dash{display:none}.dash-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}.dash-title h2{margin:0 0 4px;font-size:28px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:12px;margin:18px 0}.metric-card{background:#fff;border:1px solid #e5e8eb;border-radius:16px;padding:18px}.metric-card .n{font-size:28px;font-weight:900;margin-top:5px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.tab{border:1px solid #d9dde1;background:#fff;border-radius:999px;padding:10px 14px;font-weight:800;cursor:pointer}.tab.active{background:#111;color:#fff;border-color:#111}.scopebar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:12px 0 18px}.scopebar .field{min-width:260px;margin:0}.territory-card{overflow:hidden}.strength{display:inline-block;border-radius:999px;padding:5px 9px;background:#edf0f3;font-size:12px;font-weight:800}.empty{padding:28px;text-align:center;border:1px dashed #ccd2d7;border-radius:14px;color:#68717a;background:#fafbfc}.topline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rank{font-weight:900;color:#68717a}.map-wrap{display:none;margin-top:14px}.map-filters{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:10px;margin-bottom:12px}.map-filters .field{margin:0}.map-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.map-canvas{height:620px;border:1px solid #dfe3e6;border-radius:16px;overflow:hidden}.map-note{font-size:13px;color:#68717a;margin-top:8px}.leaflet-popup-content{min-width:250px}.popup-title{font-weight:900;font-size:15px;margin-bottom:5px}.popup-meta{font-size:12px;color:#68717a;margin-bottom:8px}.popup-total{font-weight:900;margin-bottom:8px}.popup-sections{max-height:180px;overflow:auto;border-top:1px solid #eee;padding-top:6px}.popup-section{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:12px;border-bottom:1px solid #f1f1f1}@media(max-width:760px){.map-filters{grid-template-columns:1fr 1fr}.metrics{grid-template-columns:repeat(2,1fr)}.metric-card .n{font-size:24px}.territory-card{overflow-x:auto}table{min-width:650px}}
+.searchbox{margin-bottom:22px}.candidate-list{display:grid;gap:10px;margin-top:18px}.candidate-item{width:100%;text-align:left;border:1px solid #e2e6ea;background:#fff;border-radius:14px;padding:16px;cursor:pointer}.candidate-item:hover{border-color:#111;background:#fafafa}.candidate-name{font-size:18px;font-weight:850}.candidate-meta{color:#68717a;font-size:14px;margin-top:4px}.dash{display:none}.dash-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}.dash-title h2{margin:0 0 4px;font-size:28px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:12px;margin:18px 0}.metric-card{background:#fff;border:1px solid #e5e8eb;border-radius:16px;padding:18px}.metric-card .n{font-size:28px;font-weight:900;margin-top:5px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.tab{border:1px solid #d9dde1;background:#fff;border-radius:999px;padding:10px 14px;font-weight:800;cursor:pointer}.tab.active{background:#111;color:#fff;border-color:#111}.scopebar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:12px 0 18px}.scopebar .field{min-width:260px;margin:0}.territory-card{overflow:hidden}.strength{display:inline-block;border-radius:999px;padding:5px 9px;background:#edf0f3;font-size:12px;font-weight:800}.empty{padding:28px;text-align:center;border:1px dashed #ccd2d7;border-radius:14px;color:#68717a;background:#fafbfc}.topline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rank{font-weight:900;color:#68717a}.map-wrap{display:none;margin-top:14px}.map-filters{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:10px;margin-bottom:12px}.map-filters .field{margin:0}.map-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.map-canvas{height:620px;border:1px solid #dfe3e6;border-radius:16px;overflow:hidden}.map-note{font-size:13px;color:#68717a;margin-top:8px}.vote-pin-marker{background:transparent!important;border:0!important}.vote-pin{width:100%;height:100%;transform-origin:50% 96%;animation:pinDrop .34s cubic-bezier(.2,.75,.25,1.2);filter:drop-shadow(0 5px 4px rgba(0,0,0,.24));transition:transform .15s ease,filter .15s ease}.vote-pin svg{display:block;width:100%;height:100%}.vote-pin:hover{transform:translateY(-2px) scale(1.06);filter:drop-shadow(0 7px 5px rgba(0,0,0,.28))}.vote-pin.selected{transform:translateY(-4px) scale(1.16);filter:drop-shadow(0 9px 7px rgba(0,0,0,.32))}@keyframes pinDrop{0%{opacity:0;transform:translateY(-26px) scale(.78)}70%{opacity:1;transform:translateY(3px) scale(1.04)}100%{opacity:1;transform:translateY(0) scale(1)}}.leaflet-popup-content{min-width:250px}.popup-title{font-weight:900;font-size:15px;margin-bottom:5px}.popup-meta{font-size:12px;color:#68717a;margin-bottom:8px}.popup-total{font-weight:900;margin-bottom:8px}.popup-sections{max-height:180px;overflow:auto;border-top:1px solid #eee;padding-top:6px}.popup-section{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:12px;border-bottom:1px solid #f1f1f1}@media(max-width:760px){.map-filters{grid-template-columns:1fr 1fr}.metrics{grid-template-columns:repeat(2,1fr)}.metric-card .n{font-size:24px}.territory-card{overflow-x:auto}table{min-width:650px}}
 </style>
 <h1>Siga o Voto 2026</h1>
 <p class="muted">Escolha um candidato e descubra onde a votação foi forte, média ou fraca.</p>
@@ -71,7 +71,7 @@ export function appPage(user:any,active:boolean){
     <span class="muted" id="mapCount"></span>
   </div>
   <div id="map" class="map-canvas"></div>
-  <div class="map-note">O mapa acompanha o filtro selecionado. Ao escolher município, zona, bairro, rua/local ou seção, somente aquele recorte eleitoral permanece visível.</div>
+  <div class="map-note">Em visões amplas, o mapa usa marcadores leves. Ao entrar em zona, bairro, rua/local ou seção, os locais aparecem como pinos desenhados com a ponta exatamente sobre a coordenada eleitoral.</div>
 </div>
 </div></section>
 <script>
@@ -230,6 +230,31 @@ function mapScopeLabel(){
  }
  return currentCandidate&&currentCandidate.uf==="BR"?"Brasil":"Estado "+(currentCandidate?currentCandidate.uf:"");
 }
+function pushPinSvg(){
+ return '<div class="vote-pin"><svg viewBox="0 0 64 92" aria-hidden="true" focusable="false">'+
+   '<defs><linearGradient id="pinRed" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff6767"/><stop offset=".58" stop-color="#e83f43"/><stop offset="1" stop-color="#c92f34"/></linearGradient><linearGradient id="pinNeedle" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eeeeee"/><stop offset="1" stop-color="#aeb4bb"/></linearGradient></defs>'+
+   '<g transform="rotate(12 32 44)">'+
+     '<path d="M28 55 L35 55 L32 89 Z" fill="url(#pinNeedle)"/>'+
+     '<ellipse cx="31.5" cy="50" rx="22" ry="15.5" fill="url(#pinRed)" stroke="#b9282d" stroke-width="1.2"/>'+
+     '<path d="M27 18 C28 31 25 39 21 48 C25 55 33 58 40 53 C43 43 44 31 42 18 Z" fill="url(#pinRed)"/>'+
+     '<ellipse cx="35" cy="17" rx="16.5" ry="9.5" fill="#ff6264" stroke="#d7393d" stroke-width="1.2"/>'+
+     '<ellipse cx="35" cy="15.5" rx="13.2" ry="6.8" fill="#ff7b7c" opacity=".55"/>'+
+     '<ellipse cx="18" cy="46" rx="3.2" ry="5.5" fill="#ffb1b2" opacity=".65"/>'+
+   '</g>'+
+ '</svg></div>';
+}
+function pushPinIcon(votes){
+ var v=Math.max(1,Number(votes||1));
+ var scale=Math.max(.82,Math.min(1.18,.82+Math.log10(v+1)*.08));
+ var w=Math.round(38*scale),h=Math.round(56*scale);
+ return window.L.divIcon({
+   className:"vote-pin-marker",
+   html:pushPinSvg(),
+   iconSize:[w,h],
+   iconAnchor:[Math.round(w*.5),Math.round(h*.95)],
+   popupAnchor:[0,-Math.round(h*.68)]
+ });
+}
 function renderMapRows(){
  if(!voteMap||!mapLayer)return;
  mapLayer.clearLayers();
@@ -245,8 +270,18 @@ function renderMapRows(){
   if((f.zone||f.section)&&!filteredSections.length)return;
   var copy=Object.assign({},x,{sections:filteredSections.length?filteredSections:x.sections});
   if(f.zone||f.section)copy.votes=filteredSections.reduce(function(sum,s){return sum+Number(s.votes||0)},0);
-  var radius=Math.max(6,Math.min(18,5+Math.sqrt(Number(copy.votes||0))));
-  var marker=L.circleMarker([lat,lng],{radius:radius,weight:1,fillOpacity:.78});
+  var detailed=Boolean(f.zone||f.neighborhood||f.place||f.section);
+  var marker;
+  if(detailed){
+    marker=L.marker([lat,lng],{icon:pushPinIcon(copy.votes),riseOnHover:true});
+    marker.on("click",function(){
+      document.querySelectorAll(".vote-pin.selected").forEach(function(el){el.classList.remove("selected")});
+      var el=marker.getElement();if(el){var pin=el.querySelector(".vote-pin");if(pin)pin.classList.add("selected")}
+    });
+  }else{
+    var radius=Math.max(6,Math.min(18,5+Math.sqrt(Number(copy.votes||0))));
+    marker=L.circleMarker([lat,lng],{radius:radius,weight:1,fillOpacity:.78});
+  }
   marker.bindPopup(popupHtml(copy),{maxWidth:360});
   marker.addTo(mapLayer);
   bounds.push([lat,lng]);shown++;onlyPoint=[lat,lng];
