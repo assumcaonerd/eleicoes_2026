@@ -274,7 +274,7 @@ function rebuildCompareSpecific(data){
  field.firstChild.textContent=labels[level]||"Território";
  var options=Array.isArray(data.available_units)?data.available_units:[];
  var old=compareSpecificKey;
- select.innerHTML='<option value="">Todos os '+(level==="zone"?"zonas":level==="section"?"seções":"locais / bairros")+' do município</option>'+
+ select.innerHTML='<option value="">Todos os '+(level==="zone"?"as zonas":level==="section"?"as seções":"os locais ou bairros")+' do município</option>'+
   options.map(function(row){
    var name=level==="neighborhood"?(row.neighborhood||"Bairro sem nome"):
     level==="zone"?"Zona "+row.zone:
@@ -809,6 +809,7 @@ document.getElementById("compareMunicipality").addEventListener("change",functio
 });
 document.getElementById("compareLevel").addEventListener("change",function(){
  compareSpecificKey="";
+ territoryScope.neighborhood="";territoryScope.place="";territoryScope.zone="";territoryScope.section="";
  document.getElementById("compareSpecificField").style.display="none";
  document.getElementById("compareSpecific").innerHTML='<option value="">Todos os territórios</option>';
  loadComparisonBreakdown();
