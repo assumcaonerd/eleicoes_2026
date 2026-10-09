@@ -265,6 +265,28 @@ async function drawCompareMap(data,request){
   setTimeout(function(){if(compareMap)compareMap.invalidateSize()},80);
  }catch(e){el.style.display="none";document.getElementById("compareHelp").textContent="Mapa geográfico indisponível; a tabela comparativa continua disponível."}
 }
+function rebuildCompareSpecific(data){
+ var field=document.getElementById("compareSpecificField"),select=document.getElementById("compareSpecific");
+ var level=document.getElementById("compareLevel").value;
+ if(level==="municipality"){field.style.display="none";return}
+ field.style.display="";
+ var labels={neighborhood:"Bairro",zone:"Zona eleitoral",polling_place:"Local de votação",section:"Seção eleitoral"};
+ field.firstChild.textContent=labels[level]||"Território";
+ var options=Array.isArray(data.available_units)?data.available_units:[];
+ var old=compareSpecificKey;
+ select.innerHTML='<option value="">Todos os '+(level==="zone"?"zonas":level==="section"?"seções":"locais / bairros")+' do município</option>'+
+  options.map(function(row){
+   var name=level==="neighborhood"?(row.neighborhood||"Bairro sem nome"):
+    level==="zone"?"Zona "+row.zone:
+    level==="section"?"Zona "+row.zone+" · Seção "+row.section:
+    (row.polling_place_name||row.address||"Local "+row.polling_place_code);
+   if(level==="polling_place"&&row.address&&row.polling_place_name)name+=" · "+row.address;
+   return '<option value="'+escHtml(row.key)+'">'+escHtml(name)+'</option>';
+  }).join("");
+ select.value=old;
+ if(select.value!==old)compareSpecificKey="";
+ select.disabled=options.length===0;
+}
 async function loadComparisonBreakdown(){
  var box=document.getElementById("compareBreakdown"),help=document.getElementById("compareHelp");
  var request=++compareBreakdownRequest;
