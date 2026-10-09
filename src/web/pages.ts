@@ -815,7 +815,16 @@ document.getElementById("compareLevel").addEventListener("change",function(){
 });
 document.getElementById("compareSpecific").addEventListener("change",function(){
  compareSpecificKey=this.value;
- loadComparisonBreakdown();
+ territoryScope.neighborhood="";territoryScope.place="";territoryScope.zone="";territoryScope.section="";
+ var unit=compareBreakdownData&&compareBreakdownData.available_units?compareBreakdownData.available_units.find(function(x){return x.key===compareSpecificKey}):null;
+ var level=document.getElementById("compareLevel").value;
+ if(unit){
+  if(level==="neighborhood")territoryScope.neighborhood=unit.neighborhood||"";
+  if(level==="zone")territoryScope.zone=String(unit.zone??"");
+  if(level==="polling_place")territoryScope.place=unit.polling_place_code||"";
+  if(level==="section"){territoryScope.zone=String(unit.zone??"");territoryScope.section=String(unit.section??"")}
+ }
+ refreshComparison();renderCustomComparison();
 });
 document.getElementById("compareExportCsv").addEventListener("click",function(){
  if(!currentCandidate||currentLevel!=="compare")return;
