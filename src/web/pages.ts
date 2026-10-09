@@ -72,7 +72,7 @@ export function appPage(user:any,active:boolean){
   <label class="field">Detalhamento
    <select id="compareLevel"><option value="municipality">Municípios</option><option value="neighborhood">Bairros</option><option value="zone">Zonas</option><option value="polling_place">Locais de votação / mapa</option><option value="section">Seções</option></select>
   </label>
-  <button class="btn secondary" type="button" id="compareExportCsv">Exportar CSV / Excel</button>
+  <button class="btn secondary" type="button" id="compareExportCsv">Exportar CSV completo</button>
   <button class="btn secondary" type="button" id="compareExportPdf">Salvar PDF</button>
  </div>
  <div class="compare-help" id="compareHelp">Diferença de votos: candidato consultado menos o candidato escolhido para comparar.</div>
@@ -285,7 +285,7 @@ async function loadComparisonBreakdown(){
    return '<tr><td>'+escHtml(comparisonTerritoryName(row,data.level))+'</td>'+cells+'<td>'+difference+'</td></tr>';
   }).join("");
   box.innerHTML=data.rows.length?'<table class="compare-data-table"><thead><tr>'+cols+'</tr></thead><tbody>'+body+'</tbody></table>':'<div class="empty">Não há dados territoriais para este filtro.</div>';
-  help.textContent="Diferença em votos: candidato consultado menos o primeiro candidato adicional. "+data.total_territories+" territórios com registros."+(data.truncated?" Exibindo até 300 territórios, ordenados pelos votos dos candidatos comparados.":"");
+  help.textContent="Diferença em votos: candidato consultado menos o primeiro candidato adicional. "+data.total_territories+" territórios com registros."+(data.truncated?" A tela mostra os primeiros 300; o botão Exportar CSV completo inclui todos os "+data.total_territories+" territórios.":"");
   await drawCompareMap(data);
  }catch(e){if(request===compareBreakdownRequest){compareBreakdownData=null;box.innerHTML='<div class="error">'+escHtml(e.message||"Falha na consulta")+'</div>'}}
 }
@@ -756,10 +756,15 @@ document.querySelectorAll(".tab").forEach(function(t){t.addEventListener("click"
 document.getElementById("compareMunicipality").addEventListener("change",function(){territoryScope={municipality:this.value,neighborhood:"",place:"",zone:"",section:""};refreshComparison();renderCustomComparison()});
 document.getElementById("compareLevel").addEventListener("change",function(){loadComparisonBreakdown()});
 document.getElementById("compareExportCsv").addEventListener("click",function(){
- var csv=comparisonCSV();if(!csv){alert("Carregue primeiro uma comparação territorial.");return}
- var blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob);
- var a=document.createElement("a");a.href=url;a.download="comparacao-siga-o-voto-2026.csv";document.body.appendChild(a);a.click();a.remove();
- setTimeout(function(){URL.revokeObjectURL(url)},1000);
+ if(!currentCandidate||currentLevel!=="compare")return;
+ var candidates=[currentCandidate].concat(compareChoices.filter(Boolean));
+ if(candidates.length<2){alert("Selecione pelo menos dois candidatos para exportar.");return}
+ var level=document.getElementById("compareLevel").value;
+ var municipality=territoryScope.municipality||"";
+ if(level!=="municipality"&&!municipality){alert("Selecione um município para exportar bairros, zonas, locais ou seções.");return}
+ var params=new URLSearchParams({ids:candidates.map(function(c){return c.id}).join(","),level:level});
+ if(municipality)params.set("municipality",municipality);
+ window.location.href="/api/comparison-export.csv?"+params.toString();
 });
 document.getElementById("compareExportPdf").addEventListener("click",function(){window.print()});
 document.getElementById("municipalitySelect").addEventListener("change",async function(){
