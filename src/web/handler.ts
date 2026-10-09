@@ -138,6 +138,57 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
     if(!data){json(res,{error:"Candidato não encontrado."},404);return true}
     json(res,data);return true
   }
+  if(url.pathname==="/api/comparison-export.csv"&&req.method==="GET"){
+    if(!user){json(res,{error:"Não autenticado."},401);return true}
+    if(!await hasActiveAccess(Number(user.id))){json(res,{error:"Assinatura inativa."},402);return true}
+    const rawIds=(url.searchParams.get("ids")??"").split(",");
+    const ids=rawIds.map(Number);
+    const level=url.searchParams.get("level")??"municipality";
+    if(ids.length<2||ids.length>3||new Set(ids).size!==ids.length||
+       !ids.every(x=>Number.isSafeInteger(x)&&x>0)||
+       !["municipality","neighborhood","zone","polling_place","section"].includes(level)){
+      json(res,{error:"Parâmetros de exportação inválidos."},400);return true
+    }
+    try{
+      const data=await comparativeTerritories({
+        candidateIds:ids,level:level as any,
+        municipalityCode:url.searchParams.get("municipality")||undefined,
+        exportAll:true
+      });
+      // Generate the export before sending headers, so errors cannot produce broken CSV files.
+      const safeCell=(value:unknown)=>{
+        let valueText=String(value??"");
+        // Prevent spreadsheet formulas when a field comes from user-supplied source data.
+        if(/^[\\s]*[=+@]/.test(valueText)||/^[\\s]*-(?=[^0-9])/ .test(valueText))valueText="'"+valueText;
+        return '"'+valueText.replace(/"/g,'""')+'"';
+      };
+      const candidates=data.candidates as any[];
+      const headings=["Eleição","Turno","Cargo (código)","UF","Nível",
+        "Município (código)","Município","Bairro","Zona","Local (código)",
+        "Local de votação","Endereço","Seção","Latitude","Longitude",
+        ...candidates.map(c=>"Votos - "+c.ballot_name+" ("+c.number+" / "+(c.party_abbr??"")+")"),
+        "Diferença de votos (1º candidato - 2º candidato)"];
+      const csvLines=[headings.map(safeCell).join(";")];
+      for(const row of data.rows){
+        const cells=[data.scope.election_id,data.scope.round,data.scope.office_code,
+          data.scope.uf,level,row.municipality_code,row.municipality_name,
+          row.neighborhood,row.zone,row.polling_place_code,row.polling_place_name,
+          row.address,row.section,row.latitude,row.longitude,
+          ...candidates.map(c=>{
+            const entry=row.candidates.find((v:any)=>String(v.number)===String(c.number));
+            return entry?.votes??"";
+          }),
+          row.comparison_difference??""];
+        csvLines.push(cells.map(safeCell).join(";"));
+      }
+      const csv="\uFEFF"+csvLines.join("\r\n")+"\r\n";
+      res.writeHead(200,{"content-type":"text/csv; charset=utf-8",
+        "content-disposition":'attachment; filename="comparacao-siga-o-voto-2026-'+level+'-completo.csv"',
+        "cache-control":"private, no-store","x-content-type-options":"nosniff",
+        "x-exported-territories":String(data.rows.length)});
+      res.end(csv);return true
+    }catch(e:any){json(res,{error:e?.message||"Falha ao exportar comparação."},400);return true}
+  }
   if(url.pathname==="/api/comparison-territories"&&req.method==="GET"){
     if(!user){json(res,{error:"Não autenticado."},401);return true}
     if(!await hasActiveAccess(Number(user.id))){json(res,{error:"Assinatura inativa."},402);return true}
