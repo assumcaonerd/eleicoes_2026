@@ -510,14 +510,14 @@ export async function candidateVoteComparison(args:{
      SELECT sv.candidate_number AS number,SUM(sv.votes)::bigint AS votes
      FROM section_votes sv
      ${neighborhood||place?"LEFT JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code AND p.zone=sv.zone AND p.section=sv.section":""}
-     WHERE sv.uf=$1 AND sv.election_id=$2 AND sv.office_code=$3
+     WHERE sv.uf=$1 AND sv.election_id=$2 AND sv.office_code=$3 AND sv.round=$9
        AND sv.municipality_code=$4
        AND ($5::text IS NULL OR COALESCE(p.neighborhood,'')=$5)
        AND ($6::text IS NULL OR COALESCE(NULLIF(p.polling_place_code,''),sv.polling_place_code)=$6)
        AND ($7::int IS NULL OR sv.zone=$7)
        AND ($8::int IS NULL OR sv.section=$8)
      GROUP BY sv.candidate_number
-   `,[candidate.uf,candidate.election_id,candidate.office_code,municipality,neighborhood,place,zone,section]);
+   `,[candidate.uf,candidate.election_id,candidate.office_code,municipality,neighborhood,place,zone,section,candidate.round]);
    for(const result of results)for(const row of result.rows){
      const number=String(row.number);
      totals.set(number,(totals.get(number)||0)+Number(row.votes));
