@@ -6,24 +6,27 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
-    "build": "tsc -p tsconfig.json && mkdir -p dist/src/ui && cp -R src/ui/. dist/src/ui/",
+    "build": "tsc -p tsconfig.json && mkdir -p dist/src/ui && cp -R src/ui/. dist/src/ui/ && mkdir -p dist/src/web/cartography/fonts && cp src/web/cartography/fonts/* dist/src/web/cartography/fonts/",
     "db:init": "tsx scripts/init-db.ts",
     "import:2026": "tsx scripts/import-2026.ts",
     "import:sections": "tsx scripts/import-sections-csv.ts",
-    "check": "tsc -p tsconfig.json --noEmit"
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test:map": "node --import tsx scripts/test-map-report.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "^1.0.1",
     "@modelcontextprotocol/sdk": "^1.20.2",
-    "csv-parse": "^5.6.0",
-    "pg": "^8.13.3",
-    "zod": "^3.25.76",
     "argon2": "^0.44.0",
+    "csv-parse": "^5.6.0",
+    "opentype.js": "^1.3.4",
+    "pg": "^8.13.3",
+    "sharp": "^0.34.4",
     "stripe": "^18.5.0",
-    "sharp": "^0.34.4"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
+    "@types/opentype.js": "^1.3.10",
     "@types/pg": "^8.11.10",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"

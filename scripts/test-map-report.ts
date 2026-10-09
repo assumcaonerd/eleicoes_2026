@@ -1,0 +1,31 @@
+import assert from "node:assert/strict";
+import {mkdir,writeFile} from "node:fs/promises";
+import sharp from "sharp";
+import {consolidate,buildReport,municipalIndex,overlap,colorScale,validateGeography,type Candidate,type VoteRow} from "../src/web/cartography/report.js";
+import {rasterizeReport} from "../src/web/map-export.js";
+const candidate:Candidate={id:1,uf:"ES",number:"00000",ballot_name:"CANDIDATO DE VALIDAÇÃO · DADOS SINTÉTICOS",party_abbr:"TESTE",office_name:"Deputado Estadual",office_code:7,election_id:6259,round:1};
+const municipal:VoteRow[]=municipalIndex.map((m,i)=>({municipality_code:m.tseCode,votes:i%7===0?0:Math.round(Math.exp(i/9)),source_kind:"tse_municipality"}));
+const total=municipal.reduce((s,m)=>s+Number(m.votes),0);
+const rows=[...municipal,{municipality_code:"",votes:total,source_kind:"tse_scope"}];
+validateGeography();
+const report=consolidate(candidate,rows);
+assert.equal(report.municipalities.length,78);assert.equal(report.total,total);assert.equal(report.municipalities.filter(m=>m.votes===0).length,12);
+assert.throws(()=>consolidate(candidate,rows.slice(1)),/Base incompleta/);
+assert.throws(()=>consolidate(candidate,[...rows,municipal[0]]),/duplicado/);
+assert.throws(()=>consolidate(candidate,rows.map(r=>r.source_kind==="tse_scope"?{...r,votes:total+1}:r)),/Divergência/);
+assert.throws(()=>consolidate(candidate,rows.filter(r=>r.source_kind!=="tse_scope")),/estadual ausente/);
+assert.throws(()=>consolidate(candidate,rows.map((r,i)=>i===0?{...r,municipality_code:"99999"}:r)),/sem correspondência/);
+assert.throws(()=>consolidate(candidate,rows.map((r,i)=>i===0?{...r,votes:-1}:r)),/inválida/);
+assert.throws(()=>consolidate({...candidate,round:3},rows),/Recorte/);
+assert.throws(()=>consolidate(candidate,[...rows,rows[78]]),/estadual ausente ou duplicado/);
+const shortCodes=rows.map(r=>({...r,municipality_code:r.municipality_code?String(Number(r.municipality_code)):""}));assert.equal(consolidate(candidate,shortCodes).total,total);
+for(const values of [[0,0],[1,1,1],[1,2,3,4,50,1000]]){const s=colorScale(values);assert.equal(s.color(0),"#e6e9ed");for(const v of values.filter(v=>v>0))assert(s.bins.some(b=>v>=b.min&&v<=b.max))}
+const {svg,labels}=buildReport(report,new Date("2026-10-09T20:00:00Z"));
+assert.equal(labels.length,78);for(let i=0;i<labels.length;i++)for(let j=i+1;j<labels.length;j++)assert(!overlap(labels[i],labels[j]),`${labels[i].name} overlaps ${labels[j].name}`);
+assert.equal((svg.match(/id="municipality-/g)||[]).length,78);assert.equal((svg.match(/id="label-/g)||[]).length,78);assert.equal((svg.match(/id="table-/g)||[]).length,78);assert(!svg.includes("<image"));assert(!/NaN|Infinity/.test(svg));
+for(const l of labels){assert(l.x-l.w/2>=1770&&l.x+l.w/2<=4790&&l.y-l.h/2>=1120&&l.y+l.h/2<=6210);if(l.external)assert(Math.abs(l.x-l.anchor[0])>=l.w/2+22||Math.abs(l.y-l.anchor[1])>=l.h/2+22)}
+const zeros=consolidate(candidate,rows.map(r=>({...r,votes:0})));assert.equal(zeros.total,0);const allZero=buildReport(zeros);assert.equal(allZero.labels.length,78);
+const dir=process.env.MAP_VALIDATION_DIR||"/tmp/siga-map-validation";await mkdir(dir,{recursive:true});await writeFile(`${dir}/validation.svg`,svg);
+const png=await rasterizeReport(svg);const metadata=await sharp(png).metadata();assert.equal(metadata.width,4961);assert.equal(metadata.height,7016);assert.equal(metadata.density,300);await writeFile(`${dir}/validation.png`,png);await sharp(png).resize({width:1400}).toFile(`${dir}/preview.png`);
+await writeFile(`${dir}/result.json`,JSON.stringify({synthetic:true,municipalities:78,total,zero:12,labels:labels.map(l=>({name:l.name,external:l.external})),metadata,checks:"geography, code crosswalk, missing, zero, duplicate, total mismatch, invalid values, scope, normalization, quantiles, 78 table/paths/labels, no label overlaps, PNG dimensions/dpi"},null,2));
+console.log(JSON.stringify({passed:true,synthetic:true,municipalities:78,total,labels:78,externalLabels:labels.filter(l=>l.external).length,width:metadata.width,height:metadata.height,dpi:metadata.density,output:dir}));

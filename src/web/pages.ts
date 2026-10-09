@@ -101,12 +101,12 @@ export function appPage(user:any,active:boolean){
     <div class="map-imagery-status" id="mapImageryStatus" role="status" aria-live="polite"></div>
   </div>
   <div id="esStatePrint" style="display:none;margin:10px 0 16px;padding:16px;border:1px solid #b8c9d9;border-radius:12px;background:#f7f9fb">
-   <div style="font-weight:800;margin-bottom:7px">Mapa completo do Espírito Santo para impressão</div>
+   <div style="font-weight:800;margin-bottom:7px">MAPA PROFISSIONAL DO ESPÍRITO SANTO</div>
    <div class="row">
-     <button class="btn" id="esPrintPng" type="button">Baixar PNG A2 · alta resolução</button>
-     <button class="btn secondary" id="esPrintSvg" type="button">Baixar SVG vetorial</button>
+     <button class="btn" id="esPrintPng" type="button">Baixar mapa PNG A2</button>
+     <button class="btn secondary" id="esPrintSvg" type="button">Baixar mapa SVG vetorial</button>
    </div>
-   <div class="map-note">Disponível no mapa Padrão com o ES inteiro selecionado, em qualquer zoom. O arquivo inclui todo o Espírito Santo, com pinos vermelhos, independentemente da área visível na tela.</div>
+   <div class="map-note">Relatório A2, 300 dpi: os 78 municípios, limites oficiais do IBGE, nomes, votos e tabela completa. Disponível sem filtros territoriais, em qualquer zoom ou tipo de mapa.</div>
    <div id="esPrintStatus" role="status" aria-live="polite" class="map-note"></div>
   </div>
   <div id="map" class="map-canvas"></div>
@@ -793,7 +793,7 @@ function updateESPrintControl(){
  if(!panel||!currentCandidate){if(panel)panel.style.display="none";return}
  var f=currentMapSelections();
  var statewide=!f.municipality&&!f.zone&&!f.neighborhood&&!f.place&&!f.section;
- var visible=currentLevel==="map"&&currentCandidate.uf==="ES"&&currentMapStyle==="standard"&&statewide;
+ var visible=currentLevel==="map"&&currentCandidate.uf==="ES"&&statewide;
  panel.style.display=visible?"block":"none";
 }
 async function downloadESMap(format){
@@ -801,11 +801,11 @@ async function downloadESMap(format){
  var status=document.getElementById("esPrintStatus");
  var controls=[document.getElementById("esPrintPng"),document.getElementById("esPrintSvg")];
  controls.forEach(function(el){el.disabled=true});
- status.textContent="Gerando o mapa completo do ES com os pinos vermelhos. Aguarde...";
+ status.textContent="Conferindo os totais e gerando o relatório dos 78 municípios em alta resolução. Aguarde...";
  try{
   var target="/api/map-export-es?candidateId="+encodeURIComponent(currentCandidate.id)+"&format="+format;
   var controller=new AbortController();
-  var timer=setTimeout(function(){controller.abort()},75000);
+  var timer=setTimeout(function(){controller.abort()},120000);
   var response;
   try{response=await fetch(target,{signal:controller.signal,credentials:"same-origin"})}
   finally{clearTimeout(timer)}
@@ -820,7 +820,7 @@ async function downloadESMap(format){
   link.download="mapa-completo-es-"+currentCandidate.number+"-2026."+format;
   document.body.appendChild(link);link.click();link.remove();
   setTimeout(function(){URL.revokeObjectURL(url)},30000);
-  status.textContent="Mapa integral do ES gerado: arquivo "+format.toUpperCase()+" disponível para impressão.";
+  status.textContent="Relatório dos 78 municípios conferido: arquivo "+format.toUpperCase()+" disponível para impressão.";
  }catch(error){
   status.textContent="Não foi possível gerar o mapa: "+(error.name==="AbortError"?"tempo limite excedido":error.message||"falha temporária");
  }finally{controls.forEach(function(el){el.disabled=false})}

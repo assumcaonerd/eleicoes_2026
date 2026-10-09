@@ -1,0 +1,8 @@
+{
+  "geometrySource": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/32?formato=application/vnd.geo+json&qualidade=maxima&intrarregiao=municipio",
+  "namesSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/32/municipios",
+  "crosswalkSource": "https://resultados.tse.jus.br/oficial/ele2026/6259/config/mun-e006259-cm.json",
+  "retrievedAt": "2026-10-09T20:00:53.686877+00:00",
+  "municipalities": 78,
+  "coordinates": "Geográficas oficiais fornecidas pelo IBGE; visualização conforme Mercator, sem escala anisotrópica."
+}

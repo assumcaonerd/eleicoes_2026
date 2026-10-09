@@ -78,3 +78,29 @@ A pasta `data/raw` guarda cópias dos JSON baixados para auditoria. Em produçã
 ## Aviso
 
 Projeto independente, sem vínculo institucional com o Tribunal Superior Eleitoral. A fonte original dos dados é a Justiça Eleitoral. O aplicativo apresenta dados factuais e não realiza projeções, recomendações ou inferências eleitorais.
+
+## Relatório cartográfico ES (A2)
+
+Na aba Mapa, um candidato do ES sem filtros territoriais disponibiliza PNG A2
+(4961 × 7016 px, 300 dpi) e SVG vetorial (420 × 594 mm), gerados no servidor
+sem capturas do mapa ou dependência do zoom/tipo de mapa.
+
+A malha oficial do IBGE e o cruzamento TSE/IBGE estão versionados em
+`src/web/cartography/`, com fontes e data de obtenção em `provenance.json`.
+Os 78 municípios têm contornos, nomes, votos, cores por quartis dos valores
+positivos, tabela alfabética e painel executivo. As ilhas oceânicas de Vitória
+estão preservadas em um quadro com escala própria. Os glifos Lato (OFL) são
+vetoriais, para não depender de fontes instaladas na impressão.
+
+A exportação consulta apenas `tse_municipality` e `tse_scope`, com o mesmo
+candidato, eleição, cargo, UF e turno, em uma transação de leitura com snapshot
+repetível. Não soma seções, zonas ou locais por cima dos resultados municipais.
+Exige 78 registros municipais explícitos e um total estadual único: registro
+faltante é erro, nunca zero. Duplicação, código desconhecido ou soma divergente
+bloqueiam a exportação. Pinos são contexto opcional e não entram nos totais.
+
+`npm run test:map` valida geometria, códigos, zeros explícitos, dados faltantes,
+duplicação, divergência, classificação, rótulos sem colisão e dimensões/dpi.
+Gera arquivos **sintéticos**, claramente identificados, em
+`/tmp/siga-map-validation/`; CI também os guarda como artefato. Esses testes
+não substituem uma exportação real autenticada nem o teste de produção.
