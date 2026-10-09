@@ -32,7 +32,11 @@ export function sectionsRegionForUf(uf:string){
 }
 
 export function sectionsPoolForUf(uf:string){
-  const region=sectionsRegionForUf(uf);
+  const normalized=String(uf||"").toUpperCase();
+  if(normalized==="SP" && process.env.SECTIONS_DATABASE_URL_SP){
+    return poolForUrl(process.env.SECTIONS_DATABASE_URL_SP) ?? sectionsPool;
+  }
+  const region=sectionsRegionForUf(normalized);
   if(!region) return sectionsPool;
   return poolForUrl(urls[region]) ?? sectionsPool;
 }
