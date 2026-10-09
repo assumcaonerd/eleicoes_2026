@@ -31,14 +31,25 @@ export function sectionsRegionForUf(uf:string){
   return regionByUf[String(uf||"").toUpperCase()]??null;
 }
 
-export function sectionsPoolForUf(uf:string){
+export function sectionsPoolsForUf(uf:string){
   const normalized=String(uf||"").toUpperCase();
-  if(normalized==="SP" && process.env.SECTIONS_DATABASE_URL_SP){
-    return poolForUrl(process.env.SECTIONS_DATABASE_URL_SP) ?? sectionsPool;
+  if(normalized==="SP"){
+    const spUrls=[
+      process.env.SECTIONS_DATABASE_URL_SP,
+      process.env.SECTIONS_DATABASE_URL_SP2,
+      process.env.SECTIONS_DATABASE_URL_SP3
+    ].filter((v):v is string=>Boolean(v));
+    const spPools=spUrls.map(poolForUrl).filter((p):p is pg.Pool=>Boolean(p));
+    if(spPools.length) return spPools;
   }
   const region=sectionsRegionForUf(normalized);
-  if(!region) return sectionsPool;
-  return poolForUrl(urls[region]) ?? sectionsPool;
+  if(!region) return sectionsPool?[sectionsPool]:[];
+  const pool=poolForUrl(urls[region]) ?? sectionsPool;
+  return pool?[pool]:[];
+}
+
+export function sectionsPoolForUf(uf:string){
+  return sectionsPoolsForUf(uf)[0] ?? null;
 }
 
 export async function sectionsSql<T extends pg.QueryResultRow = pg.QueryResultRow>(text:string,params:unknown[]=[]){
@@ -50,6 +61,12 @@ export async function sectionsSqlForUf<T extends pg.QueryResultRow = pg.QueryRes
   const pool=sectionsPoolForUf(uf);
   if(!pool) throw new Error("Base granular não configurada para "+uf+".");
   return pool.query<T>(text,params);
+}
+
+export async function sectionsSqlAllForUf<T extends pg.QueryResultRow = pg.QueryResultRow>(uf:string,text:string,params:unknown[]=[]){
+  const ps=sectionsPoolsForUf(uf);
+  if(!ps.length) throw new Error("Base granular não configurada para "+uf+".");
+  return Promise.all(ps.map(pool=>pool.query<T>(text,params)));
 }
 
 export async function closeSectionPools(){
