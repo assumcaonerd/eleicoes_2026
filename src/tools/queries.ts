@@ -461,3 +461,80 @@ export async function territorialLevel(args:{
     .slice(0,limit);
   return rows.map((r:any,i:number)=>({...r,rank:i+1,pct_total:total>0?Number(((Number(r.votes)/total)*100).toFixed(2)):0}));
 }
+
+
+/** Comparação factual de votos de candidatos ao mesmo cargo, eleição, turno e UF. */
+export async function candidateVoteComparison(args:{
+ candidateId:number;municipalityCode?:string;neighborhood?:string;
+ pollingPlaceCode?:string;zone?:number;section?:number;
+}){
+ const candidateResult=await sql<any>(
+   "SELECT id,election_id,round,office_code,uf,number,ballot_name,party_abbr FROM candidates WHERE id=$1",
+   [args.candidateId]
+ );
+ const candidate=candidateResult.rows[0];
+ if(!candidate)return null;
+ const municipality=args.municipalityCode||null;
+ const neighborhood=args.neighborhood||null;
+ const place=args.pollingPlaceCode||null;
+ const zone=args.zone??null,section=args.section??null;
+ if((neighborhood||place||zone!==null||section!==null)&&!municipality){
+   throw new Error("Selecione o município antes do detalhamento territorial.");
+ }
+ if(section!==null&&zone===null)throw new Error("Selecione a zona para comparar uma seção.");
+ const namesResult=await sql<any>(
+   "SELECT id,number,ballot_name,party_abbr FROM candidates WHERE election_id=$1 AND round=$2 AND office_code=$3 AND uf=$4",
+   [candidate.election_id,candidate.round,candidate.office_code,candidate.uf]
+ );
+ const identities=new Map<string,any>();
+ for(const row of namesResult.rows){
+   const number=String(row.number);
+   if(!identities.has(number)||Number(row.id)===Number(candidate.id))identities.set(number,row);
+ }
+ const totals=new Map<string,number>();
+ const stateOnly=!municipality;
+ const municipalityOnly=Boolean(municipality&&!neighborhood&&!place&&zone===null&&section===null);
+ if(stateOnly||municipalityOnly){
+   const result=await sql<any>(`
+     SELECT c.number,MAX(v.votes)::bigint AS votes
+     FROM vote_facts v JOIN candidates c ON c.id=v.candidate_id
+     WHERE c.election_id=$1 AND c.round=$2 AND c.office_code=$3 AND c.uf=$4
+       AND v.election_id=$1 AND v.round=$2 AND v.office_code=$3 AND v.uf=$4
+       AND v.zone=-1 AND v.section=-1
+       AND v.municipality_code=$5
+     GROUP BY c.number
+   `,[candidate.election_id,candidate.round,candidate.office_code,candidate.uf,municipality??""]);
+   for(const row of result.rows)totals.set(String(row.number),Number(row.votes));
+ }else{
+   const results=await sectionsSqlAllForUf<any>(String(candidate.uf),`
+     SELECT sv.candidate_number AS number,SUM(sv.votes)::bigint AS votes
+     FROM section_votes sv
+     ${neighborhood||place?"LEFT JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code AND p.zone=sv.zone AND p.section=sv.section":""}
+     WHERE sv.uf=$1 AND sv.election_id=$2 AND sv.office_code=$3
+       AND sv.municipality_code=$4
+       AND ($5::text IS NULL OR COALESCE(p.neighborhood,'')=$5)
+       AND ($6::text IS NULL OR COALESCE(NULLIF(p.polling_place_code,''),sv.polling_place_code)=$6)
+       AND ($7::int IS NULL OR sv.zone=$7)
+       AND ($8::int IS NULL OR sv.section=$8)
+     GROUP BY sv.candidate_number
+   `,[candidate.uf,candidate.election_id,candidate.office_code,municipality,neighborhood,place,zone,section]);
+   for(const result of results)for(const row of result.rows){
+     const number=String(row.number);
+     totals.set(number,(totals.get(number)||0)+Number(row.votes));
+   }
+ }
+ const ranked=[...totals.entries()]
+   .filter(([number,votes])=>identities.has(number)&&Number.isFinite(votes)&&votes>=0)
+   .map(([number,votes])=>({...identities.get(number),votes}))
+   .sort((a,b)=>b.votes-a.votes||String(a.ballot_name).localeCompare(String(b.ballot_name),"pt-BR")||String(a.number).localeCompare(String(b.number)));
+ const selectedIndex=ranked.findIndex(x=>String(x.number)===String(candidate.number));
+ const selected=selectedIndex>=0?{...ranked[selectedIndex],position:selectedIndex+1}:null;
+ return {
+   scope:{uf:candidate.uf,office_code:candidate.office_code,election_id:candidate.election_id,round:candidate.round,
+     municipality,neighborhood,polling_place_code:place,zone,section},
+   top_three:ranked.slice(0,3).map((x,i)=>({...x,position:i+1})),
+   selected,compared_candidates:ranked.length,
+   complete:ranked.length>0,
+   note:ranked.length?"Contagem de votos registrados para o mesmo cargo e turno.":"Sem votos disponíveis neste recorte."
+ };
+}
