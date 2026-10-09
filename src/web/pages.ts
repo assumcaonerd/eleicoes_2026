@@ -404,7 +404,7 @@ function imageryMessage(message){
 function satelliteTileLayer(fallback){
  var host=fallback?"server.arcgisonline.com":"services.arcgisonline.com";
  return window.L.tileLayer("https://"+host+"/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{
-   maxZoom:19,maxNativeZoom:19,updateWhenIdle:false,keepBuffer:3,
+   maxZoom:19,maxNativeZoom:17,updateWhenIdle:false,keepBuffer:3,
    attribution:"Imagery &copy; Esri, Maxar, Earthstar Geographics and the GIS User Community"
  });
 }
@@ -421,7 +421,7 @@ function attachSatelliteMonitoring(layer){
      baseMapLayers.satellite=alternate;
      if(voteMap){alternate.addTo(voteMap);alternate.bringToBack()}
    }else{
-     imageryMessage("O fornecedor não disponibilizou imagens de satélite para esta área ou aproximação. Afaste um nível de zoom ou volte ao mapa Padrão.");
+     imageryMessage("Não foi possível carregar as imagens do provedor de satélite. Pode ser uma falha de conexão ou de disponibilidade do serviço. O mapa Padrão continua funcionando.");
    }
  });
 }
