@@ -367,20 +367,31 @@ function syncMapScopeFromTerritory(){
  var m=document.getElementById("mapMunicipality");
  if(m&&territoryScope.municipality)m.value=territoryScope.municipality;
 }
+var territoryRequestId=0;
 async function loadTerritory(){
  if(!currentCandidate)return;
+ var request=++territoryRequestId;
  var content=document.getElementById("territoryContent");
- content.innerHTML='<div class="muted">Carregando...</div>';
+ content.innerHTML='<div class="muted" role="status">Carregando territórios...</div>';
  var p=new URLSearchParams({candidateId:String(currentCandidate.id),level:currentLevel,limit:"1000"});
  if(territoryScope.municipality)p.set("municipality",territoryScope.municipality);
  if(territoryScope.neighborhood)p.set("neighborhood",territoryScope.neighborhood);
  if(territoryScope.place)p.set("polling_place",territoryScope.place);
  if(territoryScope.zone)p.set("zone",territoryScope.zone);
- var r=await fetch("/api/territory?"+p.toString()),d=await r.json();
- if(!r.ok){content.innerHTML='<div class="error">'+escHtml(d.error||"Falha ao carregar este nível.")+'</div>';return}
- content.innerHTML=genericTable(d.rows||[],currentLevel);
- refreshComparison();
- content.querySelectorAll(".territory-row").forEach(function(row){
+ var controller=new AbortController();
+ var timer=setTimeout(function(){controller.abort()},20000);
+ try{
+  var response=await fetch("/api/territory?"+p.toString(),{signal:controller.signal,cache:"no-store"});
+  if(!response.ok){
+   var failure=await response.json().catch(function(){return {}});
+   throw new Error(failure.error||"Servidor respondeu HTTP "+response.status);
+  }
+  var d=await response.json();
+  if(request!==territoryRequestId)return;
+  if(!d||!Array.isArray(d.rows))throw new Error("A resposta da consulta não contém uma lista de territórios.");
+  content.innerHTML=genericTable(d.rows,currentLevel);
+  refreshComparison();
+  content.querySelectorAll(".territory-row").forEach(function(row){
    row.addEventListener("click",async function(){
      var level=currentLevel;
      if(row.dataset.municipality)territoryScope.municipality=row.dataset.municipality;
@@ -407,7 +418,13 @@ async function loadTerritory(){
        await showLevel("map");
      }
    });
- });
+  });
+ }catch(error){
+  if(request!==territoryRequestId)return;
+  var message=error&&error.name==="AbortError"?"A consulta excedeu 20 segundos.":error.message||"Erro ao consultar territórios.";
+  content.innerHTML='<div class="error" role="alert">Não foi possível carregar os dados: '+escHtml(message)+'</div><button class="btn secondary" type="button" id="retryTerritory">Tentar novamente</button>';
+  document.getElementById("retryTerritory").addEventListener("click",function(){loadTerritory()});
+ }finally{clearTimeout(timer)}
 }
 async function showLevel(level){
  currentLevel=level;
