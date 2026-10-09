@@ -16,6 +16,7 @@ SECTION_CONCURRENCY=max(1,int(os.getenv("SECTION_CONCURRENCY","12")))
 _rate_lock=threading.Lock()
 _next_request=[0.0]
 SECTION_LIMIT=max(0,int(os.getenv("SECTION_LIMIT","0")))
+SECTION_START=max(0,int(os.getenv("SECTION_START","0")))
 SPEC=os.getenv("BU_SPEC","spec/bu-v2.asn1")
 CORE_DATABASE_URL=os.environ["DATABASE_URL"]
 SECTIONS_DATABASE_URL=os.environ.get("SECTIONS_DATABASE_URL",CORE_DATABASE_URL)
@@ -258,9 +259,11 @@ def import_sections(conn, candidate_map):
 
     total_sections=0; total_rows=0; missing=0; unknown=0
     for uf in UF_LIST:
-        sections=sections_for_uf(uf)
+        all_sections=sections_for_uf(uf)
+        total_available=len(all_sections)
+        sections=all_sections[SECTION_START:]
         if SECTION_LIMIT: sections=sections[:SECTION_LIMIT]
-        print(f"SECTIONS_INDEX_{uf}={len(sections)} concurrency={SECTION_CONCURRENCY} rps={RPS}",flush=True)
+        print(f"SECTIONS_INDEX_{uf}={len(sections)} start={SECTION_START} total={total_available} concurrency={SECTION_CONCURRENCY} rps={RPS}",flush=True)
         with ThreadPoolExecutor(max_workers=SECTION_CONCURRENCY) as executor:
             futures={executor.submit(process_one,sec):sec for sec in sections}
             pending_rows=[]
