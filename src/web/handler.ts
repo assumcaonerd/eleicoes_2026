@@ -149,6 +149,7 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
       candidateId,level,
       municipalityCode:url.searchParams.get("municipality")||undefined,
       neighborhood:url.searchParams.get("neighborhood")||undefined,
+      pollingPlaceCode:url.searchParams.get("polling_place")||undefined,
       zone:Number(url.searchParams.get("zone")||0)||undefined,
       limit:Number(url.searchParams.get("limit")||500)
     });
