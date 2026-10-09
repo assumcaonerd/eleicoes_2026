@@ -153,6 +153,7 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
       const data=await comparativeTerritories({
         candidateIds:ids,level:level as any,
         municipalityCode:url.searchParams.get("municipality")||undefined,
+        territoryKey:url.searchParams.get("territory_key")||undefined,
         exportAll:true
       });
       // Generate the export before sending headers, so errors cannot produce broken CSV files.
@@ -201,7 +202,8 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
     }
     try{
       const data=await comparativeTerritories({candidateIds:ids,level:level as any,
-        municipalityCode:url.searchParams.get("municipality")||undefined});
+        municipalityCode:url.searchParams.get("municipality")||undefined,
+        territoryKey:url.searchParams.get("territory_key")||undefined});
       json(res,data);
     }catch(e:any){json(res,{error:e.message||"Falha na comparação territorial."},400)}
     return true
