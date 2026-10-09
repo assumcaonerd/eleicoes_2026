@@ -227,7 +227,7 @@ function comparisonCSV(){
   }),row.comparison_difference==null?"":String(row.comparison_difference)];
  });
  var esc=function(x){return '"'+String(x??"").replace(/"/g,'""')+'"';};
- return "\uFEFF"+[header,...records].map(function(row){return row.map(esc).join(";")}).join("\r\n");
+ return "\\uFEFF"+[header,...records].map(function(row){return row.map(esc).join(";")}).join("\\r\\n");
 }
 async function drawCompareMap(data){
  var el=document.getElementById("compareGeoMap");
