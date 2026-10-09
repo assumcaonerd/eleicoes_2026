@@ -3,7 +3,7 @@ import { URL } from "node:url";
 import { currentUser, hasActiveAccess, sessionCookie, clearSessionCookie, revokeCurrentSession, audit, hashPassword, hashToken } from "../auth/security.js";
 import { registerUser, loginUser } from "../auth/service.js";
 import { createCheckout, handleStripeWebhook } from "../billing/stripe.js";
-import { searchCandidates, compareCandidates, topTerritories, partyVotes, sourceStatus, sectionMap, sectionMetrics, candidateTerritoryOverview, territorialLevel } from "../tools/queries.js";
+import { searchCandidates, compareCandidates, topTerritories, partyVotes, sourceStatus, sectionMap, sectionMetrics, candidateTerritoryOverview, territorialLevel, candidateVoteComparison } from "../tools/queries.js";
 import { sql } from "../db/index.js";
 import { homePage, authPage, plansPage, appPage, adminPage, resetPasswordPage } from "./pages.js";
 
@@ -137,6 +137,32 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
     const data=await candidateTerritoryOverview(candidateId);
     if(!data){json(res,{error:"Candidato não encontrado."},404);return true}
     json(res,data);return true
+  }
+  if(url.pathname==="/api/vote-comparison"&&req.method==="GET"){
+    if(!user){json(res,{error:"Não autenticado."},401);return true}
+    if(!await hasActiveAccess(Number(user.id))){json(res,{error:"Assinatura inativa."},402);return true}
+    const candidateId=Number(url.searchParams.get("candidateId"));
+    if(!Number.isSafeInteger(candidateId)||candidateId<=0){json(res,{error:"Candidato inválido."},400);return true}
+    const parseOptional=(key:string)=>{
+      const value=url.searchParams.get(key);
+      if(value===null||value==="")return undefined;
+      const n=Number(value);
+      if(!Number.isSafeInteger(n)||n<0)throw new Error("Filtro "+key+" inválido.");
+      return n;
+    };
+    try{
+      const data=await candidateVoteComparison({
+        candidateId,
+        municipalityCode:url.searchParams.get("municipality")||undefined,
+        neighborhood:url.searchParams.get("neighborhood")||undefined,
+        pollingPlaceCode:url.searchParams.get("polling_place")||undefined,
+        zone:parseOptional("zone"),
+        section:parseOptional("section")
+      });
+      if(!data){json(res,{error:"Candidato não encontrado."},404);return true}
+      json(res,data);
+    }catch(e:any){json(res,{error:e?.message||"Falha ao carregar comparação."},400)}
+    return true
   }
   if(url.pathname==="/api/territory"&&req.method==="GET"){
     if(!user){json(res,{error:"Não autenticado."},401);return true}
