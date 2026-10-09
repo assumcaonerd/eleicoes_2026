@@ -528,7 +528,7 @@ export async function candidateVoteComparison(args:{
    .map(([number,votes])=>({...identities.get(number),votes}))
    .sort((a,b)=>b.votes-a.votes||String(a.ballot_name).localeCompare(String(b.ballot_name),"pt-BR")||String(a.number).localeCompare(String(b.number)));
  const selectedIndex=ranked.findIndex(x=>String(x.number)===String(candidate.number));
- const selected=selectedIndex>=0?{...ranked[selectedIndex],position:selectedIndex+1}:null;
+ const selected=selectedIndex>=0?{...ranked[selectedIndex],position:selectedIndex+1,party_position:ranked.slice(0,selectedIndex+1).filter(x=>x.party_abbr===ranked[selectedIndex].party_abbr).length}:null;
  return {
    scope:{uf:candidate.uf,office_code:candidate.office_code,election_id:candidate.election_id,round:candidate.round,
      municipality,neighborhood,polling_place_code:place,zone,section},
