@@ -542,7 +542,7 @@ export async function candidateVoteComparison(args:{
 
 /** Vote totals by geographical unit for a fixed, comparable candidate set. */
 export async function comparativeTerritories(args:{
- candidateIds:number[];level:"municipality"|"zone"|"polling_place";municipalityCode?:string;
+ candidateIds:number[];level:"municipality"|"neighborhood"|"zone"|"polling_place"|"section";municipalityCode?:string;
 }){
  const ids=[...new Set(args.candidateIds)].filter(Number.isSafeInteger).slice(0,3);
  if(ids.length<2)throw new Error("Selecione pelo menos dois candidatos.");
@@ -578,6 +578,23 @@ export async function comparativeTerritories(args:{
    FROM section_votes sv WHERE sv.election_id=$1 AND sv.round=$2 AND sv.office_code=$3
      AND sv.uf=$4 AND sv.municipality_code=$5 AND sv.candidate_number=ANY($6::text[])
    GROUP BY sv.municipality_code,sv.zone,sv.candidate_number
+  `:args.level==="section"?`
+   SELECT sv.municipality_code,MAX(sv.municipality_name) municipality_name,sv.zone,sv.section,
+     sv.candidate_number,SUM(sv.votes)::bigint votes FROM section_votes sv
+   WHERE sv.election_id=$1 AND sv.round=$2 AND sv.office_code=$3 AND sv.uf=$4
+     AND sv.municipality_code=$5 AND sv.candidate_number=ANY($6::text[])
+   GROUP BY sv.municipality_code,sv.zone,sv.section,sv.candidate_number
+  `:args.level==="neighborhood"?`
+   SELECT sv.municipality_code,MAX(sv.municipality_name) municipality_name,
+     p.neighborhood,sv.candidate_number,SUM(sv.votes)::bigint votes
+   FROM section_votes sv
+   JOIN LATERAL (SELECT p0.neighborhood FROM places p0 WHERE p0.uf=sv.uf
+     AND p0.municipality_code=sv.municipality_code AND p0.zone=sv.zone AND p0.section=sv.section
+     ORDER BY CASE WHEN p0.polling_place_code=sv.polling_place_code THEN 0 ELSE 1 END LIMIT 1) p ON true
+   WHERE sv.election_id=$1 AND sv.round=$2 AND sv.office_code=$3 AND sv.uf=$4
+     AND sv.municipality_code=$5 AND sv.candidate_number=ANY($6::text[])
+     AND COALESCE(p.neighborhood,'')<>''
+   GROUP BY sv.municipality_code,p.neighborhood,sv.candidate_number
   `:`
    SELECT sv.municipality_code,MAX(sv.municipality_name) municipality_name,
           MAX(sv.zone) zone,sv.polling_place_code,
@@ -603,12 +620,14 @@ export async function comparativeTerritories(args:{
  const units=new Map<string,any>();
  for(const row of rows){
   const key=args.level==="municipality"?String(row.municipality_code):args.level==="zone"?
-   String(row.municipality_code)+"|"+String(row.zone):
+   String(row.municipality_code)+"|"+String(row.zone):args.level==="section"?
+   String(row.municipality_code)+"|"+String(row.zone)+"|"+String(row.section):args.level==="neighborhood"?
+   String(row.municipality_code)+"|"+String(row.neighborhood):
    String(row.municipality_code)+"|"+String(row.polling_place_code);
   let item=units.get(key);
   if(!item){
    item={key,municipality_code:row.municipality_code,municipality_name:row.municipality_name,
-    zone:row.zone??null,polling_place_code:row.polling_place_code||"",
+    zone:row.zone??null,section:row.section??null,polling_place_code:row.polling_place_code||"",
     polling_place_name:row.polling_place_name||"",address:row.address||"",
     neighborhood:row.neighborhood||"",latitude:row.latitude??null,longitude:row.longitude??null,votes:{}};
    units.set(key,item);
