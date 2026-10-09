@@ -17,7 +17,7 @@ async function readBody(req:IncomingMessage,raw=false){
   return Object.fromEntries(new URLSearchParams(buf.toString("utf8")));
 }
 function html(res:ServerResponse,content:string,status=200){
-  res.writeHead(status,{"content-type":"text/html; charset=utf-8","content-security-policy":"default-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com; script-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com; connect-src 'self' https://*.tile.openstreetmap.org; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com","x-content-type-options":"nosniff","referrer-policy":"strict-origin-when-cross-origin","permissions-policy":"camera=(), microphone=(), geolocation=(self)"});
+  res.writeHead(status,{"content-type":"text/html; charset=utf-8","content-security-policy":"default-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com; script-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com https://services.arcgisonline.com https://server.arcgisonline.com; connect-src 'self' https://*.tile.openstreetmap.org https://services.arcgisonline.com https://server.arcgisonline.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com","x-content-type-options":"nosniff","referrer-policy":"strict-origin-when-cross-origin","permissions-policy":"camera=(), microphone=(), geolocation=(self)"});
   res.end(content);
 }
 function json(res:ServerResponse,data:unknown,status=200){res.writeHead(status,{"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff"});res.end(JSON.stringify(data))}
