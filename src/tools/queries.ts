@@ -538,3 +538,94 @@ export async function candidateVoteComparison(args:{
    note:ranked.length?"Contagem de votos registrados para o mesmo cargo e turno.":"Sem votos disponíveis neste recorte."
  };
 }
+
+
+/** Vote totals by geographical unit for a fixed, comparable candidate set. */
+export async function comparativeTerritories(args:{
+ candidateIds:number[];level:"municipality"|"zone"|"polling_place";municipalityCode?:string;
+}){
+ const ids=[...new Set(args.candidateIds)].filter(Number.isSafeInteger).slice(0,3);
+ if(ids.length<2)throw new Error("Selecione pelo menos dois candidatos.");
+ const found=(await sql<any>(
+  "SELECT id,election_id,round,office_code,uf,number,ballot_name,party_abbr FROM candidates WHERE id=ANY($1::bigint[])",
+  [ids]
+ )).rows;
+ if(found.length!==ids.length)throw new Error("Candidato não encontrado.");
+ const same=found.every(x=>x.election_id===found[0].election_id&&x.round===found[0].round&&x.office_code===found[0].office_code&&x.uf===found[0].uf);
+ if(!same)throw new Error("Compare somente candidatos da mesma eleição, cargo, turno e estado.");
+ const base=found[0];
+ const municipality=args.municipalityCode||null;
+ if(args.level!=="municipality"&&!municipality)throw new Error("Selecione um município para exibir zonas ou locais de votação.");
+ let rows:any[]=[];
+ if(args.level==="municipality"){
+  const r=await sql<any>(`
+   SELECT v.municipality_code,MAX(v.municipality_name) municipality_name,c.number AS candidate_number,
+          MAX(v.votes)::bigint votes
+   FROM vote_facts v JOIN candidates c ON c.id=v.candidate_id
+   WHERE v.candidate_id=ANY($1::bigint[]) AND v.election_id=$2 AND v.round=$3
+     AND v.office_code=$4 AND v.uf=$5 AND v.zone=-1 AND v.section=-1
+     AND v.municipality_code<>'' AND ($6::text IS NULL OR v.municipality_code=$6)
+   GROUP BY v.municipality_code,c.number
+  `,[ids,base.election_id,base.round,base.office_code,base.uf,municipality]);
+  rows=r.rows;
+ }else{
+  const query=args.level==="zone"?`
+   SELECT sv.municipality_code,MAX(sv.municipality_name) municipality_name,sv.zone,
+          ''::text AS polling_place_code,''::text AS polling_place_name,''::text AS address,
+          ''::text AS neighborhood,NULL::numeric AS latitude,NULL::numeric AS longitude,
+          sv.candidate_number,SUM(sv.votes)::bigint votes
+   FROM section_votes sv WHERE sv.election_id=$1 AND sv.round=$2 AND sv.office_code=$3
+     AND sv.uf=$4 AND sv.municipality_code=$5 AND sv.candidate_number=ANY($6::text[])
+   GROUP BY sv.municipality_code,sv.zone,sv.candidate_number
+  `:`
+   SELECT sv.municipality_code,MAX(sv.municipality_name) municipality_name,
+          MAX(sv.zone) zone,sv.polling_place_code,
+          MAX(p.polling_place_name) polling_place_name,MAX(p.address) address,
+          MAX(p.neighborhood) neighborhood,MAX(p.latitude) latitude,MAX(p.longitude) longitude,
+          sv.candidate_number,SUM(sv.votes)::bigint votes
+   FROM section_votes sv
+   LEFT JOIN LATERAL (
+    SELECT p0.polling_place_name,p0.address,p0.neighborhood,p0.latitude,p0.longitude
+    FROM places p0 WHERE p0.uf=sv.uf AND p0.municipality_code=sv.municipality_code
+      AND p0.zone=sv.zone AND p0.section=sv.section
+    ORDER BY CASE WHEN p0.polling_place_code=sv.polling_place_code THEN 0 ELSE 1 END
+    LIMIT 1
+   ) p ON true
+   WHERE sv.election_id=$1 AND sv.round=$2 AND sv.office_code=$3
+     AND sv.uf=$4 AND sv.municipality_code=$5 AND sv.candidate_number=ANY($6::text[])
+   GROUP BY sv.municipality_code,sv.polling_place_code,sv.candidate_number
+  `;
+  const groups=await sectionsSqlAllForUf<any>(String(base.uf),query,
+   [base.election_id,base.round,base.office_code,base.uf,municipality,found.map(x=>String(x.number))]);
+  rows=groups.flatMap(x=>x.rows);
+ }
+ const units=new Map<string,any>();
+ for(const row of rows){
+  const key=args.level==="municipality"?String(row.municipality_code):args.level==="zone"?
+   String(row.municipality_code)+"|"+String(row.zone):
+   String(row.municipality_code)+"|"+String(row.polling_place_code);
+  let item=units.get(key);
+  if(!item){
+   item={key,municipality_code:row.municipality_code,municipality_name:row.municipality_name,
+    zone:row.zone??null,polling_place_code:row.polling_place_code||"",
+    polling_place_name:row.polling_place_name||"",address:row.address||"",
+    neighborhood:row.neighborhood||"",latitude:row.latitude??null,longitude:row.longitude??null,votes:{}};
+   units.set(key,item);
+  }
+  const n=String(row.candidate_number);
+  item.votes[n]=(item.votes[n]||0)+Number(row.votes||0);
+  for(const attr of ["polling_place_name","address","neighborhood","latitude","longitude"]){
+   if((item[attr]==null||item[attr]==="")&&row[attr]!=null&&row[attr]!=="")item[attr]=row[attr];
+  }
+ }
+ const out=[...units.values()].map(x=>{
+  const detail=found.map(c=>({candidate_id:c.id,number:String(c.number),name:c.ballot_name,votes:x.votes[String(c.number)]??null}));
+  const baseline=detail.find(d=>Number(d.candidate_id)===ids[0]);
+  return {...x,candidates:detail,comparison_difference:baseline&&detail[1]&&baseline.votes!==null&&detail[1].votes!==null?baseline.votes-detail[1].votes:null,
+   total_reported:detail.reduce((n,c)=>n+Number(c.votes||0),0)};
+ });
+ out.sort((a,b)=>b.total_reported-a.total_reported||String(a.key).localeCompare(String(b.key),"pt-BR"));
+ return {level:args.level,scope:{uf:base.uf,election_id:base.election_id,round:base.round,
+   office_code:base.office_code,municipality},candidates:ids.map(id=>found.find(x=>Number(x.id)===id)),rows:out.slice(0,300),
+   truncated:out.length>300,total_territories:out.length};
+}
