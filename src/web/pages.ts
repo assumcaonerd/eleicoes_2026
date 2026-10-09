@@ -70,7 +70,7 @@ export function appPage(user:any,active:boolean){
  <div id="compareChart" class="compare-bars" aria-live="polite"></div>
  <div class="compare-tools">
   <label class="field">Detalhamento
-   <select id="compareLevel"><option value="municipality">Municípios</option><option value="zone">Zonas</option><option value="polling_place">Locais de votação / mapa</option></select>
+   <select id="compareLevel"><option value="municipality">Municípios</option><option value="neighborhood">Bairros</option><option value="zone">Zonas</option><option value="polling_place">Locais de votação / mapa</option><option value="section">Seções</option></select>
   </label>
   <button class="btn secondary" type="button" id="compareExportCsv">Exportar CSV / Excel</button>
   <button class="btn secondary" type="button" id="compareExportPdf">Salvar PDF</button>
@@ -212,6 +212,8 @@ async function renderCustomComparison(){
 function comparisonTerritoryName(row,level){
  if(level==="municipality")return row.municipality_name||row.municipality_code;
  if(level==="zone")return "Zona "+row.zone+" · "+(row.municipality_name||"");
+ if(level==="neighborhood")return row.neighborhood||"Bairro não informado";
+ if(level==="section")return "Seção "+row.section+" · Zona "+row.zone;
  return row.polling_place_name||row.address||("Local "+row.polling_place_code);
 }
 function comparisonCSV(){
