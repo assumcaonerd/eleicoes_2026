@@ -26,7 +26,7 @@ export function appPage(user:any,active:boolean){
   if(!active) return layout("Aplicativo",'<div class="card"><h1>Assinatura necessária</h1><p class="muted">Sua conta está autenticada, mas ainda não possui uma assinatura ativa.</p><a class="btn" href="/planos">Escolher plano</a></div>',user);
   var body = `
 <style>
-.searchbox{margin-bottom:22px}.candidate-list{display:grid;gap:10px;margin-top:18px}.candidate-item{width:100%;text-align:left;border:1px solid #e2e6ea;background:#fff;border-radius:14px;padding:16px;cursor:pointer}.candidate-item:hover{border-color:#111;background:#fafafa}.candidate-name{font-size:18px;font-weight:850}.candidate-meta{color:#68717a;font-size:14px;margin-top:4px}.dash{display:none}.dash-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}.dash-title h2{margin:0 0 4px;font-size:28px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:12px;margin:18px 0}.metric-card{background:#fff;border:1px solid #e5e8eb;border-radius:16px;padding:18px}.metric-card .n{font-size:28px;font-weight:900;margin-top:5px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.tab{border:1px solid #d9dde1;background:#fff;border-radius:999px;padding:10px 14px;font-weight:800;cursor:pointer}.tab.active{background:#111;color:#fff;border-color:#111}.scopebar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:12px 0 18px}.scopebar .field{min-width:260px;margin:0}.territory-card{overflow:hidden}.strength{display:inline-block;border-radius:999px;padding:5px 9px;background:#edf0f3;font-size:12px;font-weight:800}.empty{padding:28px;text-align:center;border:1px dashed #ccd2d7;border-radius:14px;color:#68717a;background:#fafbfc}.topline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rank{font-weight:900;color:#68717a}.map-wrap{display:none;margin-top:14px}.map-filters{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:10px;margin-bottom:12px}.map-filters .field{margin:0}.map-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}.map-style-switch{display:inline-flex;gap:3px;margin-left:auto;padding:3px;border:1px solid #d9dde1;border-radius:12px;background:#f4f6f8}.map-style-button{border:0;background:transparent;padding:8px 13px;border-radius:9px;font:inherit;font-size:13px;font-weight:800;cursor:pointer;color:#39434d}.map-style-button.active{background:#111;color:#fff}.map-style-button:focus-visible{outline:3px solid #3478f6;outline-offset:2px}.map-canvas{height:620px;border:1px solid #dfe3e6;border-radius:16px;overflow:hidden}.map-note{font-size:13px;color:#68717a;margin-top:8px}.vote-pin-marker{background:transparent!important;border:0!important}.vote-pin{width:100%;height:100%;transform-origin:50% 96%;animation:pinDrop .34s cubic-bezier(.2,.75,.25,1.2);filter:drop-shadow(0 5px 4px rgba(0,0,0,.24));transition:transform .15s ease,filter .15s ease}.vote-pin svg{display:block;width:100%;height:100%}.vote-pin:hover{transform:translateY(-2px) scale(1.06);filter:drop-shadow(0 7px 5px rgba(0,0,0,.28))}.vote-pin.selected{transform:translateY(-4px) scale(1.16);filter:drop-shadow(0 9px 7px rgba(0,0,0,.32))}@keyframes pinDrop{0%{opacity:0;transform:translateY(-26px) scale(.78)}70%{opacity:1;transform:translateY(3px) scale(1.04)}100%{opacity:1;transform:translateY(0) scale(1)}}.leaflet-popup-content{min-width:250px}.popup-title{font-weight:900;font-size:15px;margin-bottom:5px}.popup-meta{font-size:12px;color:#68717a;margin-bottom:8px}.popup-total{font-weight:900;margin-bottom:8px}.popup-sections{max-height:180px;overflow:auto;border-top:1px solid #eee;padding-top:6px}.popup-section{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:12px;border-bottom:1px solid #f1f1f1}@media(max-width:760px){.map-filters{grid-template-columns:1fr 1fr}.metrics{grid-template-columns:repeat(2,1fr)}.metric-card .n{font-size:24px}.territory-card{overflow-x:auto}table{min-width:650px}}
+.searchbox{margin-bottom:22px}.candidate-list{display:grid;gap:10px;margin-top:18px}.candidate-item{width:100%;text-align:left;border:1px solid #e2e6ea;background:#fff;border-radius:14px;padding:16px;cursor:pointer}.candidate-item:hover{border-color:#111;background:#fafafa}.candidate-name{font-size:18px;font-weight:850}.candidate-meta{color:#68717a;font-size:14px;margin-top:4px}.dash{display:none}.dash-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}.dash-title h2{margin:0 0 4px;font-size:28px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:12px;margin:18px 0}.metric-card{background:#fff;border:1px solid #e5e8eb;border-radius:16px;padding:18px}.metric-card .n{font-size:28px;font-weight:900;margin-top:5px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.tab{border:1px solid #d9dde1;background:#fff;border-radius:999px;padding:10px 14px;font-weight:800;cursor:pointer}.tab.active{background:#111;color:#fff;border-color:#111}.scopebar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:12px 0 18px}.scopebar .field{min-width:260px;margin:0}.territory-card{overflow:hidden}.strength{display:inline-block;border-radius:999px;padding:5px 9px;background:#edf0f3;font-size:12px;font-weight:800}.empty{padding:28px;text-align:center;border:1px dashed #ccd2d7;border-radius:14px;color:#68717a;background:#fafbfc}.topline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rank{font-weight:900;color:#68717a}.map-wrap{display:none;margin-top:14px}.map-filters{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:10px;margin-bottom:12px}.map-filters .field{margin:0}.map-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}.map-style-switch{display:inline-flex;gap:3px;margin-left:auto;padding:3px;border:1px solid #d9dde1;border-radius:12px;background:#f4f6f8}.map-style-button{border:0;background:transparent;padding:8px 13px;border-radius:9px;font:inherit;font-size:13px;font-weight:800;cursor:pointer;color:#39434d}.map-style-button.active{background:#111;color:#fff}.map-style-button:focus-visible{outline:3px solid #3478f6;outline-offset:2px}.map-imagery-status{display:none;width:100%;font-size:13px;color:#875d11;background:#fff6df;border:1px solid #f1d898;border-radius:9px;padding:8px 12px}.map-imagery-status.visible{display:block}.map-canvas{height:620px;border:1px solid #dfe3e6;border-radius:16px;overflow:hidden}.map-note{font-size:13px;color:#68717a;margin-top:8px}.vote-pin-marker{background:transparent!important;border:0!important}.vote-pin{width:100%;height:100%;transform-origin:50% 96%;animation:pinDrop .34s cubic-bezier(.2,.75,.25,1.2);filter:drop-shadow(0 5px 4px rgba(0,0,0,.24));transition:transform .15s ease,filter .15s ease}.vote-pin svg{display:block;width:100%;height:100%}.vote-pin:hover{transform:translateY(-2px) scale(1.06);filter:drop-shadow(0 7px 5px rgba(0,0,0,.28))}.vote-pin.selected{transform:translateY(-4px) scale(1.16);filter:drop-shadow(0 9px 7px rgba(0,0,0,.32))}@keyframes pinDrop{0%{opacity:0;transform:translateY(-26px) scale(.78)}70%{opacity:1;transform:translateY(3px) scale(1.04)}100%{opacity:1;transform:translateY(0) scale(1)}}.leaflet-popup-content{min-width:250px}.popup-title{font-weight:900;font-size:15px;margin-bottom:5px}.popup-meta{font-size:12px;color:#68717a;margin-bottom:8px}.popup-total{font-weight:900;margin-bottom:8px}.popup-sections{max-height:180px;overflow:auto;border-top:1px solid #eee;padding-top:6px}.popup-section{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:12px;border-bottom:1px solid #f1f1f1}@media(max-width:760px){.map-filters{grid-template-columns:1fr 1fr}.metrics{grid-template-columns:repeat(2,1fr)}.metric-card .n{font-size:24px}.territory-card{overflow-x:auto}table{min-width:650px}}
 </style>
 <h1>Siga o Voto 2026</h1>
 <p class="muted">Escolha um candidato e descubra onde a votação foi forte, média ou fraca.</p>
@@ -73,13 +73,14 @@ export function appPage(user:any,active:boolean){
       <button class="map-style-button active" type="button" data-map-style="standard" aria-pressed="true">Padrão</button>
       <button class="map-style-button" type="button" data-map-style="satellite" aria-pressed="false">Satélite</button>
     </div>
+    <div class="map-imagery-status" id="mapImageryStatus" role="status" aria-live="polite"></div>
   </div>
   <div id="map" class="map-canvas"></div>
   <div class="map-note">Em visões amplas, o mapa usa marcadores leves. Ao entrar em zona, bairro, rua/local ou seção, os locais aparecem como pinos desenhados com a ponta exatamente sobre a coordenada eleitoral.</div>
 </div>
 </div></section>
 <script>
-var currentCandidate=null,overview=null,currentLevel="municipality",voteMap=null,mapLayer=null,mapRows=[],baseMapLayers=null,currentMapStyle="standard";
+var currentCandidate=null,overview=null,currentLevel="municipality",voteMap=null,mapLayer=null,mapRows=[],baseMapLayers=null,currentMapStyle="standard",satelliteFallbackUsed=false,satelliteErrors=0;
 var territoryScope={municipality:"",neighborhood:"",place:"",zone:"",section:""};
 function fmt(n){return new Intl.NumberFormat("pt-BR").format(Number(n||0))}
 function pct(n){return Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+"%"}
@@ -396,9 +397,38 @@ function renderMapRows(){
  voteMap.setMaxBounds(leafletBounds.pad(pad));
  voteMap.options.minZoom=Math.max(3,voteMap.getZoom()-1);
 }
+function imageryMessage(message){
+ var node=document.getElementById("mapImageryStatus");if(!node)return;
+ node.textContent=message||"";node.classList.toggle("visible",Boolean(message));
+}
+function satelliteTileLayer(fallback){
+ var host=fallback?"server.arcgisonline.com":"services.arcgisonline.com";
+ return window.L.tileLayer("https://"+host+"/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{
+   maxZoom:19,maxNativeZoom:19,updateWhenIdle:false,keepBuffer:3,
+   attribution:"Imagery &copy; Esri, Maxar, Earthstar Geographics and the GIS User Community"
+ });
+}
+function attachSatelliteMonitoring(layer){
+ layer.on("tileload",function(){satelliteErrors=0;imageryMessage("")});
+ layer.on("tileerror",function(){
+   satelliteErrors++;
+   if(satelliteErrors<3||currentMapStyle!=="satellite")return;
+   if(!satelliteFallbackUsed){
+     satelliteFallbackUsed=true;satelliteErrors=0;
+     imageryMessage("Carregando imagens por uma conexão alternativa...");
+     var alternate=satelliteTileLayer(true);attachSatelliteMonitoring(alternate);
+     if(voteMap&&voteMap.hasLayer(baseMapLayers.satellite))voteMap.removeLayer(baseMapLayers.satellite);
+     baseMapLayers.satellite=alternate;
+     if(voteMap){alternate.addTo(voteMap);alternate.bringToBack()}
+   }else{
+     imageryMessage("O fornecedor não disponibilizou imagens de satélite para esta área ou aproximação. Afaste um nível de zoom ou volte ao mapa Padrão.");
+   }
+ });
+}
 function selectMapStyle(style){
  if(style!=="standard"&&style!=="satellite")return;
  currentMapStyle=style;
+ imageryMessage("");
  document.querySelectorAll(".map-style-button").forEach(function(button){
    var active=button.dataset.mapStyle===style;
    button.classList.toggle("active",active);
@@ -417,8 +447,9 @@ async function loadMap(preserveScope){
   voteMap=L.map("map",{preferCanvas:true}).setView([-14.235,-51.9253],4);
   baseMapLayers={
    standard:L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"}),
-   satellite:L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxNativeZoom:19,maxZoom:19,attribution:"Tiles &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community"})
+   satellite:satelliteTileLayer(false)
   };
+  attachSatelliteMonitoring(baseMapLayers.satellite);
   selectMapStyle(currentMapStyle);
  } else {setTimeout(function(){voteMap.invalidateSize()},50)}
  if(!mapLayer)mapLayer=L.layerGroup().addTo(voteMap);
