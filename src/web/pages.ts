@@ -100,13 +100,13 @@ export function appPage(user:any,active:boolean){
     </div>
     <div class="map-imagery-status" id="mapImageryStatus" role="status" aria-live="polite"></div>
   </div>
-  <div id="esStatePrint" style="display:none;margin:10px 0;padding:14px;border:1px solid #d7dfe5;border-radius:12px;background:#f7f9fb">
+  <div id="esStatePrint" style="display:none;margin:10px 0 16px;padding:16px;border:1px solid #b8c9d9;border-radius:12px;background:#f7f9fb">
    <div style="font-weight:800;margin-bottom:7px">Mapa completo do Espírito Santo para impressão</div>
    <div class="row">
      <button class="btn" id="esPrintPng" type="button">Baixar PNG A2 · alta resolução</button>
      <button class="btn secondary" id="esPrintSvg" type="button">Baixar SVG vetorial</button>
    </div>
-   <div class="map-note">A exportação enquadra todo o ES, mesmo que o zoom mostre apenas parte dele. Os locais com votos serão representados por pinos vermelhos. A escala estadual não mostra ruas no nível de um zoom 19.</div>
+   <div class="map-note">Disponível no mapa Padrão com o ES inteiro selecionado, em qualquer zoom. O arquivo inclui todo o Espírito Santo, com pinos vermelhos, independentemente da área visível na tela.</div>
    <div id="esPrintStatus" role="status" aria-live="polite" class="map-note"></div>
   </div>
   <div id="map" class="map-canvas"></div>
@@ -533,6 +533,7 @@ async function showLevel(level){
    title.innerHTML="<h3 style='margin:0'>Mapa da votação</h3><span class='muted'>O mapa acompanha o recorte escolhido nos outros níveis</span>";
    content.style.display="none";mapWrap.style.display="block";
    syncMapScopeFromTerritory();
+   updateESPrintControl();
    await loadMap(true);
    refreshComparison();
    return;
@@ -789,11 +790,10 @@ function attachSatelliteMonitoring(layer){
 
 function updateESPrintControl(){
  var panel=document.getElementById("esStatePrint");
- if(!panel||!voteMap||!currentCandidate){if(panel)panel.style.display="none";return}
+ if(!panel||!currentCandidate){if(panel)panel.style.display="none";return}
  var f=currentMapSelections();
  var statewide=!f.municipality&&!f.zone&&!f.neighborhood&&!f.place&&!f.section;
- var zoomMax=Number.isFinite(voteMap.getZoom())&&voteMap.getZoom()>=19;
- var visible=currentLevel==="map"&&currentCandidate.uf==="ES"&&currentMapStyle==="standard"&&statewide&&zoomMax;
+ var visible=currentLevel==="map"&&currentCandidate.uf==="ES"&&currentMapStyle==="standard"&&statewide;
  panel.style.display=visible?"block":"none";
 }
 async function downloadESMap(format){
