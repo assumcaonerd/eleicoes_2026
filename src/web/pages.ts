@@ -100,6 +100,15 @@ export function appPage(user:any,active:boolean){
     </div>
     <div class="map-imagery-status" id="mapImageryStatus" role="status" aria-live="polite"></div>
   </div>
+  <div id="esStatePrint" style="display:none;margin:10px 0;padding:14px;border:1px solid #d7dfe5;border-radius:12px;background:#f7f9fb">
+   <div style="font-weight:800;margin-bottom:7px">Mapa completo do Espírito Santo para impressão</div>
+   <div class="row">
+     <button class="btn" id="esPrintPng" type="button">Baixar PNG A2 · alta resolução</button>
+     <button class="btn secondary" id="esPrintSvg" type="button">Baixar SVG vetorial</button>
+   </div>
+   <div class="map-note">A exportação enquadra todo o ES, mesmo que o zoom mostre apenas parte dele. Os locais com votos serão representados por pinos vermelhos. A escala estadual não mostra ruas no nível de um zoom 19.</div>
+   <div id="esPrintStatus" role="status" aria-live="polite" class="map-note"></div>
+  </div>
   <div id="map" class="map-canvas"></div>
   <div class="map-note">Em visões amplas, o mapa usa marcadores leves. Ao entrar em zona, bairro, rua/local ou seção, os locais aparecem como pinos desenhados com a ponta exatamente sobre a coordenada eleitoral.</div>
 </div>
@@ -747,6 +756,7 @@ function renderMapRows(){
  var pad=f.neighborhood?.12:(f.zone?.16:(f.municipality?.22:.35));
  voteMap.setMaxBounds(leafletBounds.pad(pad));
  voteMap.options.minZoom=Math.max(3,voteMap.getZoom()-1);
+ updateESPrintControl();
 }
 function imageryMessage(message){
  var node=document.getElementById("mapImageryStatus");if(!node)return;
@@ -776,6 +786,45 @@ function attachSatelliteMonitoring(layer){
    }
  });
 }
+
+function updateESPrintControl(){
+ var panel=document.getElementById("esStatePrint");
+ if(!panel||!voteMap||!currentCandidate){if(panel)panel.style.display="none";return}
+ var f=currentMapSelections();
+ var statewide=!f.municipality&&!f.zone&&!f.neighborhood&&!f.place&&!f.section;
+ var zoomMax=Number.isFinite(voteMap.getZoom())&&voteMap.getZoom()>=19;
+ var visible=currentLevel==="map"&&currentCandidate.uf==="ES"&&currentMapStyle==="standard"&&statewide&&zoomMax;
+ panel.style.display=visible?"block":"none";
+}
+async function downloadESMap(format){
+ if(!currentCandidate||currentCandidate.uf!=="ES")return;
+ var status=document.getElementById("esPrintStatus");
+ var controls=[document.getElementById("esPrintPng"),document.getElementById("esPrintSvg")];
+ controls.forEach(function(el){el.disabled=true});
+ status.textContent="Gerando o mapa completo do ES com os pinos vermelhos. Aguarde...";
+ try{
+  var target="/api/map-export-es?candidateId="+encodeURIComponent(currentCandidate.id)+"&format="+format;
+  var controller=new AbortController();
+  var timer=setTimeout(function(){controller.abort()},75000);
+  var response;
+  try{response=await fetch(target,{signal:controller.signal,credentials:"same-origin"})}
+  finally{clearTimeout(timer)}
+  if(!response.ok){
+   var error=await response.json().catch(function(){return {}});
+   throw new Error(error.error||"Erro de exportação (HTTP "+response.status+").");
+  }
+  var blob=await response.blob();
+  var url=URL.createObjectURL(blob);
+  var link=document.createElement("a");
+  link.href=url;
+  link.download="mapa-completo-es-"+currentCandidate.number+"-2026."+format;
+  document.body.appendChild(link);link.click();link.remove();
+  setTimeout(function(){URL.revokeObjectURL(url)},30000);
+  status.textContent="Mapa integral do ES gerado: arquivo "+format.toUpperCase()+" disponível para impressão.";
+ }catch(error){
+  status.textContent="Não foi possível gerar o mapa: "+(error.name==="AbortError"?"tempo limite excedido":error.message||"falha temporária");
+ }finally{controls.forEach(function(el){el.disabled=false})}
+}
 function selectMapStyle(style){
  if(style!=="standard"&&style!=="satellite")return;
  currentMapStyle=style;
@@ -789,6 +838,7 @@ function selectMapStyle(style){
  Object.keys(baseMapLayers).forEach(function(key){if(voteMap.hasLayer(baseMapLayers[key]))voteMap.removeLayer(baseMapLayers[key])});
  baseMapLayers[style].addTo(voteMap);
  baseMapLayers[style].bringToBack();
+ updateESPrintControl();
 }
 async function loadMap(preserveScope){
  if(!currentCandidate)return;
@@ -796,6 +846,8 @@ async function loadMap(preserveScope){
  try{L=await loadLeaflet()}catch(e){document.getElementById("map").innerHTML='<div class="error">Não foi possível carregar o mapa.</div>';return}
  if(!voteMap){
   voteMap=L.map("map",{preferCanvas:true}).setView([-14.235,-51.9253],4);
+  voteMap.on("zoomend",updateESPrintControl);
+  voteMap.on("moveend",updateESPrintControl);
   baseMapLayers={
    standard:L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"}),
    satellite:satelliteTileLayer(false)
@@ -877,6 +929,8 @@ document.getElementById("municipalitySelect").addEventListener("change",async fu
  if(currentLevel!=="municipality"&&currentLevel!=="map")await loadTerritory();
  refreshComparison();
 });
+document.getElementById("esPrintPng").addEventListener("click",function(){downloadESMap("png")});
+document.getElementById("esPrintSvg").addEventListener("click",function(){downloadESMap("svg")});
 document.getElementById("mapMunicipality").addEventListener("change",function(){
  territoryScope.municipality=this.value;
  territoryScope.neighborhood="";territoryScope.place="";territoryScope.zone="";territoryScope.section="";
