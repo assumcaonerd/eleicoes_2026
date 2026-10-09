@@ -48,9 +48,9 @@ export function appPage(user:any,active:boolean){
 </div>
 <div class="tabs" id="tabs">
 <button class="tab active" data-level="municipality">Municípios</button>
-<button class="tab" data-level="zone">Zonas</button>
 <button class="tab" data-level="neighborhood">Bairros</button>
 <button class="tab" data-level="polling_place">Rua / Local</button>
+<button class="tab" data-level="zone">Zonas</button>
 <button class="tab" data-level="section">Seções</button>
 <button class="tab" data-level="map">Mapa</button>
 </div>
@@ -76,6 +76,7 @@ export function appPage(user:any,active:boolean){
 </div></section>
 <script>
 var currentCandidate=null,overview=null,currentLevel="municipality",voteMap=null,mapLayer=null,mapRows=[];
+var territoryScope={municipality:"",neighborhood:"",place:"",zone:"",section:""};
 function fmt(n){return new Intl.NumberFormat("pt-BR").format(Number(n||0))}
 function pct(n){return Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+"%"}
 function escHtml(s){return String(s==null?"":s).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]})}
@@ -94,7 +95,7 @@ document.getElementById("search").addEventListener("submit",async function(e){
 });
 async function openCandidate(id){
  var r=await fetch("/api/candidate-overview?candidateId="+id),d=await r.json();if(!r.ok){document.getElementById("searchResults").innerHTML='<div class="error">'+escHtml(d.error)+'</div>';return}
- currentCandidate=d.candidate;overview=d;
+ currentCandidate=d.candidate;overview=d;territoryScope={municipality:"",neighborhood:"",place:"",zone:"",section:""};
  document.getElementById("candName").textContent=d.candidate.ballot_name;
  document.getElementById("candMeta").textContent="Nº "+d.candidate.number+" · "+(d.candidate.party_abbr||"")+" · "+d.candidate.office_name+" · "+d.candidate.uf;
  document.getElementById("totalVotes").textContent=fmt(d.total_votes);
@@ -111,33 +112,107 @@ function municipalityTable(rows){
  return '<table><thead><tr><th>Posição</th><th>Município</th><th>Votos</th><th>% dos seus votos</th><th>Força</th></tr></thead><tbody>'+rows.map(function(x){return '<tr class="municipality-row" data-code="'+escHtml(x.municipality_code)+'" style="cursor:pointer"><td class="rank">#'+x.rank+'</td><td><b>'+escHtml(x.municipality_name)+'</b></td><td>'+fmt(x.votes)+'</td><td>'+pct(x.pct_total)+'</td><td><span class="strength">'+strength(x.rank,total)+'</span></td></tr>'}).join("")+'</tbody></table>';
 }
 function genericTable(rows,level){
- if(!rows.length){
-  if(level==="neighborhood"||level==="polling_place"||level==="section")return '<div class="empty">Nenhum dado encontrado neste nível para o município selecionado.</div>';
-  return '<div class="empty">Ainda não há dados deste nível para o município selecionado.</div>';
- }
- var total=rows.length,label="Território";if(level==="zone")label="Zona";if(level==="neighborhood")label="Bairro";if(level==="polling_place")label="Local";if(level==="section")label="Seção";
- return '<table><thead><tr><th>Posição</th><th>'+label+'</th><th>Votos</th><th>% dos seus votos</th><th>Força</th></tr></thead><tbody>'+rows.map(function(x){var name="";if(level==="zone")name="Zona "+x.zone;else if(level==="neighborhood")name=x.neighborhood||"Sem bairro informado";else if(level==="polling_place")name=(x.polling_place_name||x.polling_place_code||"Local de votação")+(x.address?" · "+x.address:"")+(x.neighborhood?" · "+x.neighborhood:"");else name="Seção "+x.section+(x.zone>=0?" · Zona "+x.zone:"")+(x.polling_place_name?" · "+x.polling_place_name:"")+(x.neighborhood?" · "+x.neighborhood:"");return '<tr><td class="rank">#'+x.rank+'</td><td><b>'+escHtml(name)+'</b></td><td>'+fmt(x.votes)+'</td><td>'+pct(x.pct_total)+'</td><td><span class="strength">'+strength(x.rank,total)+'</span></td></tr>'}).join("")+'</tbody></table>';
+ if(!rows.length)return '<div class="empty">Nenhum dado encontrado neste nível para o recorte selecionado.</div>';
+ var total=rows.length,label="Território";
+ if(level==="zone")label="Zona";
+ if(level==="neighborhood")label="Bairro";
+ if(level==="polling_place")label="Rua / Local";
+ if(level==="section")label="Seção";
+ return '<table><thead><tr><th>Posição</th><th>'+label+'</th><th>Votos</th><th>% dos seus votos</th><th>Força</th></tr></thead><tbody>'+
+ rows.map(function(x){
+   var name="";
+   if(level==="zone")name="Zona "+x.zone+(x.municipality_name?" · "+x.municipality_name:"");
+   else if(level==="neighborhood")name=(x.neighborhood||"Sem bairro informado")+(x.municipality_name?" · "+x.municipality_name:"");
+   else if(level==="polling_place")name=(x.address||x.polling_place_name||x.polling_place_code||"Local de votação")+(x.neighborhood?" · "+x.neighborhood:"")+(x.municipality_name?" · "+x.municipality_name:"");
+   else name="Seção "+x.section+(x.zone>=0?" · Zona "+x.zone:"")+(x.polling_place_name?" · "+x.polling_place_name:"")+(x.municipality_name?" · "+x.municipality_name:"");
+   return '<tr class="territory-row" style="cursor:pointer"'+
+     ' data-municipality="'+escHtml(x.municipality_code||"")+'"'+
+     ' data-neighborhood="'+escHtml(x.neighborhood||"")+'"'+
+     ' data-place="'+escHtml(x.polling_place_code||"")+'"'+
+     ' data-zone="'+escHtml(x.zone==null?"":x.zone)+'"'+
+     ' data-section="'+escHtml(x.section==null?"":x.section)+'">'+
+     '<td class="rank">#'+x.rank+'</td><td><b>'+escHtml(name)+'</b></td><td>'+fmt(x.votes)+'</td><td>'+pct(x.pct_total)+'</td><td><span class="strength">'+strength(x.rank,total)+'</span></td></tr>';
+ }).join("")+'</tbody></table>';
+}
+function syncMapScopeFromTerritory(){
+ var m=document.getElementById("mapMunicipality");
+ if(m&&territoryScope.municipality)m.value=territoryScope.municipality;
+}
+async function loadTerritory(){
+ if(!currentCandidate)return;
+ var content=document.getElementById("territoryContent");
+ content.innerHTML='<div class="muted">Carregando...</div>';
+ var p=new URLSearchParams({candidateId:String(currentCandidate.id),level:currentLevel,limit:"1000"});
+ if(territoryScope.municipality)p.set("municipality",territoryScope.municipality);
+ if(territoryScope.neighborhood)p.set("neighborhood",territoryScope.neighborhood);
+ if(territoryScope.place)p.set("polling_place",territoryScope.place);
+ if(territoryScope.zone)p.set("zone",territoryScope.zone);
+ var r=await fetch("/api/territory?"+p.toString()),d=await r.json();
+ if(!r.ok){content.innerHTML='<div class="error">'+escHtml(d.error||"Falha ao carregar este nível.")+'</div>';return}
+ content.innerHTML=genericTable(d.rows||[],currentLevel);
+ content.querySelectorAll(".territory-row").forEach(function(row){
+   row.addEventListener("click",async function(){
+     var level=currentLevel;
+     if(row.dataset.municipality)territoryScope.municipality=row.dataset.municipality;
+     if(level==="neighborhood"){
+       territoryScope.neighborhood=row.dataset.neighborhood||"";
+       territoryScope.place="";territoryScope.zone="";territoryScope.section="";
+       document.getElementById("municipalitySelect").value=territoryScope.municipality;
+       await showLevel("polling_place");
+     }else if(level==="polling_place"){
+       territoryScope.neighborhood=row.dataset.neighborhood||territoryScope.neighborhood;
+       territoryScope.place=row.dataset.place||"";
+       territoryScope.zone="";territoryScope.section="";
+       document.getElementById("municipalitySelect").value=territoryScope.municipality;
+       await showLevel("zone");
+     }else if(level==="zone"){
+       territoryScope.zone=row.dataset.zone||"";
+       territoryScope.section="";
+       document.getElementById("municipalitySelect").value=territoryScope.municipality;
+       await showLevel("section");
+     }else if(level==="section"){
+       territoryScope.zone=row.dataset.zone||territoryScope.zone;
+       territoryScope.section=row.dataset.section||"";
+       document.getElementById("municipalitySelect").value=territoryScope.municipality;
+       await showLevel("map");
+     }
+   });
+ });
 }
 async function showLevel(level){
- currentLevel=level;document.querySelectorAll(".tab").forEach(function(t){t.classList.toggle("active",t.dataset.level===level)});
+ currentLevel=level;
+ document.querySelectorAll(".tab").forEach(function(t){t.classList.toggle("active",t.dataset.level===level)});
  var scope=document.getElementById("scopebar"),title=document.getElementById("territoryTitle"),content=document.getElementById("territoryContent"),mapWrap=document.getElementById("mapWrap");
  mapWrap.style.display="none";content.style.display="block";
- if(level==="map"){
-  scope.style.display="none";
-  title.innerHTML="<h3 style='margin:0'>Mapa da votação</h3><span class='muted'>Filtre por município, zona, bairro, rua/local ou seção</span>";
-  content.style.display="none";mapWrap.style.display="block";
-  var generalMunicipality=document.getElementById("municipalitySelect").value;
-  if(generalMunicipality)document.getElementById("mapMunicipality").value=generalMunicipality;
-  await loadMap();
-  return;
- }
- if(level==="municipality"){
-  scope.style.display="none";title.innerHTML="<h3 style='margin:0'>Onde sua votação foi mais forte</h3><span class='muted'>Clique em um município para aprofundar</span>";content.innerHTML=municipalityTable(overview.municipalities||[]);
-  content.querySelectorAll(".municipality-row").forEach(function(r){r.addEventListener("click",async function(){document.getElementById("municipalitySelect").value=r.dataset.code;await showLevel("zone")})});return;
- }
- scope.style.display="flex";var labels={zone:"Zonas eleitorais",neighborhood:"Bairros",polling_place:"Ruas e locais de votação",section:"Seções eleitorais"};title.innerHTML="<h3 style='margin:0'>"+labels[level]+"</h3>";await loadTerritory();
-}
 
+ if(level==="map"){
+   scope.style.display="none";
+   title.innerHTML="<h3 style='margin:0'>Mapa da votação</h3><span class='muted'>O mapa acompanha o recorte escolhido nos outros níveis</span>";
+   content.style.display="none";mapWrap.style.display="block";
+   syncMapScopeFromTerritory();
+   await loadMap(true);
+   return;
+ }
+
+ if(level==="municipality"){
+   scope.style.display="none";
+   title.innerHTML="<h3 style='margin:0'>Onde sua votação foi mais forte</h3><span class='muted'>Clique em um município para aprofundar</span>";
+   content.innerHTML=municipalityTable(overview.municipalities||[]);
+   content.querySelectorAll(".municipality-row").forEach(function(r){
+     r.addEventListener("click",async function(){
+       territoryScope={municipality:r.dataset.code||"",neighborhood:"",place:"",zone:"",section:""};
+       document.getElementById("municipalitySelect").value=territoryScope.municipality;
+       await showLevel("neighborhood");
+     });
+   });
+   return;
+ }
+
+ scope.style.display="flex";
+ var labels={neighborhood:"Bairros",polling_place:"Ruas e locais de votação",zone:"Zonas eleitorais",section:"Seções eleitorais"};
+ title.innerHTML="<h3 style='margin:0'>"+labels[level]+"</h3>";
+ await loadTerritory();
+}
 function loadLeaflet(){
  return new Promise(function(resolve,reject){
   if(window.L){resolve(window.L);return}
@@ -317,7 +392,7 @@ function renderMapRows(){
  voteMap.setMaxBounds(leafletBounds.pad(pad));
  voteMap.options.minZoom=Math.max(3,voteMap.getZoom()-1);
 }
-async function loadMap(){
+async function loadMap(preserveScope){
  if(!currentCandidate)return;
  var L;
  try{L=await loadLeaflet()}catch(e){document.getElementById("map").innerHTML='<div class="error">Não foi possível carregar o mapa.</div>';return}
@@ -326,23 +401,45 @@ async function loadMap(){
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap"}).addTo(voteMap);
  } else {setTimeout(function(){voteMap.invalidateSize()},50)}
  if(!mapLayer)mapLayer=L.layerGroup().addTo(voteMap);
- var code=document.getElementById("mapMunicipality").value;
+ var code=document.getElementById("mapMunicipality").value||territoryScope.municipality;
+ if(code)document.getElementById("mapMunicipality").value=code;
  voteMap.setMaxBounds(null);voteMap.options.minZoom=3;
  var p=new URLSearchParams({candidateId:String(currentCandidate.id),limit:"50000"});if(code)p.set("municipality",code);
  document.getElementById("mapCount").textContent="Carregando pinos...";
  var r=await fetch("/api/map?"+p.toString()),d=await r.json();
  if(!r.ok){document.getElementById("mapCount").textContent=d.error||"Falha ao carregar mapa";return}
  mapRows=d.rows||[];
+ var wanted=preserveScope?{
+   zone:String(territoryScope.zone||""),
+   neighborhood:String(territoryScope.neighborhood||""),
+   place:String(territoryScope.place||""),
+   section:String(territoryScope.section||"")
+ }:null;
  ["mapZone","mapNeighborhood","mapPlace","mapSection"].forEach(function(id){var el=document.getElementById(id);el.value="";});
- rebuildMapFilters("municipality");renderMapRows();
+ rebuildMapFilters("municipality");
+ if(wanted){
+   if(wanted.zone){document.getElementById("mapZone").value=wanted.zone;rebuildMapFilters("zone");}
+   if(wanted.neighborhood){document.getElementById("mapNeighborhood").value=wanted.neighborhood;rebuildMapFilters("neighborhood");}
+   if(wanted.place){document.getElementById("mapPlace").value=wanted.place;rebuildMapFilters("place");}
+   if(wanted.section){document.getElementById("mapSection").value=wanted.section;rebuildMapFilters("section");}
+ }
+ renderMapRows();
  setTimeout(function(){voteMap.invalidateSize()},100);
 }
 function applyMapFilter(changed){
  rebuildMapFilters(changed);renderMapRows();
 }
 document.querySelectorAll(".tab").forEach(function(t){t.addEventListener("click",function(){showLevel(t.dataset.level)})});
-document.getElementById("municipalitySelect").addEventListener("change",loadTerritory);
-document.getElementById("mapMunicipality").addEventListener("change",loadMap);
+document.getElementById("municipalitySelect").addEventListener("change",async function(){
+ territoryScope.municipality=this.value;
+ territoryScope.neighborhood="";territoryScope.place="";territoryScope.zone="";territoryScope.section="";
+ if(currentLevel!=="municipality"&&currentLevel!=="map")await loadTerritory();
+});
+document.getElementById("mapMunicipality").addEventListener("change",function(){
+ territoryScope.municipality=this.value;
+ territoryScope.neighborhood="";territoryScope.place="";territoryScope.zone="";territoryScope.section="";
+ loadMap(false);
+});
 document.getElementById("mapZone").addEventListener("change",function(){applyMapFilter("zone")});
 document.getElementById("mapNeighborhood").addEventListener("change",function(){applyMapFilter("neighborhood")});
 document.getElementById("mapPlace").addEventListener("change",function(){applyMapFilter("place")});
