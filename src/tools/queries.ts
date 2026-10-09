@@ -1,5 +1,5 @@
 import { sql } from "../db/index.js";
-import { sectionsSqlForUf } from "../db/sections.js";
+import { sectionsSqlForUf, sectionsSqlAllForUf } from "../db/sections.js";
 
 export async function searchCandidates(args: { query: string; officeCode?: number; uf?: string; limit?: number }) {
   const q = args.query.trim();
@@ -236,7 +236,7 @@ export async function sectionMap(args:{candidateId:number;municipalityCode?:stri
   const municipality=args.municipalityCode??null;
   const limit=Math.min(args.limit??5000,10000);
 
-  const {rows}=await sectionsSqlForUf<any>(uf,`
+  const results=await sectionsSqlAllForUf<any>(uf,`
     WITH base AS (
       SELECT sv.municipality_code,MAX(sv.municipality_name) AS municipality_name,
         p.polling_place_code,MAX(p.polling_place_name) AS polling_place_name,
@@ -265,7 +265,29 @@ export async function sectionMap(args:{candidateId:number;municipalityCode?:stri
     JOIN sections s USING(municipality_code,polling_place_code)
     ORDER BY b.votes DESC LIMIT $5
   `,[uf,office,number,municipality,limit]);
-  return rows;
+
+  const merged=new Map<string,any>();
+  for(const result of results){
+    for(const row of result.rows){
+      const key=String(row.municipality_code)+"|"+String(row.polling_place_code);
+      const prev=merged.get(key);
+      if(!prev){
+        merged.set(key,{...row,votes:Number(row.votes||0),sections:[...(row.sections||[])]});
+      }else{
+        prev.votes=Number(prev.votes||0)+Number(row.votes||0);
+        prev.sections=[...(prev.sections||[]),...(row.sections||[])];
+        if(!prev.polling_place_name&&row.polling_place_name)prev.polling_place_name=row.polling_place_name;
+        if(!prev.address&&row.address)prev.address=row.address;
+        if(!prev.neighborhood&&row.neighborhood)prev.neighborhood=row.neighborhood;
+        if(!prev.cep&&row.cep)prev.cep=row.cep;
+        if(prev.latitude==null&&row.latitude!=null)prev.latitude=row.latitude;
+        if(prev.longitude==null&&row.longitude!=null)prev.longitude=row.longitude;
+      }
+    }
+  }
+  return [...merged.values()]
+    .sort((a:any,b:any)=>Number(b.votes)-Number(a.votes))
+    .slice(0,limit);
 }
 
 
@@ -335,9 +357,12 @@ export async function territorialLevel(args:{
   const municipality=args.municipalityCode??null;
   const limit=Math.min(args.limit??500,1000);
 
-  let rows:any[]=[];
+  let query="";
+  let params:any[]=[];
+  let keyOf:(r:any)=>string=()=>""; 
+
   if(args.level==="zone"){
-    rows=(await sectionsSqlForUf<any>(uf,`
+    query=`
       SELECT municipality_code,municipality_name,zone,SUM(votes)::int AS votes
       FROM section_votes
       WHERE uf=$1 AND office_code=$2 AND candidate_number=$3
@@ -345,9 +370,11 @@ export async function territorialLevel(args:{
       GROUP BY municipality_code,municipality_name,zone
       ORDER BY votes DESC
       LIMIT $5
-    `,[uf,office,number,municipality,limit])).rows;
+    `;
+    params=[uf,office,number,municipality,limit];
+    keyOf=(r:any)=>String(r.municipality_code)+"|"+String(r.zone);
   } else if(args.level==="neighborhood"){
-    rows=(await sectionsSqlForUf<any>(uf,`
+    query=`
       SELECT sv.municipality_code,sv.municipality_name,COALESCE(p.neighborhood,'') AS neighborhood,SUM(sv.votes)::int AS votes
       FROM section_votes sv
       LEFT JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code
@@ -358,9 +385,11 @@ export async function territorialLevel(args:{
       GROUP BY sv.municipality_code,sv.municipality_name,p.neighborhood
       ORDER BY votes DESC
       LIMIT $5
-    `,[uf,office,number,municipality,limit])).rows;
+    `;
+    params=[uf,office,number,municipality,limit];
+    keyOf=(r:any)=>String(r.municipality_code)+"|"+String(r.neighborhood||"");
   } else if(args.level==="polling_place"){
-    rows=(await sectionsSqlForUf<any>(uf,`
+    query=`
       SELECT sv.municipality_code,sv.municipality_name,
         COALESCE(NULLIF(p.polling_place_code,''),'SEM-CODIGO') AS polling_place_code,
         MAX(p.polling_place_name) AS polling_place_name,
@@ -379,9 +408,11 @@ export async function territorialLevel(args:{
         COALESCE(NULLIF(p.polling_place_code,''),'SEM-CODIGO')
       ORDER BY votes DESC
       LIMIT $5
-    `,[uf,office,number,municipality,limit])).rows;
+    `;
+    params=[uf,office,number,municipality,limit];
+    keyOf=(r:any)=>String(r.municipality_code)+"|"+String(r.polling_place_code||"");
   } else {
-    rows=(await sectionsSqlForUf<any>(uf,`
+    query=`
       SELECT sv.municipality_code,sv.municipality_name,sv.zone,sv.section,
         MAX(COALESCE(NULLIF(p.polling_place_code,''),sv.polling_place_code)) AS polling_place_code,
         MAX(p.polling_place_name) AS polling_place_name,MAX(p.address) AS address,
@@ -396,7 +427,29 @@ export async function territorialLevel(args:{
       GROUP BY sv.municipality_code,sv.municipality_name,sv.zone,sv.section,sv.polling_place_code
       ORDER BY votes DESC
       LIMIT $6
-    `,[uf,office,number,municipality,args.zone??null,limit])).rows;
+    `;
+    params=[uf,office,number,municipality,args.zone??null,limit];
+    keyOf=(r:any)=>String(r.municipality_code)+"|"+String(r.zone)+"|"+String(r.section)+"|"+String(r.polling_place_code||"");
   }
+
+  const results=await sectionsSqlAllForUf<any>(uf,query,params);
+  const merged=new Map<string,any>();
+  for(const result of results){
+    for(const row of result.rows){
+      const key=keyOf(row);
+      const prev=merged.get(key);
+      if(!prev){
+        merged.set(key,{...row,votes:Number(row.votes||0)});
+      }else{
+        prev.votes=Number(prev.votes||0)+Number(row.votes||0);
+        for(const field of ["polling_place_name","address","neighborhood","cep","latitude","longitude","municipality_name"]){
+          if((prev[field]==null||prev[field]==="")&&row[field]!=null&&row[field]!=="")prev[field]=row[field];
+        }
+      }
+    }
+  }
+  const rows=[...merged.values()]
+    .sort((a:any,b:any)=>Number(b.votes)-Number(a.votes))
+    .slice(0,limit);
   return rows.map((r:any,i:number)=>({...r,rank:i+1,pct_total:total>0?Number(((Number(r.votes)/total)*100).toFixed(2)):0}));
 }
