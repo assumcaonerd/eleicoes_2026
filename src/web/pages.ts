@@ -60,7 +60,7 @@ export function appPage(user:any,active:boolean){
 <div id="territoryContent" class="territory-card" style="margin-top:12px"></div>
 <div id="customCompare" class="custom-compare">
  <p class="muted">Escolha até dois outros candidatos do mesmo cargo e estado. O recorte acompanha o território selecionado nas outras abas.</p>
- <div class="scopebar"><label class="field">Município<select id="compareMunicipality"><option value="">Estado inteiro</option></select></label></div>
+ 
  <div class="compare-pickers">
   <div class="compare-picker"><strong>Candidato consultado</strong><p id="compareMainName"></p></div>
   <div class="compare-picker"><label class="field">Comparar com<input id="compareSearch1" placeholder="Nome ou número" autocomplete="off"></label><div id="compareChosen1"></div><div class="compare-search-results" id="compareResults1"></div></div>
@@ -72,6 +72,8 @@ export function appPage(user:any,active:boolean){
   <label class="field">Detalhamento
    <select id="compareLevel"><option value="municipality">Municípios</option><option value="neighborhood">Bairros</option><option value="zone">Zonas</option><option value="polling_place">Locais de votação / mapa</option><option value="section">Seções</option></select>
   </label>
+  <label class="field">Município<select id="compareMunicipality"><option value="">Todos os municípios</option></select></label>
+  <label class="field" id="compareSpecificField" style="display:none">Selecione o território<select id="compareSpecific"><option value="">Todos os territórios deste município</option></select></label>
   <button class="btn secondary" type="button" id="compareExportCsv">Exportar CSV completo</button>
   <button class="btn secondary" type="button" id="compareExportPdf">Salvar PDF</button>
  </div>
@@ -105,7 +107,7 @@ export function appPage(user:any,active:boolean){
 <script>
 var currentCandidate=null,overview=null,currentLevel="municipality",voteMap=null,mapLayer=null,mapRows=[],baseMapLayers=null,currentMapStyle="standard",satelliteFallbackUsed=false,satelliteErrors=0;
 var territoryScope={municipality:"",neighborhood:"",place:"",zone:"",section:""};
-var comparisonRequest=0,customCompareRequest=0,compareChoices=[null,null],compareSearchRequest=[0,0],compareBreakdownData=null,compareBreakdownRequest=0,compareMap=null,compareMapLayer=null,compareMapGeneration=0,compareBreakdownController=null;
+var comparisonRequest=0,customCompareRequest=0,compareChoices=[null,null],compareSearchRequest=[0,0],compareBreakdownData=null,compareBreakdownRequest=0,compareMap=null,compareMapLayer=null,compareMapGeneration=0,compareBreakdownController=null,compareSpecificKey="",compareFilterVersion=0;
 function fmt(n){return new Intl.NumberFormat("pt-BR").format(Number(n||0))}
 function pct(n){return Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+"%"}
 function escHtml(s){return String(s==null?"":s).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]})}
@@ -271,7 +273,7 @@ async function loadComparisonBreakdown(){
  var controller=new AbortController();compareBreakdownController=controller;
  var candidates=[currentCandidate].concat(compareChoices.filter(Boolean));
  if(candidates.length<2){box.innerHTML="";compareBreakdownData=null;return}
- var level=document.getElementById("compareLevel").value,municipality=territoryScope.municipality||"";
+ var level=document.getElementById("compareLevel").value,municipality=document.getElementById("compareMunicipality").value||"";
  if(level!=="municipality"&&!municipality){
   box.innerHTML='<div class="empty">Selecione um município para consultar zonas e locais de votação.</div>';
   compareBreakdownData=null;
@@ -281,6 +283,7 @@ async function loadComparisonBreakdown(){
  try{
   var p=new URLSearchParams({ids:candidates.map(function(x){return x.id}).join(","),level:level});
   if(municipality)p.set("municipality",municipality);
+  if(compareSpecificKey)p.set("territory_key",compareSpecificKey);
   var timer=setTimeout(function(){controller.abort()},25000);
   var response;
   try{response=await fetch("/api/comparison-territories?"+p.toString(),{signal:controller.signal,cache:"no-store"})}
@@ -293,6 +296,7 @@ async function loadComparisonBreakdown(){
   if(!Array.isArray(data.rows)||!Array.isArray(data.candidates))throw new Error("Resposta inválida do servidor.");
   if(request!==compareBreakdownRequest||currentLevel!=="compare")return;
   compareBreakdownData=data;
+  rebuildCompareSpecific(data);
   var cols='<th>Território</th>'+data.candidates.map(function(c){return '<th>'+escHtml(c.ballot_name)+'</th>'}).join("")+'<th>Diferença (1º − 2º)</th>';
   var body=data.rows.map(function(row){
    var cells=data.candidates.map(function(c){
@@ -458,6 +462,7 @@ async function showLevel(level){
   scope.style.display="none";content.style.display="none";customCompare.style.display="block";
   title.innerHTML="<h3 style='margin:0'>Comparar candidatos</h3>";
   document.getElementById("compareMunicipality").value=territoryScope.municipality||"";
+  compareSpecificKey="";document.getElementById("compareSpecificField").style.display="none";
   refreshComparison();updateCompareLabels();await renderCustomComparison();return;
  }
 
@@ -776,8 +781,20 @@ function applyMapFilter(changed){
 }
 document.querySelectorAll(".tab").forEach(function(t){t.addEventListener("click",function(){showLevel(t.dataset.level)})});
 [0,1].forEach(function(i){document.getElementById("compareSearch"+(i+1)).addEventListener("input",function(){lookupCompareCandidates(i)})});
-document.getElementById("compareMunicipality").addEventListener("change",function(){territoryScope={municipality:this.value,neighborhood:"",place:"",zone:"",section:""};refreshComparison();renderCustomComparison()});
-document.getElementById("compareLevel").addEventListener("change",function(){loadComparisonBreakdown()});
+document.getElementById("compareMunicipality").addEventListener("change",function(){
+ territoryScope={municipality:this.value,neighborhood:"",place:"",zone:"",section:""};
+ compareSpecificKey="";refreshComparison();renderCustomComparison();
+});
+document.getElementById("compareLevel").addEventListener("change",function(){
+ compareSpecificKey="";
+ document.getElementById("compareSpecificField").style.display="none";
+ document.getElementById("compareSpecific").innerHTML='<option value="">Todos os territórios</option>';
+ loadComparisonBreakdown();
+});
+document.getElementById("compareSpecific").addEventListener("change",function(){
+ compareSpecificKey=this.value;
+ loadComparisonBreakdown();
+});
 document.getElementById("compareExportCsv").addEventListener("click",function(){
  if(!currentCandidate||currentLevel!=="compare")return;
  var candidates=[currentCandidate].concat(compareChoices.filter(Boolean));
@@ -787,6 +804,7 @@ document.getElementById("compareExportCsv").addEventListener("click",function(){
  if(level!=="municipality"&&!municipality){alert("Selecione um município para exportar bairros, zonas, locais ou seções.");return}
  var params=new URLSearchParams({ids:candidates.map(function(c){return c.id}).join(","),level:level});
  if(municipality)params.set("municipality",municipality);
+ if(compareSpecificKey)params.set("territory_key",compareSpecificKey);
  window.location.href="/api/comparison-export.csv?"+params.toString();
 });
 document.getElementById("compareExportPdf").addEventListener("click",function(){window.print()});
