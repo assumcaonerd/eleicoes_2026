@@ -585,64 +585,84 @@ function pushPinIcon(votes){
    popupAnchor:[0,-Math.round(h*.68)]
  });
 }
+
+function popupForNearbyLocations(items){
+ if(items.length===1)return popupHtml(items[0]);
+ return '<div class="popup-title">'+fmt(items.length)+' locais próximos</div>'+
+  '<div class="popup-meta">Os pinos destes locais se sobrepõem no mapa. Confira os registros:</div>'+
+  items.map(function(x){
+   return '<div style="padding:9px 0;border-top:1px solid #ddd"><b>'+escHtml(x.polling_place_name||"Local de votação")+'</b>'+
+    '<div class="popup-meta">'+escHtml(x.address||"Endereço não informado")+'</div>'+
+    '<div><strong>'+fmt(x.votes)+' votos</strong></div>'+
+    '<div class="popup-sections">'+(x.sections||[]).map(function(sec){
+     return '<div class="popup-section"><span>Zona '+escHtml(sec.zone)+' · Seção '+escHtml(sec.section)+'</span><b>'+fmt(sec.votes)+' votos</b></div>';
+    }).join("")+'</div></div>';
+  }).join("");
+}
 function renderMapRows(){
  if(!voteMap||!mapLayer)return;
  mapLayer.clearLayers();
- var L=window.L,f=currentMapSelections(),bounds=[],shown=0,onlyPoint=null;
+ var L=window.L,f=currentMapSelections(),bounds=[],onlyPoint=null,locations=[];
  mapRows.forEach(function(x){
   if(!rowMatchesMapFilters(x,""))return;
-  var lat=Number(x.latitude),lng=Number(x.longitude);if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
-  var filteredSections=(x.sections||[]).filter(function(s){
-    if(f.zone&&String(s.zone)!==f.zone)return false;
-    if(f.section&&String(s.section)!==f.section)return false;
-    return true;
+  var lat=Number(x.latitude),lng=Number(x.longitude);
+  if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
+  var filteredSections=(x.sections||[]).filter(function(sec){
+   if(f.zone&&String(sec.zone)!==f.zone)return false;
+   if(f.section&&String(sec.section)!==f.section)return false;
+   return true;
   });
   if((f.zone||f.section)&&!filteredSections.length)return;
   var copy=Object.assign({},x,{sections:filteredSections.length?filteredSections:x.sections});
-  if(f.zone||f.section)copy.votes=filteredSections.reduce(function(sum,s){return sum+Number(s.votes||0)},0);
-  var detailed=Boolean(f.zone||f.neighborhood||f.place||f.section);
+  if(f.zone||f.section)copy.votes=filteredSections.reduce(function(sum,sec){return sum+Number(sec.votes||0)},0);
+  locations.push({lat:lat,lng:lng,data:copy});
+ });
+ // Agrupa coordenadas próximas (aproximadamente 10 m); mantém os dados individuais no popup.
+ var groups=new Map();
+ locations.forEach(function(item){
+  var key=item.lat.toFixed(4)+"|"+item.lng.toFixed(4);
+  if(!groups.has(key))groups.set(key,[]);
+  groups.get(key).push(item);
+ });
+ var detailed=Boolean(f.zone||f.neighborhood||f.place||f.section);
+ groups.forEach(function(entries){
+  var first=entries[0],items=entries.map(function(entry){return entry.data});
+  var lat=first.lat,lng=first.lng;
+  var votes=items.reduce(function(sum,x){return sum+Number(x.votes||0)},0);
   var marker;
   if(detailed){
-    marker=L.marker([lat,lng],{icon:pushPinIcon(copy.votes),riseOnHover:true});
-    marker.on("click",function(){
-      document.querySelectorAll(".vote-pin.selected").forEach(function(el){el.classList.remove("selected")});
-      var el=marker.getElement();if(el){var pin=el.querySelector(".vote-pin");if(pin)pin.classList.add("selected")}
-    });
+   marker=L.marker([lat,lng],{icon:pushPinIcon(votes),riseOnHover:true});
+   marker.on("click",function(){
+    document.querySelectorAll(".vote-pin.selected").forEach(function(el){el.classList.remove("selected")});
+    var node=marker.getElement();if(node){var pin=node.querySelector(".vote-pin");if(pin)pin.classList.add("selected")}
+   });
   }else{
-    var radius=Math.max(6,Math.min(18,5+Math.sqrt(Number(copy.votes||0))));
-    marker=L.circleMarker([lat,lng],{radius:radius,weight:1,fillOpacity:.78});
+   marker=L.circleMarker([lat,lng],{radius:Math.max(6,Math.min(18,5+Math.sqrt(votes))),weight:1,fillOpacity:.78});
   }
-  marker.bindPopup(popupHtml(copy),{maxWidth:360});
+  marker.bindPopup(popupForNearbyLocations(items),{maxWidth:400});
+  if(items.length>1)marker.bindTooltip(fmt(items.length)+" locais neste ponto",{direction:"top"});
   marker.addTo(mapLayer);
-  bounds.push([lat,lng]);shown++;onlyPoint=[lat,lng];
+  bounds.push([lat,lng]);onlyPoint=[lat,lng];
  });
- document.getElementById("mapCount").textContent=fmt(shown)+" locais com votos";
+ var count=locations.length,points=groups.size;
+ document.getElementById("mapCount").textContent=fmt(count)+" locais com votos"+(points<count?" em "+fmt(points)+" pontos do mapa (locais próximos agrupados)":"");
  document.getElementById("mapScope").textContent=mapScopeLabel();
-
  if(!bounds.length){
-   document.getElementById("mapCount").textContent="Nenhum local encontrado com esses filtros";
-   return;
+  document.getElementById("mapCount").textContent="Nenhum local encontrado com esses filtros";
+  return;
  }
-
  voteMap.setMaxBounds(null);
  voteMap.options.minZoom=3;
-
  var leafletBounds=L.latLngBounds(bounds);
-
  if(f.place||f.section||bounds.length===1){
-   voteMap.setView(onlyPoint,17,{animate:true});
-   var tight=L.latLngBounds(
-     [onlyPoint[0]-0.01,onlyPoint[1]-0.01],
-     [onlyPoint[0]+0.01,onlyPoint[1]+0.01]
-   );
-   voteMap.setMaxBounds(tight.pad(.35));
-   voteMap.options.minZoom=15;
-   return;
+  voteMap.setView(onlyPoint,17,{animate:true});
+  var tight=L.latLngBounds([onlyPoint[0]-.01,onlyPoint[1]-.01],[onlyPoint[0]+.01,onlyPoint[1]+.01]);
+  voteMap.setMaxBounds(tight.pad(.35));
+  voteMap.options.minZoom=15;
+  return;
  }
-
  var maxZoom=f.neighborhood?15:(f.zone?14:(f.municipality?13:9));
  voteMap.fitBounds(leafletBounds,{padding:[28,28],maxZoom:maxZoom,animate:true});
-
  var pad=f.neighborhood?.12:(f.zone?.16:(f.municipality?.22:.35));
  voteMap.setMaxBounds(leafletBounds.pad(pad));
  voteMap.options.minZoom=Math.max(3,voteMap.getZoom()-1);
