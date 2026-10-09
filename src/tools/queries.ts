@@ -551,6 +551,7 @@ export async function comparativeTerritories(args:{
   [ids]
  )).rows;
  if(found.length!==ids.length)throw new Error("Candidato não encontrado.");
+ found.sort((a,b)=>ids.indexOf(Number(a.id))-ids.indexOf(Number(b.id)));
  const same=found.every(x=>x.election_id===found[0].election_id&&x.round===found[0].round&&x.office_code===found[0].office_code&&x.uf===found[0].uf);
  if(!same)throw new Error("Compare somente candidatos da mesma eleição, cargo, turno e estado.");
  const base=found[0];
