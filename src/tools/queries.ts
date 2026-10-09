@@ -337,6 +337,7 @@ export async function territorialLevel(args:{
   level:"municipality"|"zone"|"neighborhood"|"polling_place"|"section";
   municipalityCode?:string;
   neighborhood?:string;
+  pollingPlaceCode?:string;
   zone?:number;
   limit?:number;
 }) {
@@ -363,15 +364,19 @@ export async function territorialLevel(args:{
 
   if(args.level==="zone"){
     query=`
-      SELECT municipality_code,municipality_name,zone,SUM(votes)::int AS votes
-      FROM section_votes
-      WHERE uf=$1 AND office_code=$2 AND candidate_number=$3
-        AND ($4::text IS NULL OR municipality_code=$4)
-      GROUP BY municipality_code,municipality_name,zone
+      SELECT sv.municipality_code,MAX(sv.municipality_name) AS municipality_name,sv.zone,SUM(sv.votes)::int AS votes
+      FROM section_votes sv
+      LEFT JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code
+        AND p.zone=sv.zone AND p.section=sv.section
+      WHERE sv.uf=$1 AND sv.office_code=$2 AND sv.candidate_number=$3
+        AND ($4::text IS NULL OR sv.municipality_code=$4)
+        AND ($5::text IS NULL OR COALESCE(p.neighborhood,'')=$5)
+        AND ($6::text IS NULL OR COALESCE(NULLIF(p.polling_place_code,''),sv.polling_place_code)=$6)
+      GROUP BY sv.municipality_code,sv.zone
       ORDER BY votes DESC
-      LIMIT $5
+      LIMIT $7
     `;
-    params=[uf,office,number,municipality,limit];
+    params=[uf,office,number,municipality,args.neighborhood??null,args.pollingPlaceCode??null,limit];
     keyOf=(r:any)=>String(r.municipality_code)+"|"+String(r.zone);
   } else if(args.level==="neighborhood"){
     query=`
@@ -404,12 +409,13 @@ export async function territorialLevel(args:{
         AND p.zone=sv.zone AND p.section=sv.section
       WHERE sv.uf=$1 AND sv.office_code=$2 AND sv.candidate_number=$3
         AND ($4::text IS NULL OR sv.municipality_code=$4)
+        AND ($5::text IS NULL OR COALESCE(p.neighborhood,'')=$5)
       GROUP BY sv.municipality_code,sv.municipality_name,
         COALESCE(NULLIF(p.polling_place_code,''),'SEM-CODIGO')
       ORDER BY votes DESC
-      LIMIT $5
+      LIMIT $6
     `;
-    params=[uf,office,number,municipality,limit];
+    params=[uf,office,number,municipality,args.neighborhood??null,limit];
     keyOf=(r:any)=>String(r.municipality_code)+"|"+String(r.polling_place_code||"");
   } else {
     query=`
@@ -423,12 +429,14 @@ export async function territorialLevel(args:{
         AND p.zone=sv.zone AND p.section=sv.section
       WHERE sv.uf=$1 AND sv.office_code=$2 AND sv.candidate_number=$3
         AND ($4::text IS NULL OR sv.municipality_code=$4)
-        AND ($5::int IS NULL OR sv.zone=$5)
+        AND ($5::text IS NULL OR COALESCE(p.neighborhood,'')=$5)
+        AND ($6::text IS NULL OR COALESCE(NULLIF(p.polling_place_code,''),sv.polling_place_code)=$6)
+        AND ($7::int IS NULL OR sv.zone=$7)
       GROUP BY sv.municipality_code,sv.municipality_name,sv.zone,sv.section,sv.polling_place_code
       ORDER BY votes DESC
-      LIMIT $6
+      LIMIT $8
     `;
-    params=[uf,office,number,municipality,args.zone??null,limit];
+    params=[uf,office,number,municipality,args.neighborhood??null,args.pollingPlaceCode??null,args.zone??null,limit];
     keyOf=(r:any)=>String(r.municipality_code)+"|"+String(r.zone)+"|"+String(r.section)+"|"+String(r.polling_place_code||"");
   }
 
