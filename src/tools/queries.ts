@@ -4,7 +4,7 @@ import { sectionsSqlForUf, sectionsSqlAllForUf } from "../db/sections.js";
 export async function searchCandidates(args: { query: string; officeCode?: number; uf?: string; limit?: number }) {
   const q = args.query.trim();
   const { rows } = await sql(`
-    SELECT id, election_id, office_code, office_name, uf, number, ballot_name, full_name, party_abbr, status
+    SELECT id, election_id, round, office_code, office_name, uf, number, ballot_name, full_name, party_abbr, status
     FROM candidates
     WHERE ($1::text IS NULL OR uf=$1)
       AND ($2::int IS NULL OR office_code=$2)
