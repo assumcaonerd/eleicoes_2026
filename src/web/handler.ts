@@ -6,6 +6,7 @@ import { createCheckout, handleStripeWebhook } from "../billing/stripe.js";
 import { searchCandidates, compareCandidates, topTerritories, partyVotes, sourceStatus, sectionMap, sectionMetrics, candidateTerritoryOverview, territorialLevel, candidateVoteComparison, comparativeTerritories } from "../tools/queries.js";
 import { sql } from "../db/index.js";
 import { homePage, authPage, plansPage, appPage, adminPage, resetPasswordPage } from "./pages.js";
+import {renderESMap} from "./map-export.js";
 
 async function readBody(req:IncomingMessage,raw=false){
   const chunks:Buffer[]=[];
@@ -268,6 +269,26 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
   if(url.pathname==="/api/top-territories"&&req.method==="GET"){if(!user){json(res,{error:"Não autenticado."},401);return true}if(!await hasActiveAccess(Number(user.id))){json(res,{error:"Assinatura inativa."},402);return true}const candidateId=Number(url.searchParams.get("candidateId"));const level=(url.searchParams.get("level")??"municipality") as any;const rows=await topTerritories({candidateId,level,limit:Number(url.searchParams.get("limit")||20)});json(res,{rows});return true}
   if(url.pathname==="/api/party-votes"&&req.method==="GET"){if(!user){json(res,{error:"Não autenticado."},401);return true}if(!await hasActiveAccess(Number(user.id))){json(res,{error:"Assinatura inativa."},402);return true}const row=await partyVotes({partyAbbr:url.searchParams.get("party")??"",officeCode:Number(url.searchParams.get("office")||0),uf:url.searchParams.get("uf")??""});json(res,{row});return true}
   if(url.pathname==="/api/data-status"&&req.method==="GET"){if(!user){json(res,{error:"Não autenticado."},401);return true}const rows=await sourceStatus();json(res,{rows});return true}
+  if(url.pathname==="/api/map-export-es"&&req.method==="GET"){
+    if(!user){json(res,{error:"Não autenticado."},401);return true}
+    if(!await hasActiveAccess(Number(user.id))){json(res,{error:"Assinatura inativa."},402);return true}
+    const candidateId=Number(url.searchParams.get("candidateId"));
+    const format=url.searchParams.get("format")==="svg"?"svg":"png";
+    if(!Number.isSafeInteger(candidateId)||candidateId<=0){
+      json(res,{error:"Candidato inválido."},400);return true
+    }
+    try{
+      const rendered=await renderESMap(candidateId,format);
+      res.writeHead(200,{"content-type":rendered.mime,
+        "content-disposition":'attachment; filename="'+rendered.filename+'"',
+        "cache-control":"private, no-store","x-content-type-options":"nosniff"});
+      res.end(rendered.file);
+    }catch(e:any){
+      console.error("STATE_MAP_EXPORT_ERROR",e?.message||e);
+      json(res,{error:e?.message||"Falha ao gerar mapa em alta resolução."},500);
+    }
+    return true
+  }
   if(url.pathname==="/api/map"&&req.method==="GET"){if(!user){json(res,{error:"Não autenticado."},401);return true}if(!await hasActiveAccess(Number(user.id))){json(res,{error:"Assinatura inativa."},402);return true}const rows=await sectionMap({candidateId:Number(url.searchParams.get("candidateId")),municipalityCode:url.searchParams.get("municipality")||undefined,limit:Number(url.searchParams.get("limit")||2000)});json(res,{rows});return true}
   if(url.pathname==="/api/section-metrics"&&req.method==="GET"){if(!user){json(res,{error:"Não autenticado."},401);return true}if(!await hasActiveAccess(Number(user.id))){json(res,{error:"Assinatura inativa."},402);return true}const row=await sectionMetrics({candidateId:Number(url.searchParams.get("candidateId")),municipalityCode:url.searchParams.get("municipality")||"",zone:Number(url.searchParams.get("zone")),section:Number(url.searchParams.get("section"))});json(res,{row});return true}
   if(url.pathname==="/api/favorites"&&req.method==="GET"){if(!user){json(res,{error:"Não autenticado."},401);return true}const rows=(await sql<any>("SELECT c.* FROM favorites f JOIN candidates c ON c.id=f.candidate_id WHERE f.user_id=$1 ORDER BY f.created_at DESC",[Number(user.id)])).rows;json(res,{rows});return true}
