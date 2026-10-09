@@ -542,7 +542,7 @@ export async function candidateVoteComparison(args:{
 
 /** Vote totals by geographical unit for a fixed, comparable candidate set. */
 export async function comparativeTerritories(args:{
- candidateIds:number[];level:"municipality"|"neighborhood"|"zone"|"polling_place"|"section";municipalityCode?:string;exportAll?:boolean;
+ candidateIds:number[];level:"municipality"|"neighborhood"|"zone"|"polling_place"|"section";municipalityCode?:string;territoryKey?:string;exportAll?:boolean;
 }){
  const ids=[...new Set(args.candidateIds)].filter(Number.isSafeInteger).slice(0,3);
  if(ids.length<2)throw new Error("Selecione pelo menos dois candidatos.");
@@ -645,7 +645,9 @@ export async function comparativeTerritories(args:{
    total_reported:detail.reduce((n,c)=>n+Number(c.votes||0),0)};
  });
  out.sort((a,b)=>b.total_reported-a.total_reported||String(a.key).localeCompare(String(b.key),"pt-BR"));
+ const available_units=out.map(r=>({key:r.key,municipality_code:r.municipality_code,municipality_name:r.municipality_name,neighborhood:r.neighborhood,zone:r.zone,section:r.section,polling_place_code:r.polling_place_code,polling_place_name:r.polling_place_name,address:r.address}));
+ const visible=args.territoryKey?out.filter(r=>r.key===args.territoryKey):out;
  return {level:args.level,scope:{uf:base.uf,election_id:base.election_id,round:base.round,
-   office_code:base.office_code,municipality},candidates:ids.map(id=>found.find(x=>Number(x.id)===id)),rows:args.exportAll?out:out.slice(0,300),
-   truncated:!args.exportAll&&out.length>300,total_territories:out.length};
+   office_code:base.office_code,municipality},candidates:ids.map(id=>found.find(x=>Number(x.id)===id)),rows:args.exportAll?visible:visible.slice(0,300),available_units:args.exportAll?[]:available_units,
+   truncated:!args.exportAll&&visible.length>300,total_territories:visible.length};
 }
