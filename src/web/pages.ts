@@ -112,6 +112,40 @@ function fmt(n){return new Intl.NumberFormat("pt-BR").format(Number(n||0))}
 function pct(n){return Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+"%"}
 function escHtml(s){return String(s==null?"":s).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]})}
 function strength(rank,total){if(!total)return "";var p=rank/total;if(p<=.10)return "Muito forte";if(p<=.30)return "Forte";if(p<=.70)return "Médio";return "Fraco"}
+
+var comparisonCache=new Map(),comparisonPending=new Map();
+async function comparisonJSON(url){
+ var saved=comparisonCache.get(url);
+ if(saved&&Date.now()-saved.timestamp<30000)return saved.data;
+ if(comparisonPending.has(url))return comparisonPending.get(url);
+ var task=(async function(){
+  var lastError;
+  for(var attempt=0;attempt<2;attempt++){
+   var controller=new AbortController();
+   var timeout=setTimeout(function(){controller.abort()},12000);
+   try{
+    var response=await fetch(url,{cache:"no-store",headers:{accept:"application/json"},signal:controller.signal});
+    var type=response.headers.get("content-type")||"";
+    if(!type.includes("application/json"))throw new Error("Resposta temporária inválida (HTTP "+response.status+").");
+    var result=await response.json();
+    if(!response.ok){
+     var err=new Error(result.error||"Falha na consulta (HTTP "+response.status+").");
+     if(response.status<500)err.permanent=true;
+     throw err;
+    }
+    comparisonCache.set(url,{timestamp:Date.now(),data:result});
+    return result;
+   }catch(err){
+    lastError=err;
+    if(err.permanent||attempt===1)break;
+    await new Promise(function(resolve){setTimeout(resolve,300)});
+   }finally{clearTimeout(timeout)}
+  }
+  throw lastError;
+ })();
+ comparisonPending.set(url,task);
+ try{return await task}finally{comparisonPending.delete(url)}
+}
 function comparisonScope(){
  var f=currentLevel==="map"?currentMapSelections():territoryScope;
  var p=new URLSearchParams({candidateId:String(currentCandidate.id)});
@@ -129,9 +163,8 @@ async function refreshComparison(){
  var box=document.getElementById("voteComparison"),request=++comparisonRequest;
  box.innerHTML='<span class="muted">Consultando votos do mesmo cargo e turno...</span>';
  try{
-  var r=await fetch("/api/vote-comparison?"+comparisonScope().toString()),d=await r.json();
+  var d=await comparisonJSON("/api/vote-comparison?"+comparisonScope().toString());
   if(request!==comparisonRequest)return;
-  if(!r.ok)throw new Error(d.error||"Falha ao consultar votos");
   var scope=d.scope||{},place=currentLevel==="map"?document.getElementById("mapScope").textContent:"";
   var location=place||(scope.section!=null?"Seção "+scope.section+" · Zona "+scope.zone:scope.polling_place_code?"Local de votação":scope.neighborhood?"Bairro "+scope.neighborhood:scope.zone!=null?"Zona "+scope.zone:scope.municipality?"Município selecionado":"Estado "+scope.uf);
   var top=d.top_three||[];
@@ -191,9 +224,7 @@ async function renderCustomComparison(){
  chart.innerHTML='<div class="muted">Calculando votos...</div>';
  try{
   var results=await Promise.all(choices.map(async function(candidate){
-    var response=await fetch("/api/vote-comparison?"+compareScopeParams(candidate.id).toString());
-    var data=await response.json();
-    if(!response.ok)throw new Error(data.error||"Consulta indisponível");
+    var data=await comparisonJSON("/api/vote-comparison?"+compareScopeParams(candidate.id).toString());
     if(Number(data.scope.election_id)!==Number(currentCandidate.election_id)||Number(data.scope.round)!==Number(currentCandidate.round)||Number(data.scope.office_code)!==Number(currentCandidate.office_code)||String(data.scope.uf)!==String(currentCandidate.uf))throw new Error("Candidatos de eleições ou turnos diferentes.");
     return {candidate:candidate,selected:data.selected};
   }));
