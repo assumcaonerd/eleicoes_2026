@@ -199,7 +199,7 @@ async function renderCustomComparison(){
   var max=Math.max(1,...results.map(function(x){return Number(x.selected?.votes||0)}));
   chart.innerHTML=results.map(function(x){
     var votes=x.selected?Number(x.selected.votes):null;
-    return '<div><div class="compare-row-top"><strong>'+escHtml(x.candidate.ballot_name)+' · '+escHtml(x.candidate.number)+'</strong><b>'+(votes===null?"Sem dados":fmt(votes)+" votos")+'</b></div><div class="compare-track"><div class="compare-bar" style="width:'+(votes===null?0:100*votes/max)+'%"></div></div><div class="muted" style="font-size:12px">'+(x.selected?"Posição no recorte: "+x.selected.position+"º":"Posição não disponível")+'</div></div>';
+    return '<div><div class="compare-row-top"><strong>'+escHtml(x.candidate.ballot_name)+' · '+escHtml(x.candidate.number)+'</strong><b>'+(votes===null?"Sem dados":fmt(votes)+" votos")+'</b></div><div class="compare-track"><div class="compare-bar" style="width:'+(votes===null?0:100*votes/max)+'%"></div></div><div class="muted" style="font-size:12px">'+(x.selected?"Posição no recorte: "+x.selected.position+"º"+(x.selected.party_position?" · No partido: "+x.selected.party_position+"º":""):"Posição não disponível")+'</div></div>';
   }).join("");
   var denominator=results.reduce(function(sum,x){return sum+Number(x.selected?.votes||0)},0);
   if(denominator>0){
