@@ -542,7 +542,7 @@ export async function candidateVoteComparison(args:{
 
 /** Vote totals by geographical unit for a fixed, comparable candidate set. */
 export async function comparativeTerritories(args:{
- candidateIds:number[];level:"municipality"|"neighborhood"|"zone"|"polling_place"|"section";municipalityCode?:string;
+ candidateIds:number[];level:"municipality"|"neighborhood"|"zone"|"polling_place"|"section";municipalityCode?:string;exportAll?:boolean;
 }){
  const ids=[...new Set(args.candidateIds)].filter(Number.isSafeInteger).slice(0,3);
  if(ids.length<2)throw new Error("Selecione pelo menos dois candidatos.");
@@ -646,6 +646,6 @@ export async function comparativeTerritories(args:{
  });
  out.sort((a,b)=>b.total_reported-a.total_reported||String(a.key).localeCompare(String(b.key),"pt-BR"));
  return {level:args.level,scope:{uf:base.uf,election_id:base.election_id,round:base.round,
-   office_code:base.office_code,municipality},candidates:ids.map(id=>found.find(x=>Number(x.id)===id)),rows:out.slice(0,300),
-   truncated:out.length>300,total_territories:out.length};
+   office_code:base.office_code,municipality},candidates:ids.map(id=>found.find(x=>Number(x.id)===id)),rows:args.exportAll?out:out.slice(0,300),
+   truncated:!args.exportAll&&out.length>300,total_territories:out.length};
 }
