@@ -49,7 +49,9 @@ async function loadPlaces(candidateId:number){
  }
  return {info,places:[...places.values()]};
 }
+let cachedPrintMap:{image:string|null;expires:number}|null=null;
 async function tryPrintBasemap(){
+ if(cachedPrintMap&&Date.now()<cachedPrintMap.expires)return cachedPrintMap.image;
  const url=new URL("https://sampleserver6.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/export");
  url.search=new URLSearchParams({
   bbox:[region.west*111319.49079327358,merc(region.south)*6378137,region.east*111319.49079327358,merc(region.north)*6378137].join(","),
@@ -65,7 +67,9 @@ async function tryPrintBasemap(){
   if(!type.startsWith("image/jpeg")&&!type.startsWith("image/png"))return null;
   const bytes=Buffer.from(await response.arrayBuffer());
   if(bytes.length<1000||bytes.length>15_000_000)return null;
-  return "data:"+(type.includes("png")?"image/png":"image/jpeg")+";base64,"+bytes.toString("base64");
+  const image="data:"+(type.includes("png")?"image/png":"image/jpeg")+";base64,"+bytes.toString("base64");
+  cachedPrintMap={image,expires:Date.now()+20*60*1000};
+  return image;
  }catch{return null}finally{clearTimeout(timeout)}
 }
 function pin(x:number,y:number,votes:number){
@@ -117,13 +121,13 @@ export async function renderESMap(candidateId:number,format:"svg"|"png"){
   '<text x="145" y="'+(H-BOTTOM+125)+'" font-size="29" font-family="Arial" fill="#40556b">Pinos vermelhos: locais com votos · Gerado em '+escapeXml(date)+'</text>',
   '<text x="145" y="'+(H-BOTTOM+178)+'" font-size="24" font-family="Arial" fill="#40556b">Fonte eleitoral: TSE · Contorno estadual: LAGEAMB/UFPR / geodata-br-states (MIT)</text>',
   '<text x="145" y="'+(H-BOTTOM+217)+'" font-size="24" font-family="Arial" fill="#40556b">'+(basemap?
-   'Mapa base: Esri World Street Map (fontes: Esri, DeLorme, HERE, USGS, Intermap)':
+   'Mapa base: Esri World Street Map · Esri, DeLorme, HERE, USGS, Intermap, NRCAN, TomTom':
    'Base vetorial estadual; mapa de ruas indisponível na origem neste momento')+'</text>',
   '<text x="145" y="'+(H-BOTTOM+253)+'" font-size="23" font-family="Arial" fill="#40556b">ES inteiro no enquadramento · escala estadual · formato de impressão A2 (300 dpi)</text>',
   '</svg>'
  ].join("");
  const filename="mapa-es-"+String(info.number).replace(/[^0-9A-Za-z-]/g,"")+"-2026."+format;
  if(format==="svg")return {file:Buffer.from(svg),mime:"image/svg+xml; charset=utf-8",filename};
- const file=await sharp(Buffer.from(svg),{limitInputPixels:55_000_000}).png({compressionLevel:7}).toBuffer();
+ const file=await sharp(Buffer.from(svg),{limitInputPixels:55_000_000}).png({compressionLevel:7}).withMetadata({density:300}).toBuffer();
  return {file,mime:"image/png",filename};
 }
