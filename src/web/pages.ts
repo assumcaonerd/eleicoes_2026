@@ -26,7 +26,7 @@ export function appPage(user:any,active:boolean){
   if(!active) return layout("Aplicativo",'<div class="card"><h1>Assinatura necessária</h1><p class="muted">Sua conta está autenticada, mas ainda não possui uma assinatura ativa.</p><a class="btn" href="/planos">Escolher plano</a></div>',user);
   var body = `
 <style>
-.searchbox{margin-bottom:22px}.candidate-list{display:grid;gap:10px;margin-top:18px}.candidate-item{width:100%;text-align:left;border:1px solid #e2e6ea;background:#fff;border-radius:14px;padding:16px;cursor:pointer}.candidate-item:hover{border-color:#111;background:#fafafa}.candidate-name{font-size:18px;font-weight:850}.candidate-meta{color:#68717a;font-size:14px;margin-top:4px}.dash{display:none}.dash-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}.dash-title h2{margin:0 0 4px;font-size:28px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:12px;margin:18px 0}.metric-card{background:#fff;border:1px solid #e5e8eb;border-radius:16px;padding:18px}.metric-card .n{font-size:28px;font-weight:900;margin-top:5px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.tab{border:1px solid #d9dde1;background:#fff;border-radius:999px;padding:10px 14px;font-weight:800;cursor:pointer}.tab.active{background:#111;color:#fff;border-color:#111}.scopebar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:12px 0 18px}.scopebar .field{min-width:260px;margin:0}.territory-card{overflow:hidden}.strength{display:inline-block;border-radius:999px;padding:5px 9px;background:#edf0f3;font-size:12px;font-weight:800}.empty{padding:28px;text-align:center;border:1px dashed #ccd2d7;border-radius:14px;color:#68717a;background:#fafbfc}.topline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rank{font-weight:900;color:#68717a}.map-wrap{display:none;margin-top:14px}.map-filters{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:10px;margin-bottom:12px}.map-filters .field{margin:0}.map-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}.map-style-switch{display:inline-flex;gap:3px;margin-left:auto;padding:3px;border:1px solid #d9dde1;border-radius:12px;background:#f4f6f8}.map-style-button{border:0;background:transparent;padding:8px 13px;border-radius:9px;font:inherit;font-size:13px;font-weight:800;cursor:pointer;color:#39434d}.map-style-button.active{background:#111;color:#fff}.map-style-button:focus-visible{outline:3px solid #3478f6;outline-offset:2px}.map-imagery-status{display:none;width:100%;font-size:13px;color:#875d11;background:#fff6df;border:1px solid #f1d898;border-radius:9px;padding:8px 12px}.map-imagery-status.visible{display:block}.map-canvas{height:620px;border:1px solid #dfe3e6;border-radius:16px;overflow:hidden}.map-note{font-size:13px;color:#68717a;margin-top:8px}.vote-pin-marker{background:transparent!important;border:0!important}.vote-pin{width:100%;height:100%;transform-origin:50% 96%;animation:pinDrop .34s cubic-bezier(.2,.75,.25,1.2);filter:drop-shadow(0 5px 4px rgba(0,0,0,.24));transition:transform .15s ease,filter .15s ease}.vote-pin svg{display:block;width:100%;height:100%}.vote-pin:hover{transform:translateY(-2px) scale(1.06);filter:drop-shadow(0 7px 5px rgba(0,0,0,.28))}.vote-pin.selected{transform:translateY(-4px) scale(1.16);filter:drop-shadow(0 9px 7px rgba(0,0,0,.32))}@keyframes pinDrop{0%{opacity:0;transform:translateY(-26px) scale(.78)}70%{opacity:1;transform:translateY(3px) scale(1.04)}100%{opacity:1;transform:translateY(0) scale(1)}}.leaflet-popup-content{min-width:250px}.popup-title{font-weight:900;font-size:15px;margin-bottom:5px}.popup-meta{font-size:12px;color:#68717a;margin-bottom:8px}.popup-total{font-weight:900;margin-bottom:8px}.popup-sections{max-height:180px;overflow:auto;border-top:1px solid #eee;padding-top:6px}.popup-section{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:12px;border-bottom:1px solid #f1f1f1}@media(max-width:760px){.map-filters{grid-template-columns:1fr 1fr}.metrics{grid-template-columns:repeat(2,1fr)}.metric-card .n{font-size:24px}.territory-card{overflow-x:auto}table{min-width:650px}}
+.searchbox{margin-bottom:22px}.candidate-list{display:grid;gap:10px;margin-top:18px}.candidate-item{width:100%;text-align:left;border:1px solid #e2e6ea;background:#fff;border-radius:14px;padding:16px;cursor:pointer}.candidate-item:hover{border-color:#111;background:#fafafa}.candidate-name{font-size:18px;font-weight:850}.candidate-meta{color:#68717a;font-size:14px;margin-top:4px}.dash{display:none}.dash-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}.dash-title h2{margin:0 0 4px;font-size:28px}.vote-comparison{position:sticky;top:8px;z-index:950;background:#fff;border:1px solid #dbe2e8;border-radius:16px;padding:13px 16px;box-shadow:0 5px 18px rgba(0,0,0,.06);margin-bottom:14px}.comparison-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}.comparison-head strong{font-size:15px}.comparison-head span{font-size:12px;color:#68717a}.comparison-rows{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:9px}.comparison-item{border:1px solid #e7ebef;border-radius:10px;padding:9px;background:#f9fafb;min-width:0}.comparison-item b{font-size:12px;display:block;overflow-wrap:anywhere}.comparison-item small{color:#68717a}.comparison-selected{margin-top:9px;border-top:1px solid #e7ebef;padding-top:9px;font-size:13px;font-weight:750}.comparison-current{border-color:#151515;background:#f0f2f4}@media(max-width:650px){.comparison-rows{grid-template-columns:1fr}.vote-comparison{position:relative;top:auto}}.metrics{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:12px;margin:18px 0}.metric-card{background:#fff;border:1px solid #e5e8eb;border-radius:16px;padding:18px}.metric-card .n{font-size:28px;font-weight:900;margin-top:5px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.tab{border:1px solid #d9dde1;background:#fff;border-radius:999px;padding:10px 14px;font-weight:800;cursor:pointer}.tab.active{background:#111;color:#fff;border-color:#111}.scopebar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:12px 0 18px}.scopebar .field{min-width:260px;margin:0}.territory-card{overflow:hidden}.strength{display:inline-block;border-radius:999px;padding:5px 9px;background:#edf0f3;font-size:12px;font-weight:800}.empty{padding:28px;text-align:center;border:1px dashed #ccd2d7;border-radius:14px;color:#68717a;background:#fafbfc}.topline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rank{font-weight:900;color:#68717a}.map-wrap{display:none;margin-top:14px}.map-filters{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:10px;margin-bottom:12px}.map-filters .field{margin:0}.map-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}.map-style-switch{display:inline-flex;gap:3px;margin-left:auto;padding:3px;border:1px solid #d9dde1;border-radius:12px;background:#f4f6f8}.map-style-button{border:0;background:transparent;padding:8px 13px;border-radius:9px;font:inherit;font-size:13px;font-weight:800;cursor:pointer;color:#39434d}.map-style-button.active{background:#111;color:#fff}.map-style-button:focus-visible{outline:3px solid #3478f6;outline-offset:2px}.map-imagery-status{display:none;width:100%;font-size:13px;color:#875d11;background:#fff6df;border:1px solid #f1d898;border-radius:9px;padding:8px 12px}.map-imagery-status.visible{display:block}.map-canvas{height:620px;border:1px solid #dfe3e6;border-radius:16px;overflow:hidden}.map-note{font-size:13px;color:#68717a;margin-top:8px}.vote-pin-marker{background:transparent!important;border:0!important}.vote-pin{width:100%;height:100%;transform-origin:50% 96%;animation:pinDrop .34s cubic-bezier(.2,.75,.25,1.2);filter:drop-shadow(0 5px 4px rgba(0,0,0,.24));transition:transform .15s ease,filter .15s ease}.vote-pin svg{display:block;width:100%;height:100%}.vote-pin:hover{transform:translateY(-2px) scale(1.06);filter:drop-shadow(0 7px 5px rgba(0,0,0,.28))}.vote-pin.selected{transform:translateY(-4px) scale(1.16);filter:drop-shadow(0 9px 7px rgba(0,0,0,.32))}@keyframes pinDrop{0%{opacity:0;transform:translateY(-26px) scale(.78)}70%{opacity:1;transform:translateY(3px) scale(1.04)}100%{opacity:1;transform:translateY(0) scale(1)}}.leaflet-popup-content{min-width:250px}.popup-title{font-weight:900;font-size:15px;margin-bottom:5px}.popup-meta{font-size:12px;color:#68717a;margin-bottom:8px}.popup-total{font-weight:900;margin-bottom:8px}.popup-sections{max-height:180px;overflow:auto;border-top:1px solid #eee;padding-top:6px}.popup-section{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:12px;border-bottom:1px solid #f1f1f1}@media(max-width:760px){.map-filters{grid-template-columns:1fr 1fr}.metrics{grid-template-columns:repeat(2,1fr)}.metric-card .n{font-size:24px}.territory-card{overflow-x:auto}table{min-width:650px}}
 </style>
 <h1>Siga o Voto 2026</h1>
 <p class="muted">Escolha um candidato e descubra onde a votação foi forte, média ou fraca.</p>
@@ -40,6 +40,7 @@ export function appPage(user:any,active:boolean){
 </div>
 <section id="dashboard" class="dash"><div class="card">
 <div class="dash-head"><div class="dash-title"><div class="tag">Raio-X eleitoral</div><h2 id="candName"></h2><div class="muted" id="candMeta"></div></div><button class="btn secondary" type="button" id="newSearch">Trocar candidato</button></div>
+<div class="vote-comparison" id="voteComparison" aria-live="polite"><span class="muted">Carregando comparação de votos...</span></div>
 <div class="metrics">
 <div class="metric-card"><div class="muted">Votos totais</div><div class="n" id="totalVotes">0</div></div>
 <div class="metric-card"><div class="muted">Municípios com votos</div><div class="n" id="municipalitiesCount">0</div></div>
@@ -82,10 +83,41 @@ export function appPage(user:any,active:boolean){
 <script>
 var currentCandidate=null,overview=null,currentLevel="municipality",voteMap=null,mapLayer=null,mapRows=[],baseMapLayers=null,currentMapStyle="standard",satelliteFallbackUsed=false,satelliteErrors=0;
 var territoryScope={municipality:"",neighborhood:"",place:"",zone:"",section:""};
+var comparisonRequest=0;
 function fmt(n){return new Intl.NumberFormat("pt-BR").format(Number(n||0))}
 function pct(n){return Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+"%"}
 function escHtml(s){return String(s==null?"":s).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]})}
 function strength(rank,total){if(!total)return "";var p=rank/total;if(p<=.10)return "Muito forte";if(p<=.30)return "Forte";if(p<=.70)return "Médio";return "Fraco"}
+function comparisonScope(){
+ var f=currentLevel==="map"?currentMapSelections():territoryScope;
+ var p=new URLSearchParams({candidateId:String(currentCandidate.id)});
+ var municipality=f.municipality||"";
+ if(!municipality)return p;
+ p.set("municipality",municipality);
+ if(f.neighborhood)p.set("neighborhood",f.neighborhood);
+ if(f.place)p.set("polling_place",f.place);
+ if(f.zone!==""&&f.zone!=null)p.set("zone",f.zone);
+ if(f.section!==""&&f.section!=null&&f.zone!==""&&f.zone!=null)p.set("section",f.section);
+ return p;
+}
+async function refreshComparison(){
+ if(!currentCandidate)return;
+ var box=document.getElementById("voteComparison"),request=++comparisonRequest;
+ box.innerHTML='<span class="muted">Consultando votos do mesmo cargo e turno...</span>';
+ try{
+  var r=await fetch("/api/vote-comparison?"+comparisonScope().toString()),d=await r.json();
+  if(request!==comparisonRequest)return;
+  if(!r.ok)throw new Error(d.error||"Falha ao consultar votos");
+  var scope=d.scope||{},place=currentLevel==="map"?document.getElementById("mapScope").textContent:"";
+  var location=place||(scope.section!=null?"Seção "+scope.section+" · Zona "+scope.zone:scope.polling_place_code?"Local de votação":scope.neighborhood?"Bairro "+scope.neighborhood:scope.zone!=null?"Zona "+scope.zone:scope.municipality?"Município selecionado":"Estado "+scope.uf);
+  var top=d.top_three||[];
+  var items=top.map(function(x){return '<div class="comparison-item '+(d.selected&&String(x.number)===String(d.selected.number)?"comparison-current":"")+'"><b>'+x.position+'º · '+escHtml(x.ballot_name)+'</b><small>Nº '+escHtml(x.number)+' · '+escHtml(x.party_abbr||"")+'</small><div><strong>'+fmt(x.votes)+' votos</strong></div></div>'}).join("");
+  var chosen=d.selected?d.selected.position+"º lugar · "+fmt(d.selected.votes)+" votos":"Posição indisponível neste recorte";
+  box.innerHTML='<div class="comparison-head"><strong>Três maiores votações</strong><span>'+escHtml(location)+' · mesmo cargo e turno</span></div>'+
+   (items?'<div class="comparison-rows">'+items+'</div>':'<div class="muted">Sem dados de votação disponíveis para esta área.</div>')+
+   '<div class="comparison-selected">Candidato consultado: '+escHtml(currentCandidate.ballot_name)+' · '+escHtml(chosen)+'</div>';
+ }catch(e){if(request===comparisonRequest)box.innerHTML='<div class="muted">Comparação indisponível: '+escHtml(e.message||"Tente novamente")+'</div>'}
+}
 function candidateButtons(rows){
  if(!rows.length)return '<div class="empty">Nenhum candidato encontrado com esses filtros.</div>';
  return rows.map(function(x){
@@ -155,6 +187,7 @@ async function loadTerritory(){
  var r=await fetch("/api/territory?"+p.toString()),d=await r.json();
  if(!r.ok){content.innerHTML='<div class="error">'+escHtml(d.error||"Falha ao carregar este nível.")+'</div>';return}
  content.innerHTML=genericTable(d.rows||[],currentLevel);
+ refreshComparison();
  content.querySelectorAll(".territory-row").forEach(function(row){
    row.addEventListener("click",async function(){
      var level=currentLevel;
@@ -196,6 +229,7 @@ async function showLevel(level){
    content.style.display="none";mapWrap.style.display="block";
    syncMapScopeFromTerritory();
    await loadMap(true);
+   refreshComparison();
    return;
  }
 
@@ -203,6 +237,7 @@ async function showLevel(level){
    scope.style.display="none";
    title.innerHTML="<h3 style='margin:0'>Onde sua votação foi mais forte</h3><span class='muted'>Clique em um município para aprofundar</span>";
    content.innerHTML=municipalityTable(overview.municipalities||[]);
+   refreshComparison();
    content.querySelectorAll(".municipality-row").forEach(function(r){
      r.addEventListener("click",async function(){
        territoryScope={municipality:r.dataset.code||"",neighborhood:"",place:"",zone:"",section:""};
@@ -479,18 +514,19 @@ async function loadMap(preserveScope){
  setTimeout(function(){voteMap.invalidateSize()},100);
 }
 function applyMapFilter(changed){
- rebuildMapFilters(changed);renderMapRows();
+ rebuildMapFilters(changed);renderMapRows();refreshComparison();
 }
 document.querySelectorAll(".tab").forEach(function(t){t.addEventListener("click",function(){showLevel(t.dataset.level)})});
 document.getElementById("municipalitySelect").addEventListener("change",async function(){
  territoryScope.municipality=this.value;
  territoryScope.neighborhood="";territoryScope.place="";territoryScope.zone="";territoryScope.section="";
  if(currentLevel!=="municipality"&&currentLevel!=="map")await loadTerritory();
+ refreshComparison();
 });
 document.getElementById("mapMunicipality").addEventListener("change",function(){
  territoryScope.municipality=this.value;
  territoryScope.neighborhood="";territoryScope.place="";territoryScope.zone="";territoryScope.section="";
- loadMap(false);
+ loadMap(false).then(refreshComparison);
 });
 document.getElementById("mapZone").addEventListener("change",function(){applyMapFilter("zone")});
 document.getElementById("mapNeighborhood").addEventListener("change",function(){applyMapFilter("neighborhood")});
