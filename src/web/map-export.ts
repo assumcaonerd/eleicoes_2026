@@ -6,7 +6,7 @@ import {esOutlineGeometry} from "./es-outline.js";
 type Place={lat:number;lng:number;votes:number;municipality:string;name:string};
 const W=4961,H=7016,TOP=440,BOTTOM=285;
 const frame={x:145,y:470,w:W-290,h:H-470-BOTTOM-50};
-const region={west:-42.06,east:-39.46,south:-21.53,north:-17.65};
+const region={west:-42.32,east:-39.22,south:-21.53,north:-17.65};
 const merc=(lat:number)=>Math.log(Math.tan(Math.PI/4+lat*Math.PI/360));
 const X=(lng:number)=>frame.x+(lng-region.west)/(region.east-region.west)*frame.w;
 const Y=(lat:number)=>frame.y+(merc(region.north)-merc(lat))/(merc(region.north)-merc(region.south))*frame.h;
@@ -52,8 +52,8 @@ async function loadPlaces(candidateId:number){
 async function tryPrintBasemap(){
  const url=new URL("https://sampleserver6.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/export");
  url.search=new URLSearchParams({
-  bbox:[region.west,region.south,region.east,region.north].join(","),
-  bboxSR:"4326",imageSR:"4326",size:"2400,3200",
+  bbox:[region.west*111319.49079327358,merc(region.south)*6378137,region.east*111319.49079327358,merc(region.north)*6378137].join(","),
+  bboxSR:"3857",imageSR:"3857",size:"2400,3200",
   format:"jpg",transparent:"false",dpi:"160",f:"image"
  }).toString();
  const controller=new AbortController();
