@@ -509,7 +509,7 @@ export async function candidateVoteComparison(args:{
    const results=await sectionsSqlAllForUf<any>(String(candidate.uf),`
      SELECT sv.candidate_number AS number,SUM(sv.votes)::bigint AS votes
      FROM section_votes sv
-     ${neighborhood||place?"LEFT JOIN places p ON p.uf=sv.uf AND p.municipality_code=sv.municipality_code AND p.zone=sv.zone AND p.section=sv.section":""}
+     LEFT JOIN LATERAL (SELECT p0.neighborhood,p0.polling_place_code FROM places p0 WHERE p0.uf=sv.uf AND p0.municipality_code=sv.municipality_code AND p0.zone=sv.zone AND p0.section=sv.section ORDER BY CASE WHEN p0.polling_place_code=sv.polling_place_code THEN 0 ELSE 1 END LIMIT 1) p ON true
      WHERE sv.uf=$1 AND sv.election_id=$2 AND sv.office_code=$3 AND sv.round=$9
        AND sv.municipality_code=$4
        AND ($5::text IS NULL OR COALESCE(p.neighborhood,'')=$5)
