@@ -8,7 +8,7 @@ export type VoteRow={municipality_code:string;votes:number|string;source_kind:st
 type Point=[number,number];
 type Geometry={type:string;coordinates:any};
 export type Municipality={ibgeCode:string;tseCode:string;name:string;votes:number;geometry:Geometry};
-export type Report={candidate:Candidate;municipalities:Municipality[];total:number;pins?:{lat:number;lng:number}[]};
+export type Report={candidate:Candidate;municipalities:Municipality[];total:number;pinCoverage?:string;pins?:{lat:number;lng:number}[]};
 export const WIDTH=4961,HEIGHT=7016;
 const number=(v:number)=>v.toLocaleString("pt-BR");
 const xml=(v:unknown)=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"} as Record<string,string>)[c]);
@@ -175,7 +175,7 @@ export function buildReport(report:Report,generatedAt=new Date()){
  const {bins,color}=colorScale(report.municipalities.map(m=>m.votes));
  const pieces=[`<svg xmlns="http://www.w3.org/2000/svg" width="420mm" height="594mm" viewBox="0 0 ${WIDTH} ${HEIGHT}" role="img" aria-labelledby="report-title">`,
  `<title id="report-title">Siga o Voto 2026: ${xml(report.candidate.ballot_name)}, 78 municípios do Espírito Santo</title>`,
- `<metadata>${xml(JSON.stringify({candidate:report.candidate,total:report.total,municipalities:report.municipalities.map(({geometry,...m})=>m),generatedAt:generatedAt.toISOString(),projection:"EPSG:3857; escala uniforme",classification:"Quartis dos valores positivos; valores repetidos mantidos juntos; zero separado",sources:["Tribunal Superior Eleitoral","IBGE"]}))}</metadata>`,
+ `<metadata>${xml(JSON.stringify({candidate:report.candidate,total:report.total,pinCoverage:report.pinCoverage,municipalities:report.municipalities.map(({geometry,...m})=>m),generatedAt:generatedAt.toISOString(),projection:"EPSG:3857; escala uniforme",classification:"Quartis dos valores positivos; valores repetidos mantidos juntos; zero separado",sources:["Tribunal Superior Eleitoral","IBGE"]}))}</metadata>`,
  `<rect width="${WIDTH}" height="${HEIGHT}" fill="#fff"/>`,
  `<rect width="4961" height="870" fill="${brandColors.navy}"/><rect y="870" width="4961" height="10" fill="${brandColors.accent}"/>`,
  brandMark.replace('<svg ', '<svg x="4560" y="110" width="180" height="180" '),
@@ -232,7 +232,7 @@ export function buildReport(report:Report,generatedAt=new Date()){
  const legend=[{min:0,max:0,color:"#e6e9ed"},...bins];
  legend.forEach((b,i)=>{const x=1770+i*600;pieces.push(`<rect x="${x}" y="6402" width="72" height="50" rx="5" fill="${b.color}" stroke="#8499aa"/>`,text(b.min===0?"Zero votos":b.min===b.max?`${number(b.min)}`:`${number(b.min)} a ${number(b.max)}`,x+88,6440,33))});
  pieces.push(text("Faixas por quartis dos votos positivos. Zero somente com registro confirmado.",1770,6510,32,"#536d83"),
- text("Pinos: locais de votação georreferenciados, exibidos onde há espaço legível.",1770,6560,30,"#536d83"),
+ text(`Pinos exibidos: ${keptPins.length}/${report.pins?.length??0}. ${report.pinCoverage??"Locais georreferenciados; disposição para leitura."}`,1770,6560,30,"#536d83"),
  '<path d="M130 6620H4830" stroke="#ced8e1" stroke-width="3"/>',
  text("Fonte eleitoral: Tribunal Superior Eleitoral.  Fonte cartográfica: IBGE.",165,6725,39,"#365674"),
  text(`Eleição 2026 · ${report.candidate.round}º turno · Gerado em ${new Intl.DateTimeFormat("pt-BR",{timeZone:"America/Sao_Paulo",dateStyle:"short",timeStyle:"medium"}).format(generatedAt)} (Brasília)`,165,6805,37,"#365674"),

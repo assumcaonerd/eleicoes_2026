@@ -80,7 +80,7 @@ export async function loadStateReport(candidateId:number,selectedUf?:string):Pro
   report=consolidateState(info,uf,rows);
   await client.query('COMMIT');
  }catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
- const pools=sectionsPoolsForUf(report.uf),unique=new Map<string,{lat:number;lng:number}>();let places=0,coordinates=0,unavailable=0;
+ const pools=sectionsPoolsForUf(report.uf),unique=new Map<string,{lat:number;lng:number;municipality_code?:string}>();let places=0,coordinates=0,unavailable=0;
  // Consult every SP partition. Optional pin failure never modifies electoral totals.
  for(const p of pools){let c:PoolClient|undefined;try{
   c=await p.connect();await c.query('BEGIN READ ONLY');await c.query("SET LOCAL statement_timeout='12000ms'");
@@ -89,7 +89,7 @@ export async function loadStateReport(candidateId:number,selectedUf?:string):Pro
    AND sv.municipality_code=p.municipality_code AND sv.zone=p.zone AND sv.section=p.section
    AND sv.election_id=$2 AND sv.round=$3 AND sv.office_code=$4 AND sv.candidate_number=$5)
    GROUP BY p.municipality_code,p.zone,p.polling_place_code,p.latitude,p.longitude`,[report.uf,report.candidate.election_id,report.candidate.round,report.candidate.office_code,report.candidate.number])).rows;
-  places+=pins.length;for(const pin of pins)if(pin.lat!==null&&pin.lng!==null&&validPin(report,pin)){coordinates++;unique.set(`${pin.lat}:${pin.lng}`,{lat:pin.lat,lng:pin.lng})}
+  places+=pins.length;for(const pin of pins)if(pin.lat!==null&&pin.lng!==null&&validPin(report,pin)){coordinates++;unique.set(`${pin.lat}:${pin.lng}`,{lat:pin.lat,lng:pin.lng,municipality_code:pin.municipality_code})}
   await c.query('COMMIT');
  }catch{unavailable++;if(c)await c.query('ROLLBACK').catch(()=>{})}finally{c?.release()}}
  report.pins=[...unique.values()];report.pinCoverage=pools.length?`${coordinates}/${places} locais consultados com coordenadas válidas; ${unavailable} base(s) indisponível(is).`:'Sem base de coordenadas configurada; mapa e votos preservados.';
