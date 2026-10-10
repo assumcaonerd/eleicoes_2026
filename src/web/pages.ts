@@ -37,10 +37,10 @@ export function appPage(user:any,active:boolean){
 <div class="card searchbox">
 <p><a class="btn" href="/app/majority">Painel de Governador e Presidente</a></p>
 <form id="search"><div class="grid">
-<label class="field">Candidato<input name="q" placeholder="Digite o nome ou número" required autocomplete="off"></label>
+<div class="field"><button class="btn" type="submit" style="align-self:flex-start" aria-label="Encontrar candidato">Encontrar candidato</button><input name="q" aria-label="Candidato" placeholder="Digite o nome ou número" required autocomplete="off"></div>
 <label class="field">Cargo<select name="office"><option value="">Todos</option><option value="1">Presidente</option><option value="3">Governador</option><option value="5">Senador</option><option value="6">Deputado Federal</option><option value="7">Deputado Estadual/Distrital</option></select></label>
 <label class="field">Estado<span class="state-select-wrap"><select id="searchState" name="uf" aria-label="Estado" size="1"><option value="" aria-label="Nenhum estado selecionado"></option><option value="AC">Acre (AC)</option><option value="AL">Alagoas (AL)</option><option value="AP">Amapá (AP)</option><option value="AM">Amazonas (AM)</option><option value="BA">Bahia (BA)</option><option value="CE">Ceará (CE)</option><option value="DF">Distrito Federal (DF)</option><option value="ES">Espírito Santo (ES)</option><option value="GO">Goiás (GO)</option><option value="MA">Maranhão (MA)</option><option value="MT">Mato Grosso (MT)</option><option value="MS">Mato Grosso do Sul (MS)</option><option value="MG">Minas Gerais (MG)</option><option value="PA">Pará (PA)</option><option value="PB">Paraíba (PB)</option><option value="PR">Paraná (PR)</option><option value="PE">Pernambuco (PE)</option><option value="PI">Piauí (PI)</option><option value="RJ">Rio de Janeiro (RJ)</option><option value="RN">Rio Grande do Norte (RN)</option><option value="RS">Rio Grande do Sul (RS)</option><option value="RO">Rondônia (RO)</option><option value="RR">Roraima (RR)</option><option value="SC">Santa Catarina (SC)</option><option value="SP">São Paulo (SP)</option><option value="SE">Sergipe (SE)</option><option value="TO">Tocantins (TO)</option></select></span></label>
-</div><button class="btn">Encontrar candidato</button></form>
+</div></form>
 <div id="searchResults" class="candidate-list"></div>
 </div>
 <section id="dashboard" class="dash"><div class="card">
