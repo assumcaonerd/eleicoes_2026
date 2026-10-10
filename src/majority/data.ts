@@ -1,5 +1,5 @@
 import {stateGeography} from '../web/cartography/national.js';
-import {readIndicators} from './indicators.js';
+import {readIndicators,readOnlineIndicators} from './indicators.js';
 import {pool} from '../db/index.js';
 import type {PoolClient} from 'pg';
 import {sectionsSqlAllForUf} from '../db/sections.js';
@@ -50,7 +50,23 @@ export async function majorityOverview(candidateId:number,uf?:string,existingCli
   const rows=consolidateTerritories(municipalities,territorialFacts,!scopeUf,total);
   const metrics=await readIndicators(client,{electionId:c.election_id,round:c.round,office:c.office_code,uf:scopeUf||'BR'});
   const scopeMetric=metrics.rows.find(r=>r.municipality_code==='');
-  const indicators=scopeMetric?.totals??null;
+  let indicators=scopeMetric?.totals??null;
+  let indicatorSource=scopeMetric?.source_url??null;
+  let indicatorStatus=metrics.status;
+  let indicatorFetchedAt=scopeMetric?.imported_at??null;
+  let online=false;
+  if(!indicators&&scopeUf!=='ZZ'){
+   try{
+    const live=await readOnlineIndicators({electionId:c.election_id,round:c.round,office:c.office_code,uf:scopeUf||'BR'});
+    indicators=live.totals;
+    indicatorSource=live.source_url;
+    indicatorFetchedAt=live.fetched_at;
+    indicatorStatus='Dados oficiais do TSE consultados online; não armazenados neste recorte. Atualização TSE: '+live.totals.source_date+' '+live.totals.source_time+'.';
+    online=true;
+   }catch(err){
+    indicatorStatus=metrics.status+' Consulta online ao TSE indisponível ou não validada: '+(err instanceof Error?err.message:String(err));
+   }
+  }
   for(const row of rows){const m=metrics.rows.find(m=>m.municipality_code===row.code);const f=territorialFacts.find(f=>f.uf===row.uf&&f.municipality_code===row.code&&f.source_kind==='tse_municipality');(row as any).valid_vote_percentage=m&&f&&(f as any).source_sha256&& (f as any).source_sha256===m.source_sha256&&Number(m.totals.valid_votes)>0&&row.votes!==null?100*row.votes/Number(m.totals.valid_votes):null;}
   const times=territorialFacts.filter(f=>f.source_kind==='tse_municipality').map(f=>f.source_updated_at?new Date(f.source_updated_at).toISOString():null).filter((t):t is string=>Boolean(t)).sort();
   const coverage=rows.reduce((n,r)=>n+r.coverage,0),expected=rows.reduce((n,r)=>n+r.expected,0);
@@ -61,11 +77,11 @@ export async function majorityOverview(candidateId:number,uf?:string,existingCli
    reconciliation:mismatch?'divergent':c.office_code===3&&coverage===expected&&total!==null?'matched':'not_verified',
    updated_at:times[0]??null,latest_record_at:times.at(-1)??null,
    source:'TSE, EA20 importado; consolidação exclusiva de registros municipais',
-   mode:'stored_snapshot',indicators,indicator_status:metrics.status,indicator_source:scopeMetric?.source_url??null,indicator_imported_at:scopeMetric?.imported_at??null,valid_votes:indicators?.valid_votes??null,blank_votes:indicators?.blank_votes??null,null_votes:indicators?.null_votes??null,turnout:indicators?.turnout??null,abstention:indicators?.abstention??null,
+   mode:'stored_snapshot',indicators,indicator_status:indicatorStatus,indicator_source:indicatorSource,indicator_imported_at:indicatorFetchedAt,indicator_online:online,valid_votes:indicators?.valid_votes??null,blank_votes:indicators?.blank_votes??null,null_votes:indicators?.null_votes??null,turnout:indicators?.turnout??null,abstention:indicators?.abstention??null,
    warnings:[...(coverage<expected?['Base territorial incompleta. Registro ausente não equivale a zero.']:[]),
     ...(mismatch?['Soma municipal divergente do total estadual. Não exportar como resultado conciliado.']:[]),
-    ...(indicators?[]:[metrics.status]),
-    'Horários indicam a importação dos registros. Não há confirmação de conexão ao vivo com o TSE.',
+    ...(indicators?[]:[indicatorStatus]),
+    online?'Indicadores consultados online no TSE. Votos dos candidatos continuam provenientes do banco local.':'Votos dos candidatos são registros armazenados; os horários correspondem à origem indicada.',
     ...(c.office_code===1&&!scopeUf?['O total nacional pode incluir exterior. As 27 UFs são consolidadas apenas quando todos os municípios possuem registros; não há conciliação nacional sem o exterior completo.']:[])]};
  }catch(e){if(!existingClient)await client.query('ROLLBACK');throw e}finally{if(!existingClient)client.release()}
 }
