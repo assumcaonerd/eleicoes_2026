@@ -51,7 +51,7 @@ export function reportInfo(uf:string){const state=states.find(s=>s.uf===uf);cons
 export function buildStateReport(r:StateReport,now=new Date()){
  const info=reportInfo(r.uf),confirmed=r.units.filter(m=>m.votes!==null),sum=confirmed.reduce((n,m)=>n+m.votes!,0);
  // Preserve the established ES composition for complete, reconciled snapshots.
- if(r.uf==='ES'&&confirmed.length===78&&r.total!==null&&r.totalKind==='official'){const old=consolidate({...r.candidate,uf:'ES'},[...r.units.map(m=>({municipality_code:m.tseCode,votes:m.votes!,source_kind:'tse_municipality'})),{municipality_code:'',votes:r.total,source_kind:'tse_scope'}]);old.pins=r.pins;old.pinCoverage=r.pinCoverage;return {...buildReport(old,now),complementary:false}}
+ if(r.uf==='ES'&&confirmed.length===78&&r.total!==null&&r.totalKind==='official'){const old=consolidate({...r.candidate,uf:'ES'},[...r.units.map(m=>({municipality_code:m.tseCode,votes:m.votes!,source_kind:'tse_municipality'})),{municipality_code:'',votes:r.total,source_kind:'tse_scope'}]);old.pins=r.pins.filter(p=>validPin(r,p));old.pinCoverage=r.pinCoverage;return {...buildReport(old,now),complementary:false}}
  const t=printText,scale=colorScale(confirmed.map(m=>m.votes!));
  const projectRaw=([x,y]:number[])=>[x*Math.PI/180,-Math.log(Math.tan(Math.PI/4+y*Math.PI/360))];
  const points=r.units.flatMap(m=>polygons(m.geometry).flat(2)).map(projectRaw);

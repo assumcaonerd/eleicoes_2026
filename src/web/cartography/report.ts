@@ -180,7 +180,7 @@ export function buildReport(report:Report,generatedAt=new Date()){
  `<rect width="4961" height="870" fill="${brandColors.navy}"/><rect y="870" width="4961" height="10" fill="${brandColors.accent}"/>`,
  brandMark.replace('<svg ', '<svg x="4560" y="110" width="180" height="180" '),
  text("SIGA O VOTO 2026",165,190,108,brandColors.accent,true),
- text("MAPA DE VOTAÇÃO POR MUNICÍPIO | ESPÍRITO SANTO",165,305,61,"#d3e6f4"),
+ text("MAPA PROFISSIONAL DE ESPÍRITO SANTO",165,305,61,"#d3e6f4"),
  fitText(report.candidate.ballot_name,165,495,98,4500,"#fff",true),
  fitText(`Nº ${report.candidate.number}  ·  ${report.candidate.office_name}  ·  ${report.candidate.party_abbr||"Partido não informado"}`,165,610,62,4500,"#fff"),
  text(`Eleição 2026  ·  ${report.candidate.round}º turno  ·  TSE ${report.candidate.election_id}`,165,725,47,"#a9c6df"),
@@ -216,7 +216,7 @@ export function buildReport(report:Report,generatedAt=new Date()){
  for(const pin of report.pins??[]){
   if(!Number.isFinite(pin.lat)||!Number.isFinite(pin.lng))continue;
   const p=project([pin.lng,pin.lat]);
-  if(!projected.some(item=>inside(p,item.rings))||labels.some(l=>Math.abs(l.x-p[0])<l.w/2+20&&Math.abs(l.y-p[1]+10)<l.h/2+35)||keptPins.some(q=>Math.hypot(q[0]-p[0],q[1]-p[1])<44))continue;
+  if(!projected.some(item=>inside(p,item.rings)))continue;
   keptPins.push(p);
   pieces.push(`<g transform="translate(${p[0]},${p[1]})"><path d="M0 0C-3-8-10-13-10-20A10 10 0 1 1 10-20C10-13 3-8 0 0Z" fill="#b72e3e" stroke="#fff" stroke-width="2"/><circle cy="-20" r="3.5" fill="#fff"/></g>`);
  }
