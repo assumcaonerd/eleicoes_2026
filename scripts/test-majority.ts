@@ -54,10 +54,10 @@ try{
  candidate={...candidate,round:2};await assert.rejects(majorityOverview(1),/primeiro turno/);
  candidate={...candidate,round:1,office_code:7};await assert.rejects(majorityOverview(1),/governador ou presidente/);
 }finally{(pool as any).connect=savedConnect}
-const page=majorityPage({id:1,email:'synthetic@example.invalid'}),ids=[...page.matchAll(/id="(majority[^"]+)"/g)].map(m=>m[1]);assert.equal(new Set(ids).size,ids.length);assert(page.includes('[hidden]{display:none!important}'));assert(!page.includes('Restaurar visualização'));assert(page.includes('id="majorityFilterField"'));assert(!page.includes('<strong>Indisponíveis</strong>'));
+const page=majorityPage({id:1,email:'synthetic@example.invalid'}),ids=[...page.matchAll(/id="(majority[^"]+)"/g)].map(m=>m[1]);assert.equal(new Set(ids).size,ids.length);assert(page.includes('[hidden]{display:none!important}'));assert(!page.includes('Restaurar visualização'));assert(page.includes('id="majorityFilterField"'));assert(page.includes('id="majorityWinnersPanel"'));assert(page.includes('id="majorityStateWinners"'));assert(page.includes('id="majorityMunicipalityWinners"'));assert(!page.includes('<strong>Indisponíveis</strong>'));
 new Script(readFileSync(new URL('../src/ui/majority.js',import.meta.url),'utf8'));
 assert(page.includes('prefers-reduced-motion'));assert(page.includes('@media(max-width:800px)'));assert(page.includes('outline:3px solid #ffdc35'));
-for(const path of ['/api/majority/compare?ids=1,2','/api/majority/overview?candidateId=1','/api/majority/export.csv?candidateId=1','/api/majority/geometry','/api/majority/sections','/assets/siga-voto/majority.js','/app/majority']){
+for(const path of ['/api/majority/compare?ids=1,2','/api/majority/overview?candidateId=1','/api/majority/export.csv?candidateId=1','/api/majority/geometry','/api/majority/sections','/api/majority/online-totals?uf=ES','/assets/siga-voto/majority.js','/app/majority']){
  let status=0;const res={writeHead(s:number){status=s},end(){}};assert(await handleWeb({method:'GET',url:path,headers:{}} as any,res as any));assert.equal(status,path==='/app/majority'?303:401);
 }
 console.log(JSON.stringify({passed:true,synthetic:true,states:27,municipalities:5571,es:78,exterior:186,checks:['zero versus missing','duplicate rejection','scope isolation','snapshot read-only','no mixed aggregate grains','CSV completeness and formula safety','cartographic inventories','unavailable indicators','authentication','UI syntax','existing controls preserved'],productionDatabaseTested:false,browserTested:false}));
