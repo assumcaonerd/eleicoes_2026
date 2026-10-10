@@ -16,6 +16,7 @@
     "test:majority": "node --import tsx scripts/test-majority.ts",
     "test:indicators": "node --import tsx scripts/test-indicators.ts",
     "import:totals": "tsx scripts/import-territorial-totals.ts",
+    "import:totals:summary": "tsx scripts/import-majority-summary-totals.ts",
     "test:national-map": "node --import tsx scripts/test-national-map.ts"
   },
   "dependencies": {
