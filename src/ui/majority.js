@@ -86,7 +86,7 @@ function addMunicipalWinners(state,rows,fi,li){
  section.appendChild(heading);
  var group=document.createElement('div');
  group.innerHTML=grouped.map(function(r){return winnerLine(r.name,state,String(r.code),fi===0?r.votes_a:r.votes_b,li===0?r.votes_a:r.votes_b)}).join('');
- section.appendChild(group);$('MunicipalityWinners').appendChild(section);
+ section.appendChild(group);section.dataset.uf=state;var target=$('MunicipalityWinners'),following=Array.from(target.children).find(function(el){return String(el.dataset.uf||'').localeCompare(state,'pt-BR')>0});target.insertBefore(section,following||null);
  municipalWinnerCount+=grouped.length;$('MunicipalCount').textContent='('+municipalWinnerCount+')';
  observeTotals(group);
 }
@@ -97,7 +97,7 @@ async function paintMunicipalOverlay(){
  if(!showWinnersPanel()||!map||!window.L)return;
  var cs=mapComparison.candidates,fi=cs.findIndex(isFlavio),li=cs.findIndex(isLula);
  if(fi<0||li<0||fi===li)return;
- var red=mapComparison.rows.filter(function(r){return r.votes_a!=null&&r.votes_b!=null&&r.votes_a!==r.votes_b&&(li===0?r.votes_a>r.votes_b:r.votes_b>r.votes_a)}).map(function(r){return r.uf});
+ var red=mapComparison.rows.filter(function(r){return r.votes_a!=null&&r.votes_b!=null&&r.votes_a!==r.votes_b&&(li===0?r.votes_a>r.votes_b:r.votes_b>r.votes_a)}).map(function(r){return r.uf}).sort();
  if(!red.length)return;
  municipalOverlay=window.L.layerGroup().addTo(map);
  var done=0,errors=0,queue=red.slice(),working=0;
