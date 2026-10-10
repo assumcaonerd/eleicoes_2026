@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 var candidate=null,data=null,map=null,geoLayer=null,pins=null,base=null,satellite=null,uf=null,municipality=null,sectionRows=[],sectionOffset=0,sequence=0,detailSequence=0,lastBounds=null,municipalityBounds=null,satelliteActive=false,personalMarker=null;
-var mapComparison=null,comparisonSequence=0,municipalOverlay=null,overlaySequence=0,comparisonSelection=null;
+var mapComparison=null,comparisonSequence=0,municipalOverlay=null,overlaySequence=0,comparisonSelection=null,onlineTotalsCache=new Map(),onlineTotalsPending=new Set(),onlineTotalsQueue=[],onlineTotalsActive=0,totalsObserver=null,municipalWinnerCount=0;
 var $=function(id){return document.getElementById('majority'+id)};
 var fmt=function(v){return v===null||v===undefined?'Sem registro':Number(v).toLocaleString('pt-BR')};
 var escape=function(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
@@ -17,9 +17,84 @@ function comparisonColor(r){if(!r||r.votes_a==null||r.votes_b==null)return '#697
 function downloadComparisonSVG(){if(!geoLayer||!mapComparison||uf||Number(candidate.office_code)!==1){$('MapStatus').textContent='Abra o mapa do Brasil e compare dois candidatos antes de baixar.';return}var W=1800,H=1900,pad=90,minX=-74,maxX=-34,minY=-34,maxY=6;function project(p){return [(pad+(p[0]-minX)/(maxX-minX)*(W-2*pad)).toFixed(1),(pad+(maxY-p[1])/(maxY-minY)*(H-2*pad)).toFixed(1)]}function ring(points){return points.map(function(p,i){var q=project(p);return(i?'L':'M')+q[0]+' '+q[1]}).join(' ')+' Z'}function shape(g){if(!g)return '';if(g.type==='Polygon')return g.coordinates.map(ring).join(' ');if(g.type==='MultiPolygon')return g.coordinates.map(function(poly){return poly.map(ring).join(' ')}).join(' ');return ''}var shapes=[];geoLayer.eachLayer(function(layer){var f=layer.feature,key=String(f.properties.ibgeCode||f.properties.codarea||f.properties.CD_MUN||f.properties.CD_UF||''),baseRow=data.rows.find(function(r){return String(r.ibgeCode||r.code)===key}),row=comparisonRow(baseRow);shapes.push('<path d="'+shape(f.geometry)+'" fill="'+comparisonColor(row)+'" stroke="#ffffff" stroke-width="2.1" fill-rule="evenodd"/>')});if(municipalOverlay)municipalOverlay.eachLayer(function(layer){var f=layer.feature;if(f&&f.geometry)shapes.push('<path d="'+shape(f.geometry)+'" fill="#ffdc00" stroke="#b49a00" stroke-width="0.7" fill-rule="evenodd"/>')});var legend=mapComparison.candidates.map(function(c,i){return '<rect x="'+(90+i*700)+'" y="168" width="34" height="34" fill="'+candidateColor(c,i)+'"/><text x="'+(140+i*700)+'" y="195" font-size="29" fill="#fff">'+escape(c.ballot_name)+'</text>'}).join('');var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'"><rect width="100%" height="100%" fill="#101d33"/><text x="90" y="82" font-family="Arial" font-weight="bold" font-size="53" fill="#fff">SIGA O VOTO | COMPARATIVO PRESIDENCIAL</text><text x="90" y="127" font-family="Arial" font-size="26" fill="#fff">Brasil · '+escape(String(candidate.election_id))+' · '+escape(String(candidate.round))+'º turno · Vencedor por UF, com destaque municipal</text><g font-family="Arial">'+legend+'</g><g transform="translate(0,160)">'+shapes.join('')+'</g><text x="90" y="1840" font-family="Arial" font-size="25" fill="#fff">Cinza: dados incompletos. Comparação por votos registrados na base.</text></svg>';var blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='siga-o-voto-comparativo-presidente-'+candidate.election_id+'-turno-'+candidate.round+'.svg';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},30000)}
 function isFlavio(c){var n=String(c.ballot_name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();return n.includes('flavio')&&n.includes('bolsonaro')}
 function isLula(c){var n=String(c.ballot_name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();return n.split(/[^a-z]+/).includes('lula')||n.includes('luiz inacio')}
+
+function showWinnersPanel(){
+ var panel=$('WinnersPanel');
+ var cs=mapComparison&&mapComparison.candidates||[],fi=cs.findIndex(isFlavio),li=cs.findIndex(isLula);
+ panel.hidden=!mapComparison||!!uf||Number(candidate.office_code)!==1||fi<0||li<0;
+ if(panel.hidden)return false;
+ var winners=mapComparison.rows.filter(function(r){return r.votes_a!=null&&r.votes_b!=null&&(fi===0?r.votes_a>r.votes_b:r.votes_b>r.votes_a)}).sort(function(a,b){return a.name.localeCompare(b.name,'pt-BR')});
+ $('StateCount').textContent='('+winners.length+')';
+ $('StateWinners').innerHTML=winners.map(function(r){return winnerLine(r.name,r.uf,'',fi===0?r.votes_a:r.votes_b,li===0?r.votes_a:r.votes_b)}).join('')||'<p class="side-caption">Nenhum estado com comparação confirmada.</p>';
+ $('MunicipalCount').textContent='('+municipalWinnerCount+')';
+ observeTotals($('StateWinners'));
+ return true;
+}
+function winnerLine(name,state,code,flavio,lula){
+ var key=state+':'+(code||'');
+ var count='<small>Flávio: '+fmt(flavio)+' · Lula: '+fmt(lula)+'</small>';
+ var cached=onlineTotalsCache.get(key);
+ var totals=cached?totalText(cached):'V / B / N: aguardando consulta ao TSE';
+ return '<div class="territory"><strong>'+escape(name)+' ('+escape(state)+')</strong>'+count+'<small class="official'+(cached&&cached.error?' error':'')+'" data-total-key="'+escape(key)+'">'+escape(totals)+'</small></div>';
+}
+function totalText(value){
+ if(value.error)return 'V / B / N: TSE indisponível neste recorte';
+ var t=value.totals;
+ return 'V: '+fmt(t.valid_votes)+' · B: '+fmt(t.blank_votes)+' · N: '+fmt(t.null_votes)+' | TSE '+t.source_date+' '+t.source_time;
+}
+function observeTotals(root){
+ if(!root)return;
+ if(!totalsObserver&&'IntersectionObserver' in window){
+  totalsObserver=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){totalsObserver.unobserve(entry.target);enqueueTotals(entry.target.dataset.totalKey)}})},{root:$('WinnersPanel'),rootMargin:'180px'});
+ }
+ root.querySelectorAll('[data-total-key]').forEach(function(el){
+  var key=el.dataset.totalKey;
+  if(onlineTotalsCache.has(key)){var result=onlineTotalsCache.get(key);el.textContent=totalText(result);el.classList.toggle('error',!!result.error)}
+  else if(totalsObserver)totalsObserver.observe(el);
+  else enqueueTotals(key);
+ });
+}
+function enqueueTotals(key){
+ if(!key||onlineTotalsCache.has(key)||onlineTotalsPending.has(key)||!mapComparison)return;
+ onlineTotalsPending.add(key);onlineTotalsQueue.push(key);pumpTotals();
+}
+function pumpTotals(){
+ while(onlineTotalsActive<3&&onlineTotalsQueue.length){
+  var key=onlineTotalsQueue.shift();onlineTotalsActive++;
+  (async function(k){
+   try{
+    var parts=k.split(':'),p=new URLSearchParams({uf:parts[0]});
+    if(parts[1])p.set('municipality',parts[1]);
+    var result=await json('/api/majority/online-totals?'+p.toString());
+    onlineTotalsCache.set(k,result);
+   }catch(e){onlineTotalsCache.set(k,{error:String(e.message||e)})}
+   finally{
+    onlineTotalsPending.delete(k);onlineTotalsActive--;
+    document.querySelectorAll('[data-total-key]').forEach(function(el){
+     if(el.dataset.totalKey===k){var v=onlineTotalsCache.get(k);el.textContent=totalText(v);el.classList.toggle('error',!!v.error)}
+    });
+    pumpTotals();
+   }
+  })(key);
+ }
+}
+function addMunicipalWinners(state,rows,fi,li){
+ if(!mapComparison||uf||!rows.length)return;
+ var grouped=rows.slice().sort(function(a,b){return a.name.localeCompare(b.name,'pt-BR')});
+ var section=document.createElement('section'),heading=document.createElement('h4');
+ heading.textContent=state+' · '+grouped.length+' municípios';
+ section.appendChild(heading);
+ var group=document.createElement('div');
+ group.innerHTML=grouped.map(function(r){return winnerLine(r.name,state,String(r.code),fi===0?r.votes_a:r.votes_b,li===0?r.votes_a:r.votes_b)}).join('');
+ section.appendChild(group);$('MunicipalityWinners').appendChild(section);
+ municipalWinnerCount+=grouped.length;$('MunicipalCount').textContent='('+municipalWinnerCount+')';
+ observeTotals(group);
+}
+
 async function paintMunicipalOverlay(){
  var token=++overlaySequence;if(municipalOverlay&&map){map.removeLayer(municipalOverlay);municipalOverlay=null}
- if(!mapComparison||uf||!map||!window.L||Number(candidate.office_code)!==1)return;
+ municipalWinnerCount=0;$('MunicipalityWinners').textContent='';$('MunicipalCount').textContent='(0)';$('WinnersStatus').textContent='';
+ if(!showWinnersPanel()||!map||!window.L)return;
  var cs=mapComparison.candidates,fi=cs.findIndex(isFlavio),li=cs.findIndex(isLula);
  if(fi<0||li<0||fi===li)return;
  var red=mapComparison.rows.filter(function(r){return r.votes_a!=null&&r.votes_b!=null&&r.votes_a!==r.votes_b&&(li===0?r.votes_a>r.votes_b:r.votes_b>r.votes_a)}).map(function(r){return r.uf});
@@ -36,16 +111,18 @@ async function paintMunicipalOverlay(){
    var results=await Promise.all([json('/api/majority/compare?'+cp),json('/api/majority/geometry?'+gp)]);
    if(token!==overlaySequence||!municipalOverlay||uf)return;
    var comp=results[0],geo=results[1],byCode=new Map(comp.rows.map(function(r){return [String(r.code),r]}));
+   var winners=comp.rows.filter(function(r){return r.votes_a!=null&&r.votes_b!=null&&(fi===0?r.votes_a>r.votes_b:r.votes_b>r.votes_a)});
+   addMunicipalWinners(state,winners,fi,li);
    window.L.geoJSON(geo,{filter:function(feature){var r=byCode.get(String(feature.properties.tseCode||''));return !!r&&r.votes_a!=null&&r.votes_b!=null&&(fi===0?r.votes_a>r.votes_b:r.votes_b>r.votes_a)},style:{color:'#b49a00',weight:.65,fillColor:'#ffdc00',fillOpacity:1},onEachFeature:function(f,l){var r=byCode.get(String(f.properties.tseCode));if(r)l.bindTooltip(escape(r.name)+' ('+escape(state)+')<br>'+escape(cs[fi].ballot_name)+': '+fmt(fi===0?r.votes_a:r.votes_b)+' votos<br>'+escape(cs[li].ballot_name)+': '+fmt(li===0?r.votes_a:r.votes_b)+' votos',{sticky:true})}}).eachLayer(function(layer){municipalOverlay.addLayer(layer)});
   }catch(e){errors++}
-  finally{done++;working--;if(token===overlaySequence&&mapComparison&&!uf){$('MapStatus').textContent='Municípios destacados: '+done+' / '+red.length+' estados verificados.'+(errors?' '+errors+' estados não carregados.':'');next()}}
+  finally{done++;working--;if(token===overlaySequence&&mapComparison&&!uf){$('WinnersStatus').textContent='Verificados '+done+' de '+red.length+' estados onde Lula recebeu mais votos.'+(errors?' '+errors+' sem dados municipais disponíveis.':'');$('MapStatus').textContent='Destaques municipais carregados: '+done+' / '+red.length+' estados.';next()}}
  }
  for(var i=0;i<Math.min(3,queue.length);i++)next();
 }
 function ensureComparisonDownload(){var b=$('ComparisonDownload');if(!b){b=document.createElement('button');b.id='majorityComparisonDownload';b.type='button';b.className='btn';b.textContent='Baixar mapa comparativo do Brasil (SVG)';b.onclick=downloadComparisonSVG;$('CSV').insertAdjacentElement('afterend',b)}b.hidden=!(mapComparison&&!uf&&candidate&&Number(candidate.office_code)===1)}
 function paintComparison(){ensureComparisonDownload();if(!map||!geoLayer||!data||!mapComparison||uf||Number(candidate.office_code)!==1)return;var indexed=new Map(data.rows.map(function(r){return [String(r.ibgeCode||r.code),r]}));geoLayer.eachLayer(function(layer){var f=layer.feature,key=String(f.properties.ibgeCode||f.properties.codarea||f.properties.CD_MUN||f.properties.CD_UF||''),row=comparisonRow(indexed.get(key));layer.setStyle({fillColor:comparisonColor(row),fillOpacity:row&&row.votes_a!=null&&row.votes_b!=null?1:.35});if(!row)return;var names=mapComparison.candidates;var outcome=row.votes_a==null||row.votes_b==null?'Sem registro completo':'Mais votos: '+escape(names[row.votes_a===row.votes_b?0:row.votes_a>row.votes_b?0:1].ballot_name);layer.bindTooltip(escape(row.name)+'<br>'+escape(names[0].ballot_name)+': '+fmt(row.votes_a)+' votos<br>'+escape(names[1].ballot_name)+': '+fmt(row.votes_b)+' votos<br>'+outcome,{sticky:true})});$('MapLegend').innerHTML=mapComparison.candidates.map(function(c,i){return '<span style="display:inline-block;width:14px;height:14px;background:'+candidateColor(c,i)+';border:1px solid white;margin-right:5px"></span>'+escape(c.ballot_name)}).join(' · ')+' · Cinza: sem registro completo';$('MapStatus').textContent='Comparação por UF. Nos estados vermelhos, municípios amarelos indicam vitória de Flávio Bolsonaro.'}
 async function draw(token){try{var L=await initMap(),g=await json('/api/majority/geometry?'+params());if(token!==sequence)return;if(geoLayer)map.removeLayer(geoLayer);pins.clearLayers();var indexed=new Map(data.rows.map(function(r){return [String(r.ibgeCode||r.code),r]}));var max=Math.max(1,...data.rows.map(function(r){return r.votes||0}));geoLayer=L.geoJSON(g,{style:function(f){var key=String(f.properties.ibgeCode||f.properties.codarea||f.properties.CD_MUN||f.properties.CD_UF||''),r=indexed.get(key);return {color:'#fff',weight:1,fillColor:!r||r.votes===null?'#697487':r.votes===0?'#edf1f5':'#f4cd28',fillOpacity:!r||r.votes===null?.35:r.votes===0?.6:.25+.7*Math.sqrt(r.votes/max)}},onEachFeature:function(f,l){var key=String(f.properties.ibgeCode||f.properties.codarea||f.properties.CD_MUN||f.properties.CD_UF||''),r=indexed.get(key);if(!r)return;l.bindTooltip(escape(r.name)+'<br>'+fmt(r.votes)+' votos',{sticky:true});l.on('click',function(){if(!uf)load(r.uf);else openMunicipality(r)})}}).addTo(map);lastBounds=geoLayer.getBounds();bounds();$('MapStatus').textContent='Limites oficiais IBGE. Clique no território para detalhar.';paintComparison()}catch(e){if(token===sequence)$('MapStatus').textContent='Malha cartográfica indisponível: '+e.message+'. A tabela eleitoral continua acessível.'}}
-async function load(nextUF){if(!candidate)return;var token=++sequence;detailSequence++;comparisonSequence++;overlaySequence++;if(municipalOverlay&&map){map.removeLayer(municipalOverlay);municipalOverlay=null;}mapComparison=null;ensureComparisonDownload();$('MapLegend').textContent='Cores: intensidade dos votos disponíveis. Cinza: sem registro completo.';uf=Number(candidate.office_code)===3?candidate.uf:(nextUF||null);$('Office').value=String(candidate.office_code);configureUF(false);$('UF').value=uf||'';municipality=null;municipalityBounds=null;sectionRows=[];sectionOffset=0;lastBounds=null;data=null;$('Filter').value='';$('Sort').value='name';$('CompareQuery').value='';$('State').hidden=true;$('CSV').disabled=true;$('Print').hidden=true;$('Indicators').textContent='Consultando...';$('IndicatorStatus').textContent='';if(personalMarker&&map){map.removeLayer(personalMarker);personalMarker=null;}$('Comparison').textContent='';$('CompareOptions').textContent='';$('Detail').hidden=true;$('Status').textContent='Consultando os registros oficiais armazenados...';$('List').innerHTML='';$('MapStatus').textContent='';if(geoLayer&&map)map.removeLayer(geoLayer);geoLayer=null;if(pins)pins.clearLayers();try{var d=await json('/api/majority/overview?'+params());if(token!==sequence)return;data=d;candidate=d.candidate;uf=d.uf;$('Panel').hidden=false;$('Title').textContent=candidate.ballot_name+' · '+candidate.office_name;$('Scope').textContent='Eleição '+candidate.election_id+' · '+(d.year||2026)+' · '+candidate.round+'º turno · '+(uf||'Brasil');$('Total').textContent=fmt(d.total);$('Coverage').textContent=fmt(d.coverage)+' / '+fmt(d.expected);$('Status').textContent='Base armazenada. Importação mais antiga do recorte: '+(d.updated_at?new Date(d.updated_at).toLocaleString('pt-BR'):'não disponível')+'. '+d.warnings.join(' ');$('Brazil').hidden=Number(candidate.office_code)!==1;$('State').hidden=true;$('ListTitle').textContent=uf==='ZZ'?'Unidades eleitorais do exterior e votação':uf?'Municípios e votação':'UFs e votação';$('FilterField').hidden=Number(candidate.office_code)===3;$('ExteriorHint').hidden=Number(candidate.office_code)!==1;$('Print').hidden=true;if(uf&&uf!=='ZZ')printInfo(token);$('Exterior').hidden=Number(candidate.office_code)!==1;$('CSV').disabled=d.reconciliation==='divergent';$('Indicators').textContent=d.indicators?fmt(d.indicators.valid_votes)+' / '+fmt(d.indicators.blank_votes)+' / '+fmt(d.indicators.null_votes):'Sem totalização importada';$('IndicatorStatus').textContent=d.indicators?(d.indicator_online?'Fonte: TSE online · ':'Fonte: totalização armazenada · ')+'Comparecimento: '+fmt(d.indicators.turnout)+' · Abstenção: '+fmt(d.indicators.abstention)+' · Seções totalizadas: '+fmt(d.indicators.sections_totalized_percentage)+'% · Situação: '+({n:'não iniciada',p:'parcial',f:'finalizada'}[d.indicators.totalization_status])+' · Totalização TSE: '+d.indicators.source_date+' '+d.indicators.source_time+' · Fonte: '+d.indicator_source:(d.indicator_status||'Não há registros de totalização territorial armazenados para este recorte. A consulta de votos por candidato não contém estes indicadores.');list();if(uf!=='ZZ'){await draw(token);if(token===sequence&&!uf&&comparisonSelection&&Number(candidate.office_code)===1){
+async function load(nextUF){if(!candidate)return;var token=++sequence;detailSequence++;comparisonSequence++;overlaySequence++;if(municipalOverlay&&map){map.removeLayer(municipalOverlay);municipalOverlay=null;}mapComparison=null;$('WinnersPanel').hidden=true;ensureComparisonDownload();$('MapLegend').textContent='Cores: intensidade dos votos disponíveis. Cinza: sem registro completo.';uf=Number(candidate.office_code)===3?candidate.uf:(nextUF||null);$('Office').value=String(candidate.office_code);configureUF(false);$('UF').value=uf||'';municipality=null;municipalityBounds=null;sectionRows=[];sectionOffset=0;lastBounds=null;data=null;$('Filter').value='';$('Sort').value='name';$('CompareQuery').value='';$('State').hidden=true;$('CSV').disabled=true;$('Print').hidden=true;$('Indicators').textContent='Consultando...';$('IndicatorStatus').textContent='';if(personalMarker&&map){map.removeLayer(personalMarker);personalMarker=null;}$('Comparison').textContent='';$('CompareOptions').textContent='';$('Detail').hidden=true;$('Status').textContent='Consultando os registros oficiais armazenados...';$('List').innerHTML='';$('MapStatus').textContent='';if(geoLayer&&map)map.removeLayer(geoLayer);geoLayer=null;if(pins)pins.clearLayers();try{var d=await json('/api/majority/overview?'+params());if(token!==sequence)return;data=d;candidate=d.candidate;uf=d.uf;$('Panel').hidden=false;$('Title').textContent=candidate.ballot_name+' · '+candidate.office_name;$('Scope').textContent='Eleição '+candidate.election_id+' · '+(d.year||2026)+' · '+candidate.round+'º turno · '+(uf||'Brasil');$('Total').textContent=fmt(d.total);$('Coverage').textContent=fmt(d.coverage)+' / '+fmt(d.expected);$('Status').textContent='Base armazenada. Importação mais antiga do recorte: '+(d.updated_at?new Date(d.updated_at).toLocaleString('pt-BR'):'não disponível')+'. '+d.warnings.join(' ');$('Brazil').hidden=Number(candidate.office_code)!==1;$('State').hidden=true;$('ListTitle').textContent=uf==='ZZ'?'Unidades eleitorais do exterior e votação':uf?'Municípios e votação':'UFs e votação';$('FilterField').hidden=Number(candidate.office_code)===3;$('ExteriorHint').hidden=Number(candidate.office_code)!==1;$('Print').hidden=true;if(uf&&uf!=='ZZ')printInfo(token);$('Exterior').hidden=Number(candidate.office_code)!==1;$('CSV').disabled=d.reconciliation==='divergent';$('Indicators').textContent=d.indicators?fmt(d.indicators.valid_votes)+' / '+fmt(d.indicators.blank_votes)+' / '+fmt(d.indicators.null_votes):'Sem totalização importada';$('IndicatorStatus').textContent=d.indicators?(d.indicator_online?'Fonte: TSE online · ':'Fonte: totalização armazenada · ')+'Comparecimento: '+fmt(d.indicators.turnout)+' · Abstenção: '+fmt(d.indicators.abstention)+' · Seções totalizadas: '+fmt(d.indicators.sections_totalized_percentage)+'% · Situação: '+({n:'não iniciada',p:'parcial',f:'finalizada'}[d.indicators.totalization_status])+' · Totalização TSE: '+d.indicators.source_date+' '+d.indicators.source_time+' · Fonte: '+d.indicator_source:(d.indicator_status||'Não há registros de totalização territorial armazenados para este recorte. A consulta de votos por candidato não contém estes indicadores.');list();if(uf!=='ZZ'){await draw(token);if(token===sequence&&!uf&&comparisonSelection&&Number(candidate.office_code)===1){
  try{var restored=await json('/api/majority/compare?ids='+comparisonSelection.join(','));if(token!==sequence)return;mapComparison=restored;paintComparison();paintMunicipalOverlay();$('Comparison').textContent='Comparação presidencial restaurada no mapa do Brasil. '+restored.candidates.map(function(c){return c.ballot_name}).join(' × ')+'.';}
  catch(err){if(token===sequence)$('MapStatus').textContent='Não foi possível restaurar a comparação: '+err.message;}
  }}else $('MapStatus').textContent='Exterior: unidades eleitorais oficiais, sem localização fictícia ou associação a municípios brasileiros.'}catch(e){if(token!==sequence)return;$('Panel').hidden=false;$('Status').textContent=e.message;$('List').innerHTML='';$('Total').textContent='Indisponível';$('Coverage').textContent='Indisponível';$('CSV').disabled=true;$('Print').hidden=true;$('Indicators').textContent='Consulta falhou';$('IndicatorStatus').textContent=e.message}}
