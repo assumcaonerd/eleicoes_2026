@@ -9,7 +9,7 @@ export const states = [
 ].map(([uf,name,ibgeCode])=>({uf,name,ibgeCode}));
 export type Municipality = {uf:string;code:string;name:string;ibgeCode?:string};
 export type Fact = {uf:string;municipality_code:string;votes:number;source_kind:string;source_updated_at?:string|null};
-export type Territory = {code:string;name:string;uf:string;ibgeCode?:string;votes:number|null;share:number|null;coverage:number;expected:number;updated_at:string|null};
+export type Territory = {code:string;name:string;uf:string;ibgeCode?:string;votes:number|null;share:number|null;valid_vote_percentage?:number|null;coverage:number;expected:number;updated_at:string|null};
 export function consolidateTerritories(catalog:Municipality[],facts:Fact[],national:boolean,total:number|null):Territory[]{
  const seen=new Map<string,Fact>();
  for(const row of facts){
@@ -46,7 +46,7 @@ export function csvCell(value:unknown){
 export function territoryCSV(data:{candidate:any;rows:Territory[];total:number|null}){
  const c=data.candidate;
  return '\uFEFF'+[
-  ['Eleição','Turno','Cargo','Candidato','Número','UF','Código','Território','Votos','Participação no total do candidato (%)','Registros presentes','Registros esperados','Atualização'],
-  ...data.rows.map(r=>[c.election_id,c.round,c.office_name,c.ballot_name,c.number,r.uf,r.code,r.name,r.votes,r.share,r.coverage,r.expected,r.updated_at])
+  ['Eleição','Turno','Cargo','Candidato','Número','UF','Código','Território','Votos','Percentual dos votos válidos (%)','Participação no total do candidato (%)','Registros presentes','Registros esperados','Atualização'],
+  ...data.rows.map(r=>[c.election_id,c.round,c.office_name,c.ballot_name,c.number,r.uf,r.code,r.name,r.votes,r.valid_vote_percentage,r.share,r.coverage,r.expected,r.updated_at])
  ].map(r=>r.map(csvCell).join(';')).join('\r\n')+'\r\n';
 }

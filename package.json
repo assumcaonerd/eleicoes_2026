@@ -13,7 +13,9 @@
     "check": "tsc -p tsconfig.json --noEmit",
     "test:map": "node --import tsx scripts/test-map-report.ts",
     "test:brand": "node --import tsx scripts/test-brand.ts",
-    "test:majority": "node --import tsx scripts/test-majority.ts"
+    "test:majority": "node --import tsx scripts/test-majority.ts",
+    "test:indicators": "node --import tsx scripts/test-indicators.ts",
+    "import:totals": "tsx scripts/import-territorial-totals.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "^1.0.1",
