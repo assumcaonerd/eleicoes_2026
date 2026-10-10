@@ -13,7 +13,7 @@ import es from '../src/web/cartography/es-ibge.json' with {type:'json'};
 assert.equal(states.length,27);assert.equal(new Set(states.map(s=>s.ibgeCode)).size,27);
 assert.equal(catalog.length,5571);assert.equal(exterior.length,186);assert(exterior.every(m=>m.uf==='ZZ'));
 assert.equal(new Set(catalog.map(m=>m.uf+':'+m.code)).size,catalog.length);
-assert.equal(es.features.length,78);
+assert.equal(es.features.length,78);assert.equal(catalog.filter(m=>m.uf==='SP').length,645);
 const facts:Fact[]=catalog.map((m,i)=>({uf:m.uf,municipality_code:m.code,votes:i%10,source_kind:'tse_municipality',source_updated_at:'2026-10-10T12:00:00Z'}));
 const total=facts.reduce((n,f)=>n+f.votes,0);
 const rows=consolidateTerritories(catalog,facts,true,total);
@@ -28,7 +28,7 @@ assert.throws(()=>consolidateTerritories(catalog,[{...facts[0],votes:1.3}],true,
 assert.equal(consolidateTerritories(catalog,[...facts,{...facts[0],votes:999999,source_kind:'tse_scope'}],true,total).reduce((n,r)=>n+r.votes!,0),total);
 assert.equal(csvCell('=SUM(A1:A2)'),`"'=SUM(A1:A2)"`);
 const csv=territoryCSV({candidate:{election_id:6257,round:1,office_name:'Presidente',ballot_name:'TESTE SINTÉTICO',number:'00'},rows,total});
-assert.equal(csv.split('\r\n').filter(Boolean).length,28);assert(csv.includes('Participação no total do candidato'));assert(!csv.includes('votos válidos (%)'));
+assert.equal(csv.split('\r\n').filter(Boolean).length,28);assert(csv.includes('Participação no total do candidato'));assert(csv.includes('Percentual dos votos válidos (%)'));
 assert.equal((await majorityGeometry()).features.length,27);assert.equal((await majorityGeometry('ES')).features.length,78);await assert.rejects(majorityGeometry('XX'),/UF inválida/);
 
 // Exercise the read-only integration contract without touching production or storing synthetic votes.
@@ -54,7 +54,7 @@ try{
  candidate={...candidate,round:2};await assert.rejects(majorityOverview(1),/primeiro turno/);
  candidate={...candidate,round:1,office_code:7};await assert.rejects(majorityOverview(1),/governador ou presidente/);
 }finally{(pool as any).connect=savedConnect}
-const page=majorityPage({id:1,email:'synthetic@example.invalid'}),ids=[...page.matchAll(/id="(majority[^"]+)"/g)].map(m=>m[1]);assert.equal(new Set(ids).size,ids.length);
+const page=majorityPage({id:1,email:'synthetic@example.invalid'}),ids=[...page.matchAll(/id="(majority[^"]+)"/g)].map(m=>m[1]);assert.equal(new Set(ids).size,ids.length);assert(page.includes('[hidden]{display:none!important}'));assert(!page.includes('Restaurar visualização'));assert(page.includes('id="majorityFilterField"'));assert(!page.includes('<strong>Indisponíveis</strong>'));
 new Script(readFileSync(new URL('../src/ui/majority.js',import.meta.url),'utf8'));
 assert(page.includes('prefers-reduced-motion'));assert(page.includes('@media(max-width:800px)'));assert(page.includes('outline:3px solid #ffdc35'));
 for(const path of ['/api/majority/compare?ids=1,2','/api/majority/overview?candidateId=1','/api/majority/export.csv?candidateId=1','/api/majority/geometry','/api/majority/sections','/assets/siga-voto/majority.js','/app/majority']){

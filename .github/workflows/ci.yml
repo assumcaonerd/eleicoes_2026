@@ -15,6 +15,7 @@ jobs:
       - run: npm run build
       - run: npm run test:brand
       - run: npm run test:majority
+      - run: npm run test:indicators
       - run: npm run test:map
       - uses: actions/upload-artifact@v4
         with:

@@ -1,3 +1,6 @@
+import {createHash} from "node:crypto";
+import {storeIndicators} from "../majority/indicators.js";
+import {pool} from "../db/index.js";
 import { offices } from "../config.js";
 import { sql } from "../db/index.js";
 import { fetchAndPersist } from "./client.js";
@@ -40,19 +43,24 @@ async function storeScope(args: {
   const url = scopeResultUrl(args);
   const { data, file } = await fetchAndPersist<any>(url);
   const candidates = extractCandidates(data);
+  const sourceDigest=createHash("sha256").update(JSON.stringify(data)).digest("hex");
   const electionId = electionIdForOffice(args.office);
 
   for (const candidate of candidates) {
     const candidateId = await upsertCandidate({ electionId, office: args.office, uf: args.uf, candidate });
     await sql(`
       INSERT INTO vote_facts
-        (election_id, office_code, candidate_id, uf, municipality_code, municipality_name, zone, votes, source_kind, source_file, source_updated_at)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,now())
+        (election_id, office_code, candidate_id, uf, municipality_code, municipality_name, zone, votes, source_kind, source_file, source_updated_at, source_sha256)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,now(),$11)
       ON CONFLICT (election_id, round, office_code, candidate_id, uf,
         municipality_code, neighborhood, zone, section, polling_place_code, source_kind)
-      DO UPDATE SET votes=EXCLUDED.votes, source_file=EXCLUDED.source_file, source_updated_at=now()
+      DO UPDATE SET votes=EXCLUDED.votes, source_file=EXCLUDED.source_file, source_updated_at=now(), source_sha256=EXCLUDED.source_sha256
     `, [electionId, args.office, candidateId, args.uf, args.municipalityCode ?? '', args.municipalityName ?? null,
-      args.zone ?? -1, candidate.votes, args.zone == null ? (args.municipalityCode ? "tse_municipality" : "tse_scope") : "tse_zone", file]);
+      args.zone ?? -1, candidate.votes, args.zone == null ? (args.municipalityCode ? "tse_municipality" : "tse_scope") : "tse_zone", file, sourceDigest]);
+  }
+  if([1,3].includes(args.office)){
+    const client=await pool.connect();
+    try{await storeIndicators(client,data,{electionId,round:1,office:args.office,uf:args.uf,municipalityCode:args.municipalityCode,zone:args.zone},url,file)}finally{client.release()}
   }
   return candidates.length;
 }

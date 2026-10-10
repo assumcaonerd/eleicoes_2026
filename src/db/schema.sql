@@ -134,3 +134,14 @@ CREATE TABLE IF NOT EXISTS search_history (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS search_history_user_idx ON search_history(user_id, created_at DESC);
+
+-- Territorial indicators are independent of candidate facts. Additive migration only.
+CREATE TABLE IF NOT EXISTS territorial_totals (
+ election_id INTEGER NOT NULL, round INTEGER NOT NULL, office_code INTEGER NOT NULL,
+ uf CHAR(2) NOT NULL, municipality_code TEXT NOT NULL DEFAULT '', zone INTEGER NOT NULL DEFAULT -1,
+ totals JSONB NOT NULL, source_url TEXT NOT NULL, source_file TEXT NOT NULL,
+ source_sha256 TEXT NOT NULL, imported_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+ PRIMARY KEY(election_id,round,office_code,uf,municipality_code,zone)
+);
+
+ALTER TABLE vote_facts ADD COLUMN IF NOT EXISTS source_sha256 TEXT;

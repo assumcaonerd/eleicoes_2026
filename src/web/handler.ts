@@ -84,13 +84,13 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
     const uf=url.searchParams.get('uf')?.toUpperCase()||undefined;
     try{
       if(url.pathname==='/api/majority/compare'){json(res,await majorityComparison((url.searchParams.get('ids')??'').split(',').map(Number),uf));return true}
-      if(url.pathname==='/api/majority/geometry'){json(res,await majorityGeometry(uf));return true}
+      if(url.pathname==='/api/majority/geometry'){const scope=await majorityOverview(candidateId,uf);if(scope.uf==='ZZ')throw new Error('Exterior não possui malha municipal brasileira.');json(res,await majorityGeometry(scope.uf??undefined));return true}
       if(url.pathname==='/api/majority/overview'||url.pathname==='/api/majority/export.csv'){
         const data=await majorityOverview(candidateId,uf);
         if(url.pathname.endsWith('.csv')){
           if(data.reconciliation==='divergent')throw new Error('Exportação bloqueada: totais divergentes.');
           const csv=territoryCSV(data);
-          res.writeHead(200,{'content-type':'text/csv; charset=utf-8','content-disposition':'attachment; filename="siga-o-voto-2026-'+(uf??'BR')+'-completo.csv"','cache-control':'private, no-store','x-content-type-options':'nosniff'});res.end(csv);
+          res.writeHead(200,{'content-type':'text/csv; charset=utf-8','content-disposition':'attachment; filename="siga-o-voto-2026-'+(data.uf??'BR')+'-completo.csv"','cache-control':'private, no-store','x-content-type-options':'nosniff'});res.end(csv);
         }else json(res,data);
         return true
       }
