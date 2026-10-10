@@ -9,6 +9,9 @@ import { searchCandidates, compareCandidates, topTerritories, partyVotes, source
 import { sql } from "../db/index.js";
 import { homePage, authPage, plansPage, appPage, adminPage, resetPasswordPage } from "./pages.js";
 import {renderESMap,renderStateMap,reportInfo} from "./map-export.js";
+import {readOnlineIndicators} from '../majority/indicators.js';
+import {electionIdForOffice} from '../tse/url.js';
+import municipalities2026 from '../majority/municipalities-2026.json' with {type:'json'};
 import {majorityPage} from '../majority/page.js';
 import {majorityOverview,majorityGeometry,majoritySections,majorityComparison} from '../majority/data.js';
 import {territoryCSV} from '../majority/model.js';
@@ -93,6 +96,14 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
     const candidateId=Number(url.searchParams.get('candidateId'));
     const uf=url.searchParams.get('uf')?.toUpperCase()||undefined;
     try{
+      if(url.pathname==='/api/majority/online-totals'){
+        const state=url.searchParams.get('uf')?.toUpperCase()||'';
+        const municipality=url.searchParams.get('municipality')||undefined;
+        if(!/^[A-Z]{2}$/.test(state)||!municipalities2026.some(m=>m.uf===state&&(!municipality||m.code===municipality)))
+          throw new Error('Território oficial inválido.');
+        const live=await readOnlineIndicators({electionId:electionIdForOffice(1),round:1,office:1,uf:state,municipalityCode:municipality});
+        json(res,{uf:state,municipality:municipality||null,...live});return true
+      }
       if(url.pathname==='/api/majority/compare'){json(res,await majorityComparison((url.searchParams.get('ids')??'').split(',').map(Number),uf));return true}
       if(url.pathname==='/api/majority/geometry'){const scope=await majorityOverview(candidateId,uf);if(scope.uf==='ZZ')throw new Error('Exterior não possui malha municipal brasileira.');json(res,await majorityGeometry(scope.uf??undefined));return true}
       if(url.pathname==='/api/majority/overview'||url.pathname==='/api/majority/export.csv'){
