@@ -8,7 +8,7 @@ body.sov-shell{background:#090f1f;color:#fff}.sov-shell .card{background:#121d30
 <h1>Governador e Presidente</h1><p class="muted">Resultados armazenados de 2026, primeiro turno. Fonte eleitoral: TSE.</p>
 <form id="majoritySearch" class="card"><div class="grid">
 <label class="field">Cargo<select id="majorityOffice"><option value="3">Governador</option><option value="1">Presidente da República</option></select></label>
-<label class="field">Estado<select id="majorityUF">${states.map(s=>`<option value="${s.uf}" ${s.uf==='ES'?'selected':''}>${s.name} (${s.uf})</option>`).join('')}</select></label>
+<label class="field">Estado<select id="majorityUF"><option value=""></option>${states.map(s=>`<option value="${s.uf}">${s.name} (${s.uf})</option>`).join('')}</select></label>
 <label class="field">Candidato<input id="majorityQuery" placeholder="Nome ou número" autocomplete="off"></label></div>
 <button class="btn" type="submit">Buscar candidatos</button><div id="majorityResults" class="majority-search-results" role="status" aria-live="polite"></div></form>
 <section id="majorityPanel" hidden><h2 id="majorityTitle"></h2><p id="majorityScope"></p>

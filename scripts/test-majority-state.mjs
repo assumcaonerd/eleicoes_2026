@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
+const elements=new Map(),requests=[];
+let resultButtons=[];
+function element(id){if(!elements.has(id))elements.set(id,{value:'',options:[{textContent:''}],disabled:false,hidden:false,textContent:'',innerHTML:'',querySelectorAll(){return id==='majorityResults'?resultButtons:[];}});return elements.get(id)}
+const $=id=>element('majority'+id);
+$('Office').value='3';$('UF').value='SP';
+const candidate={id:42,office_code:1,office_name:'Presidente',uf:'BR',ballot_name:'Candidato de teste',number:'00',election_id:1,round:1};
+runInNewContext(readFileSync(new URL('../src/ui/majority.js',import.meta.url),'utf8'),{document:{getElementById:element,createElement(){throw Error('Map intentionally unavailable in DOM test')}},window:{location:{search:''}},URLSearchParams,AbortController,setTimeout,clearTimeout,fetch:async url=>{requests.push(url);if(url.startsWith('/api/candidates'))return {ok:true,json:async()=>({rows:[candidate]})};if(url.startsWith('/api/map-report-info'))return {ok:true,json:async()=>({name:'Teste',count:1,unit:'município'})};return {ok:true,json:async()=>({candidate,uf:new URL('https://test.invalid'+url).searchParams.get('uf'),total:0,coverage:0,expected:0,warnings:[],rows:[]})};}});
+$('Office').value='1';$('Office').onchange();
+assert.equal($('UF').disabled,false);assert.equal($('UF').value,'');assert.equal($('UF').options[0].textContent,'Todos');assert.equal($('Panel').hidden,true);
+$('UF').value='SP';$('UF').onchange();resultButtons=[{dataset:{index:'0'}}];
+await $('Search').onsubmit({preventDefault(){}});
+assert.equal(new URL('https://test.invalid'+requests.at(-1)).searchParams.get('uf'),'BR');
+resultButtons[0].onclick();await new Promise(resolve=>setImmediate(resolve));
+assert(requests.some(url=>url.startsWith('/api/majority/overview?')&&url.includes('uf=SP')));assert.equal($('UF').value,'SP');assert.equal($('UF').disabled,false);
+$('UF').value='ES';$('UF').onchange();await new Promise(resolve=>setImmediate(resolve));
+assert(requests.some(url=>url.startsWith('/api/majority/overview?')&&url.includes('uf=ES')));
+$('UF').value='';$('UF').onchange();await new Promise(resolve=>setImmediate(resolve));
+assert.equal(new URL('https://test.invalid'+requests.filter(url=>url.startsWith('/api/majority/overview?')).at(-1)).searchParams.has('uf'),false);
+$('Office').value='3';$('Office').onchange();assert.equal($('UF').value,'');assert.equal($('UF').options[0].textContent,'');assert.equal($('UF').disabled,false);assert.equal($('Panel').hidden,true);
+console.log('Passed: governor SP → president Todos; enabled UF; BR candidate search; selected UF overview; UF changes; national reset; return to governor.');
