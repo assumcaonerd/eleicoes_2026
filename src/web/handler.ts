@@ -1,5 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { URL } from "node:url";
+import { readFileSync } from "node:fs";
+import { brandMark } from "./brand.js";
 import { currentUser, hasActiveAccess, sessionCookie, clearSessionCookie, revokeCurrentSession, audit, hashPassword, hashToken } from "../auth/security.js";
 import { registerUser, loginUser } from "../auth/service.js";
 import { createCheckout, handleStripeWebhook } from "../billing/stripe.js";
@@ -27,6 +29,12 @@ function sameOrigin(req:IncomingMessage){const origin=req.headers.origin;if(!ori
 
 export async function handleWeb(req:IncomingMessage,res:ServerResponse){
   const url=new URL(req.url??"/","http://local");
+  const fonts:Record<string,string>={"/assets/siga-voto/lato-regular-v1.ttf":"Lato-Regular.ttf","/assets/siga-voto/lato-bold-v1.ttf":"Lato-Bold.ttf"};
+  if(req.method==="GET"&&(fonts[url.pathname]||url.pathname==="/assets/siga-voto/mark.svg")){
+    const isFont=Boolean(fonts[url.pathname]);
+    const content=isFont?readFileSync(new URL("./cartography/fonts/"+fonts[url.pathname],import.meta.url)):brandMark;
+    res.writeHead(200,{"content-type":isFont?"font/ttf":"image/svg+xml","cache-control":isFont?"public, max-age=31536000, immutable":"public, max-age=86400","x-content-type-options":"nosniff"});res.end(content);return true;
+  }
   if(req.method==="POST"&&!sameOrigin(req)&&url.pathname!=="/webhooks/stripe"){json(res,{error:"Origem inválida."},403);return true}
   if(url.pathname==="/"&&req.method==="GET"){const user=await currentUser(req);html(res,homePage(user));return true}
   if(url.pathname==="/login"&&req.method==="GET"){html(res,authPage("login"));return true}

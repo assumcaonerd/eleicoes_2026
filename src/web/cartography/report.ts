@@ -1,5 +1,6 @@
 import {readFileSync} from "node:fs";
 import opentype from "opentype.js";
+import {brandColors,brandMark} from "../brand.js";
 import geography from "./es-ibge.json" with {type:"json"};
 
 export type Candidate={id:number;uf:string;number:string;ballot_name:string;full_name?:string;party_abbr:string;office_name:string;office_code:number;election_id:number;round:number};
@@ -176,7 +177,8 @@ export function buildReport(report:Report,generatedAt=new Date()){
  `<title id="report-title">Siga o Voto 2026: ${xml(report.candidate.ballot_name)}, 78 municípios do Espírito Santo</title>`,
  `<metadata>${xml(JSON.stringify({candidate:report.candidate,total:report.total,municipalities:report.municipalities.map(({geometry,...m})=>m),generatedAt:generatedAt.toISOString(),projection:"EPSG:3857; escala uniforme",classification:"Quartis dos valores positivos; valores repetidos mantidos juntos; zero separado",sources:["Tribunal Superior Eleitoral","IBGE"]}))}</metadata>`,
  `<rect width="${WIDTH}" height="${HEIGHT}" fill="#fff"/>`,
- '<rect width="4961" height="870" fill="#102b47"/><rect y="870" width="4961" height="10" fill="#4386b7"/>',
+ `<rect width="4961" height="870" fill="${brandColors.navy}"/><rect y="870" width="4961" height="10" fill="${brandColors.primary}"/>`,
+ brandMark.replace('<svg ', '<svg x="4560" y="110" width="180" height="180" '),
  text("SIGA O VOTO 2026",165,190,108,"#fff",true),
  text("MAPA DE VOTAÇÃO POR MUNICÍPIO | ESPÍRITO SANTO",165,305,61,"#d3e6f4"),
  fitText(report.candidate.ballot_name,165,495,98,4500,"#fff",true),

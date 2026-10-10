@@ -11,7 +11,8 @@
     "import:2026": "tsx scripts/import-2026.ts",
     "import:sections": "tsx scripts/import-sections-csv.ts",
     "check": "tsc -p tsconfig.json --noEmit",
-    "test:map": "node --import tsx scripts/test-map-report.ts"
+    "test:map": "node --import tsx scripts/test-map-report.ts",
+    "test:brand": "node --import tsx scripts/test-brand.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "^1.0.1",
