@@ -16,6 +16,7 @@ async function throttle() {
 export async function fetchJson<T = unknown>(url: string): Promise<T> {
   await throttle();
   const response = await fetch(url, {
+    signal: AbortSignal.timeout(30000),
     headers: { "user-agent": "eleicoes-2026/0.1 (+dados-publicos-tse)" },
   });
   if (!response.ok) throw new Error(`TSE ${response.status} em ${url}`);

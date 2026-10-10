@@ -34,6 +34,7 @@ export function appPage(user:any,active:boolean){
 <h1>Explore a votação. Entenda o território.</h1>
 <p class="muted">Escolha um candidato e descubra onde a votação foi forte, média ou fraca.</p></header>
 <div class="card searchbox">
+<p><a class="btn" href="/app/majority">Painel de Governador e Presidente</a></p>
 <form id="search"><div class="grid">
 <label class="field">Candidato<input name="q" placeholder="Digite o nome ou número" required autocomplete="off"></label>
 <label class="field">Cargo<select name="office"><option value="">Todos</option><option value="1">Presidente</option><option value="3">Governador</option><option value="5">Senador</option><option value="6">Deputado Federal</option><option value="7">Deputado Estadual/Distrital</option></select></label>

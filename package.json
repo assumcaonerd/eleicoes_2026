@@ -12,7 +12,8 @@
     "import:sections": "tsx scripts/import-sections-csv.ts",
     "check": "tsc -p tsconfig.json --noEmit",
     "test:map": "node --import tsx scripts/test-map-report.ts",
-    "test:brand": "node --import tsx scripts/test-brand.ts"
+    "test:brand": "node --import tsx scripts/test-brand.ts",
+    "test:majority": "node --import tsx scripts/test-majority.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "^1.0.1",

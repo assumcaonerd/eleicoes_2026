@@ -9,6 +9,9 @@ import { searchCandidates, compareCandidates, topTerritories, partyVotes, source
 import { sql } from "../db/index.js";
 import { homePage, authPage, plansPage, appPage, adminPage, resetPasswordPage } from "./pages.js";
 import {renderESMap} from "./map-export.js";
+import {majorityPage} from '../majority/page.js';
+import {majorityOverview,majorityGeometry,majoritySections,majorityComparison} from '../majority/data.js';
+import {territoryCSV} from '../majority/model.js';
 
 async function readBody(req:IncomingMessage,raw=false){
   const chunks:Buffer[]=[];
@@ -69,6 +72,35 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
   if(url.pathname==="/logout"&&req.method==="POST"){await revokeCurrentSession(req);redirect(res,"/",clearSessionCookie());return true}
   if(url.pathname==="/webhooks/stripe"&&req.method==="POST"){try{const raw=await readBody(req,true) as Buffer;const sig=String(req.headers["stripe-signature"]??"");const event=await handleStripeWebhook(raw,sig);json(res,{received:true,event});}catch(e:any){json(res,{error:e.message},400)}return true}
   const user=await currentUser(req);
+  if(req.method==='GET'&&(url.pathname==='/app/majority'||url.pathname.startsWith('/api/majority/')||url.pathname==='/assets/siga-voto/majority.js')){
+    if(!user){if(url.pathname==='/app/majority')redirect(res,'/login');else json(res,{error:'Não autenticado.'},401);return true}
+    if(!await hasActiveAccess(Number(user.id))){json(res,{error:'Assinatura inativa.'},402);return true}
+    if(url.pathname==='/app/majority'){html(res,majorityPage(user));return true}
+    if(url.pathname==='/assets/siga-voto/majority.js'){
+      res.writeHead(200,{'content-type':'application/javascript; charset=utf-8','cache-control':'private, no-store','x-content-type-options':'nosniff'});
+      res.end(readFileSync(new URL('../ui/majority.js',import.meta.url)));return true
+    }
+    const candidateId=Number(url.searchParams.get('candidateId'));
+    const uf=url.searchParams.get('uf')?.toUpperCase()||undefined;
+    try{
+      if(url.pathname==='/api/majority/compare'){json(res,await majorityComparison((url.searchParams.get('ids')??'').split(',').map(Number),uf));return true}
+      if(url.pathname==='/api/majority/geometry'){json(res,await majorityGeometry(uf));return true}
+      if(url.pathname==='/api/majority/overview'||url.pathname==='/api/majority/export.csv'){
+        const data=await majorityOverview(candidateId,uf);
+        if(url.pathname.endsWith('.csv')){
+          if(data.reconciliation==='divergent')throw new Error('Exportação bloqueada: totais divergentes.');
+          const csv=territoryCSV(data);
+          res.writeHead(200,{'content-type':'text/csv; charset=utf-8','content-disposition':'attachment; filename="siga-o-voto-2026-'+(uf??'BR')+'-completo.csv"','cache-control':'private, no-store','x-content-type-options':'nosniff'});res.end(csv);
+        }else json(res,data);
+        return true
+      }
+      if(url.pathname==='/api/majority/sections'){
+        const optional=(key:string)=>{const value=url.searchParams.get(key);return value?Number(value):undefined};
+        json(res,await majoritySections({candidateId,uf:uf??'',municipality:url.searchParams.get('municipality')??'',zone:optional('zone'),section:optional('section'),place:url.searchParams.get('place')||undefined,offset:optional('offset')}));return true
+      }
+      json(res,{error:'Consulta não encontrada.'},404);return true
+    }catch(e:any){console.error('MAJORITY_QUERY_ERROR',e?.message);json(res,{error:e?.message??'Consulta indisponível.'},400);return true}
+  }
   if(url.pathname==="/planos"&&req.method==="GET"){if(!user){redirect(res,"/login");return true}html(res,plansPage(user));return true}
   if(url.pathname==="/checkout"&&req.method==="POST"){if(!user){redirect(res,"/login");return true}try{const d=await readBody(req) as any;const plan=d.plan==="lifetime"?"lifetime":"monthly";const target=await createCheckout({id:Number(user.id),email:user.email},plan);await audit(req,"CHECKOUT_STARTED",Number(user.id),{plan});if(!target)throw new Error("Checkout indisponível.");redirect(res,target);}catch(e:any){html(res,plansPage(user),400)}return true}
   if(url.pathname==="/app"&&req.method==="GET"){if(!user){redirect(res,"/login");return true}const active=await hasActiveAccess(Number(user.id));html(res,appPage(user,active));return true}

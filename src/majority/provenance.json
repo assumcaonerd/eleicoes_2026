@@ -1,0 +1,9 @@
+{
+ "retrievedAt":"2026-10-10",
+ "municipalitiesSource":"https://resultados.tse.jus.br/oficial/ele2026/6259/config/mun-e006259-cm.json",
+ "presidentialUnitsSource":"https://resultados.tse.jus.br/oficial/ele2026/6257/config/mun-e006257-cm.json",
+ "nationalGeometrySource":"https://servicodados.ibge.gov.br/api/v3/malhas/paises/BR?formato=application/vnd.geo+json&qualidade=minima&intrarregiao=UF",
+ "nationalGeometryUsage":"Navigation only. Not a high-resolution print geometry.",
+ "counts":{"domesticMunicipalities":5571,"states":27,"exteriorUnits":186},
+ "notes":"No electoral vote values are bundled. Catalogs are pinned to 2026 round 1. Exterior city names are official electoral units, not an inferred country mapping. ES geometry and crosswalk retain their existing provenance."
+}
