@@ -1,5 +1,7 @@
 import type {PoolClient} from 'pg';
 import {createHash} from 'node:crypto';
+import {fetchJson} from '../tse/client.js';
+import {scopeResultUrl} from '../tse/url.js';
 export const indicatorSpecification='https://www.tse.jus.br/eleicoes/eleicoes-2026-content/arquivos/divulgacao-de-resultados/tse-ea20-arquivo-de-resultado-unificado';
 export type TotalScope={electionId:number;round:number;office:number;uf:string;municipalityCode?:string;zone?:number};
 export function parseIndicators(p:any,scope:TotalScope){
@@ -25,4 +27,27 @@ export async function readIndicators(client:PoolClient,scope:TotalScope){
  if(!exists)return {rows:[],status:'A tabela de totalizações ainda não foi criada neste ambiente.'};
  const rows=(await client.query(`SELECT municipality_code,totals,source_url,source_file,source_sha256,imported_at FROM territorial_totals WHERE election_id=$1 AND round=$2 AND office_code=$3 AND uf=$4 AND zone=-1`,[scope.electionId,scope.round,scope.office,scope.uf])).rows;
  return {rows,status:rows.length?'Snapshot oficial armazenado; data e hora da totalização constam na fonte.':'Nenhuma totalização EA20 foi importada para esta eleição, turno, cargo e território.'};
+}
+
+type OnlineTotals={totals:ReturnType<typeof parseIndicators>;source_url:string;fetched_at:string};
+const onlineCache=new Map<string,{expires:number;value:OnlineTotals}>();
+const pendingOnline=new Map<string,Promise<OnlineTotals>>();
+/** Consult the official TSE EA20 result, never fabricate a denominator.
+ * A short positive TTL and inflight deduplication avoid hammering the TSE. */
+export async function readOnlineIndicators(scope:TotalScope):Promise<OnlineTotals>{
+ if(scope.round!==1||![1,3].includes(scope.office)||!/^(BR|[A-Z]{2})$/.test(scope.uf))throw new Error('Recorte EA20 online inválido.');
+ const key=[scope.electionId,scope.round,scope.office,scope.uf].join(':');
+ const cached=onlineCache.get(key);
+ if(cached&&cached.expires>Date.now())return cached.value;
+ const inFlight=pendingOnline.get(key);if(inFlight)return inFlight;
+ const job=(async()=>{
+  let url=scopeResultUrl({office:scope.office,uf:scope.uf});
+  if(scope.office===1&&scope.uf!=='BR')url=url.replace('/dados/br/br-','/dados/'+scope.uf.toLowerCase()+'/'+scope.uf.toLowerCase()+'-');
+  const raw=await fetchJson<any>(url);
+  const value={totals:parseIndicators(raw,scope),source_url:url,fetched_at:new Date().toISOString()};
+  onlineCache.set(key,{expires:Date.now()+60000,value});
+  return value;
+ })();
+ pendingOnline.set(key,job);
+ try{return await job}finally{pendingOnline.delete(key)}
 }
