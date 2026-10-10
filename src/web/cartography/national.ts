@@ -13,7 +13,7 @@ const fmt=(v:number|null)=>v===null?'Sem registro':v.toLocaleString('pt-BR');
 export function stateGeography(uf:string){
  const state=states.find(s=>s.uf===uf);if(!state)throw new Error('UF inválida. Selecione um estado ou o Distrito Federal.');
  if(!cache.has(uf)){
-  let g:any;try{const data=readFileSync(new URL(uf==='ES'?'./es-ibge.json':`./ufs/${uf}.json.gz`,import.meta.url));g=JSON.parse((uf==='ES'?data:gunzipSync(data)).toString('utf8'))}catch{throw new Error(`Malha oficial de ${uf} ainda indisponível. Nenhuma localização será inventada.`)}
+  let g:any;try{const data=uf==='MT'?Buffer.concat((JSON.parse(readFileSync(new URL('./ufs/MT.parts.json',import.meta.url),'utf8')) as string[]).map(name=>readFileSync(new URL('./ufs/'+name,import.meta.url)))):readFileSync(new URL(uf==='ES'?'./es-ibge.json':`./ufs/${uf}.json.gz`,import.meta.url));g=JSON.parse((uf==='ES'?data:gunzipSync(data)).toString('utf8'))}catch{throw new Error(`Malha oficial de ${uf} ainda indisponível. Nenhuma localização será inventada.`)}
   const expected=catalog.filter(m=>m.uf===uf),keys=new Map(expected.map(m=>[m.ibgeCode,m.code]));
   if(g.type!=='FeatureCollection'||g.features.length!==expected.length)throw new Error(`Quantidade territorial divergente em ${uf}.`);
   const ibge=new Set(),tse=new Set();
