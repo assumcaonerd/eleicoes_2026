@@ -67,5 +67,5 @@ body.sov-public{background:${brandColors.navy};color:#fff}
 .sov-app .app-intro h1{color:${brandColors.accent};text-transform:uppercase;font-size:clamp(28px,3.2vw,40px);margin-top:12px}
 .sov-app .app-intro .muted{color:#E0E6F1;margin-bottom:0}.sov-app .app-intro .hero-eyebrow{color:${brandColors.accent}}.sov-app .app-intro .hero-eyebrow:before{background:${brandColors.accent}}
 @media(max-width:760px){.sov-public .hero{padding:24px 0 36px}.sov-shell .brand-wordmark strong{font-size:18px}.sov-app .app-intro{padding:24px 20px;border-radius:20px}.hero-checks{display:grid;gap:8px}}
-@media print{body.sov-shell{background:white;color:#142B4A}.sov-shell .wrap{max-width:none;padding:0}.sov-shell .card{padding:0;border:0;box-shadow:none}.sov-shell .vote-comparison{position:static;box-shadow:none}.sov-shell .nav,.sov-shell .footer{display:none!important}}
+@media print{body.sov-shell{background:white;color:#142B4A}.sov-shell .wrap{max-width:none;padding:0}.sov-shell .card{padding:0;border:0;box-shadow:none}.sov-shell .vote-comparison{position:static;box-shadow:none}.sov-shell .nav,.sov-shell .footer,.sov-shell .app-intro{display:none!important}.sov-public .hero h1,.sov-public main>h1{color:#142B4A}}
 `;
