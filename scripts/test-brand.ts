@@ -9,6 +9,7 @@ const user={id:1,email:"visual-test@example.invalid",role:"admin"};
 const pages=[homePage(),homePage(user),authPage("login"),authPage("cadastro"),authPage("login","<script>invalid</script>"),appPage(user,true),appPage(user,false),plansPage(user),resetPasswordPage("token"),resetPasswordPage("", "",true),adminPage(user,{users:1,active:1,imports:1})];
 for(const page of pages){
  assert(page.includes('class="sov-shell '));assert(page.includes('class="brand-symbol"'));assert(page.includes('INTELIGÊNCIA ELEITORAL'));assert(page.includes('<main>'));
+ assert(page.includes("/assets/siga-voto/favicon-v1.svg"));assert(page.includes("/favicon.ico?v=1"));assert(page.includes("apple-touch-icon"));
  assert(page.includes("font-family:SigaLato"));assert(page.includes("font-display:swap"));assert(!page.includes("politique.app"));
  for(const match of page.matchAll(/<script(?: [^>]*)?>([\s\S]*?)<\/script>/g))new Script(match[1]);
 }
@@ -31,3 +32,12 @@ for(const [path,file] of [["lato-regular-v1.ttf","Lato-Regular.ttf"],["lato-bold
  if(file){assert(Buffer.isBuffer(content));assert.equal(headers["content-type"],"font/ttf");assert(content.equals(readFileSync(new URL("../src/web/cartography/fonts/"+file,import.meta.url))))}else assert.equal(content,brandMark);
 }
 console.log(JSON.stringify({passed:true,pages:pages.length,tabs:7,uniqueControls:ids.length,contrast:"WCAG AA >= 4.5:1",publicAssets:3,checks:"branding, local fonts, forms, escaped errors, JavaScript syntax, existing controls, responsive/print/reduced-motion styles"}));
+
+for(const [url,type] of [["/favicon.ico","image/x-icon"],["/assets/siga-voto/favicon-v1.svg","image/svg+xml"],["/assets/siga-voto/favicon-32-v1.png","image/png"],["/assets/siga-voto/favicon-180-v1.png","image/png"]]){
+ let status=0,headers:Record<string,any>={},content:any;
+ await handleWeb({method:"GET",url,headers:{}} as any,{writeHead:(s:number,h:any)=>{status=s;headers=h},end:(c:any)=>{content=c}} as any);
+ assert.equal(status,200);assert.equal(headers["content-type"],type);assert(content.length>100);
+ if(type==="image/png"){const size=url.includes("180")?180:32;assert.equal(content.readUInt32BE(16),size);assert.equal(content.readUInt32BE(20),size)}
+ if(type==="image/x-icon"){assert.equal(content.readUInt16LE(2),1);assert.equal(content.readUInt16LE(4),3)}
+}
+console.log("Favicon: public routes, image dimensions, ICO frames and page links passed.");

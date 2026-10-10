@@ -32,6 +32,16 @@ function sameOrigin(req:IncomingMessage){const origin=req.headers.origin;if(!ori
 
 export async function handleWeb(req:IncomingMessage,res:ServerResponse){
   const url=new URL(req.url??"/","http://local");
+  const faviconFiles:Record<string,{file:string,type:string}>={
+    "/favicon.ico":{file:"favicon-v1.ico",type:"image/x-icon"},
+    "/assets/siga-voto/favicon-v1.svg":{file:"favicon-v1.svg",type:"image/svg+xml"},
+    ...Object.fromEntries([16,32,48,180,192].map(size=>["/assets/siga-voto/favicon-"+size+"-v1.png",{file:"favicon-"+size+"-v1.png",type:"image/png"}]))
+  };
+  const favicon=faviconFiles[url.pathname];
+  if(req.method==="GET"&&favicon){
+    const content=readFileSync(new URL("../ui/icons/"+favicon.file,import.meta.url));
+    res.writeHead(200,{"content-type":favicon.type,"cache-control":url.pathname==="/favicon.ico"?"public, max-age=86400":"public, max-age=31536000, immutable","x-content-type-options":"nosniff"});res.end(content);return true;
+  }
   const fonts:Record<string,string>={"/assets/siga-voto/lato-regular-v1.ttf":"Lato-Regular.ttf","/assets/siga-voto/lato-bold-v1.ttf":"Lato-Bold.ttf"};
   if(req.method==="GET"&&(fonts[url.pathname]||url.pathname==="/assets/siga-voto/mark.svg")){
     const isFont=Boolean(fonts[url.pathname]);
