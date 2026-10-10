@@ -1,3 +1,4 @@
+import {stateGeography} from '../web/cartography/national.js';
 import {readIndicators} from './indicators.js';
 import {pool} from '../db/index.js';
 import type {PoolClient} from 'pg';
@@ -93,27 +94,7 @@ export async function majorityComparison(ids:number[],uf?:string){
  }catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
 }
 
-const geometryCache=new Map<string,Promise<any>>();
-export async function majorityGeometry(uf?:string){
- if(!uf)return brazil;
- if(uf==='ES')return es;
- const state=states.find(s=>s.uf===uf);
- if(uf&&!state)throw new Error('UF inválida.');
- const key=uf??'BR';
- if(!geometryCache.has(key)){
-  const url=state?`https://servicodados.ibge.gov.br/api/v3/malhas/estados/${state.ibgeCode}?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio`:
-   'https://servicodados.ibge.gov.br/api/v3/malhas/paises/BR?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=UF';
-  geometryCache.set(key,(async()=>{
-   const response=await fetch(url,{signal:AbortSignal.timeout(20000)});
-   if(!response.ok)throw new Error('Malha IBGE indisponível: HTTP '+response.status);
-   const geometry:any=await response.json();
-   if(geometry.type!=='FeatureCollection'||!Array.isArray(geometry.features)||geometry.features.length===0||(!uf&&geometry.features.length!==27))throw new Error('Malha IBGE incompleta.');
-   if(geometry.features.some((f:any)=>!['Polygon','MultiPolygon'].includes(f.geometry?.type)))throw new Error('Geometria territorial inválida.');
-   return geometry;
-  })().catch(e=>{geometryCache.delete(key);throw e}));
- }
- return geometryCache.get(key)!;
-}
+export async function majorityGeometry(uf?:string){return uf?stateGeography(uf):brazil;}
 
 export async function majoritySections(args:{candidateId:number;uf:string;municipality:string;zone?:number;place?:string;section?:number;offset?:number}){
  const {candidate:c}=await majorityOverview(args.candidateId,args.uf);

@@ -241,3 +241,6 @@ export function buildReport(report:Report,generatedAt=new Date()){
  if(/NaN|Infinity/.test(svg))throw new Error("Coordenada gráfica inválida. Exportação bloqueada.");
  return {svg,labels,municipalities:78,total:report.total};
 }
+
+export const printText=text;
+export {layoutLabels,interiorAnchor};

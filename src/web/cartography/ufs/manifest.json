@@ -1,0 +1,319 @@
+[
+  {
+    "uf": "AC",
+    "count": 22,
+    "assetSha256": "bcd47a464334c7b3ff862dab832a5d58d6463307fd271587fdfca102d0417ffb",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/12?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "62f5a06e2dc570532dda3721df29c140fc3599b69e3085840aa5e48f58f363b2",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/12/municipios"
+    }
+  },
+  {
+    "uf": "AL",
+    "count": 102,
+    "assetSha256": "e14c39e3902a6fd3b1ba61eb9a168a70f50627437ad37106d0cc5765c759ba59",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/27?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "3505dcb89f753dcdbb8a7d8a0a186302f9d5f3252a9ae479b0ea95fa7ea08eae",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/27/municipios"
+    }
+  },
+  {
+    "uf": "AM",
+    "count": 62,
+    "assetSha256": "04e2b50ddea528cdf4122193691f6822e676f1a682ed577ed9520af429adfe6b",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/13?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "9f7814945a090954c20e92af7022b79d681535f61933fe56cd0cdb69d1df2ffb",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/13/municipios"
+    }
+  },
+  {
+    "uf": "AP",
+    "count": 16,
+    "assetSha256": "dcfc2e407d50ab29265cfb46455084cf6cb52759e67df87d29f8f6da71794d3b",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/16?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "22ffebcd8235478c29d5d3bd72cb2cd51649f377aca8f20421a86e62ba57924f",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/16/municipios"
+    }
+  },
+  {
+    "uf": "BA",
+    "count": 417,
+    "assetSha256": "5f239e56fbeca2d307724374c6da2a66aed9f10183bcecafce5fa176fc567e4a",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/29?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "5449e806f0e56d23eb4923dc54b816bbb4c6a51aa74fc0b579455f44de44b9b2",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/29/municipios"
+    }
+  },
+  {
+    "uf": "CE",
+    "count": 184,
+    "assetSha256": "b6d28f5bed30d7154a378fe83ff5876b97f8ae08e584a0cdea72daae1da0b669",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/23?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "bf54026da8dc0db22d7986e1be060dcd4c30e545365024380f6f1b4950163525",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/23/municipios"
+    }
+  },
+  {
+    "uf": "DF",
+    "count": 1,
+    "assetSha256": "71a027591b91782d6195e44b01106bb204892f76a61bf49a21760adc743d5fad",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/53?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "fbb325ed64f96fa951435fc02a87801701f62d482becda26adb9e8d93f799f8b",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/53/municipios"
+    }
+  },
+  {
+    "uf": "GO",
+    "count": 246,
+    "assetSha256": "0a772ca932c6b0889c71fb53b3502c81c1a9e501bf2cac389c7fffbfddf53bba",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/52?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "5b02dcb3fb7a2bb437dd89a7ad49abdc59e1013e7931c99a8c942599545f2ad9",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/52/municipios"
+    }
+  },
+  {
+    "uf": "MA",
+    "count": 217,
+    "assetSha256": "24f238ee4465d4e11aef1ef45a42e2cb2830099a87794559430d386ce0b80bbd",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/21?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "7596b3f4e511f7f4376b65766d1512270aa7b286d1c86253dc5729433498aa4b",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/21/municipios"
+    }
+  },
+  {
+    "uf": "MG",
+    "count": 853,
+    "assetSha256": "7a81541af0320680759b0a575e08b80ebc3c3b38d81d06a6d8c8d9f0eb84b592",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/31?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "0ac287391b4a1332ea428c73273bba5ab9cef14a8251bb7468387b73bc522c10",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/31/municipios"
+    }
+  },
+  {
+    "uf": "MS",
+    "count": 79,
+    "assetSha256": "59131aa1bc8ae288564d22c2c3a6bd97083fe46f08d6aae39c2b47f8ff1a3af7",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/50?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "0e209a36703681dc4c3f8eff108dd4b57434faee8e06ec545eb17524691ebe2c",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/50/municipios"
+    }
+  },
+  {
+    "uf": "MT",
+    "count": 142,
+    "assetSha256": "a4b9f0b9f84b24d911c88b486993b8b99e0e272e12b187a0e6cfeeef3faf95b9",
+    "source": {
+      "url": "https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2025/UFs/MT/MT_Municipios_2025.zip",
+      "retrievedAt": "2026-10-10",
+      "sha256": "86f3cc662ff63c9742f095ba60fa201721f8faf1d9dc4cd3f59c20028cc9b7a0",
+      "simplificationDegrees": 5e-05,
+      "crosswalk": "TSE mun-e006259-cm.json campos cd/cdi"
+    }
+  },
+  {
+    "uf": "PA",
+    "count": 144,
+    "assetSha256": "bed131cc2abb875398ff0d74a6f7dc864ed7f4adc1f20115f9d8e0bc602f40b0",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/15?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "badad567ba9fdbb63c51a41cb8cf7e6b73222b6a5ff8781107fd561dfe9c9cc2",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/15/municipios"
+    }
+  },
+  {
+    "uf": "PB",
+    "count": 223,
+    "assetSha256": "7164d8b10eb1696b8567ea96d47fe1e0af4f53a7c0fe85c89e66effba84b5af1",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/25?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "eb0959d996f24aac3642df4bbcc550035f396b4f7707bd9491ab822659ebf658",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/25/municipios"
+    }
+  },
+  {
+    "uf": "PE",
+    "count": 185,
+    "assetSha256": "613bc682f3a31f74c48b112c742488b42a3110b1a0ae1492087c6ab18e291183",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/26?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "d95c99bb6cfc2f403ff96240f409542102f1f7e70be2b5f505cdb5a911999472",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/26/municipios"
+    }
+  },
+  {
+    "uf": "PI",
+    "count": 224,
+    "assetSha256": "5a15d9237ef542aa36f769480e52a27998eac7c5325e838592e602e5d539f317",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/22?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "dc3c1079517c834266d378f51ad06acf81918304bd396aa1a86a124d0f5a474f",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/22/municipios"
+    }
+  },
+  {
+    "uf": "PR",
+    "count": 399,
+    "assetSha256": "29b12b0df8aba4a76703337508dd678299842b55dd18dabafc319c8f81892427",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/41?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "dddf64a2747a81d8ba5de454f48948cf0cc3589c103004e8fae733db621ca22c",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/41/municipios"
+    }
+  },
+  {
+    "uf": "RJ",
+    "count": 92,
+    "assetSha256": "b85c0bc43079663bcac10d71d13723a5abb96933c278436c3c61f01453fe9d8c",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/33?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "3c53676f3fa487a5732be3bcbb88d711fd8ee8bfa81aa19468eb2c9b6b93a476",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/33/municipios"
+    }
+  },
+  {
+    "uf": "RN",
+    "count": 167,
+    "assetSha256": "e84dc7e41380f57d57cc620dd109d752add0dad09078042f3ea45ccf760bfe65",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/24?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "68c686741bc7cc6a239f22093f47845098bb156088f9e34dcd5ffa743c871edb",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/24/municipios"
+    }
+  },
+  {
+    "uf": "RO",
+    "count": 52,
+    "assetSha256": "083d8c9b15e4b55dc5a003f6e93df6a64f69f4ed9a2e62a0b2937c13db007271",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/11?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "4e3940e58b39cb2c702adb6d850b42753c04989319046a9f92159cefad05b395",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/11/municipios"
+    }
+  },
+  {
+    "uf": "RR",
+    "count": 15,
+    "assetSha256": "198a3e23bbfb93dbe8b41a61c2e74279a64b92ccd59395e5a4078df5facc3384",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/14?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "0b44c964efc960afb1d1c99c11466b8854ff0aa72e80c221e04717cb3f3b7bee",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/14/municipios"
+    }
+  },
+  {
+    "uf": "RS",
+    "count": 497,
+    "assetSha256": "f6680d4692e113496fc3c9d83315f43f99d66991b20d141fb740c4008f4bc382",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/43?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "026f812616e334ef1798b1cc1af8b46d98598cd63221a1b7312cbfb9d3a8a255",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/43/municipios"
+    }
+  },
+  {
+    "uf": "SC",
+    "count": 295,
+    "assetSha256": "dda4acd35eb7b7a324fa991e0d5002d2d9048f5424e037aacd95e712fd7a66f7",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/42?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "8f10496df507ebccdd14b778104e9c317949eaa80ab3787477f4396f5eab89a0",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/42/municipios"
+    }
+  },
+  {
+    "uf": "SE",
+    "count": 75,
+    "assetSha256": "91ad3e6c966a2c12bb147f96d0b844ad2d596414292c96a4c7f428c97e3b08b4",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/28?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "1d6aa15c01a7c141017f77d92785d264b08137de13e9b7e18013a03bb6aadce2",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/28/municipios"
+    }
+  },
+  {
+    "uf": "SP",
+    "count": 645,
+    "assetSha256": "17fc4ebf5ce439508289d11ca675b35bf24c3ed4eb280dfc70ffeb6b632ec039",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/35?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "12e5a0bf431aa76e852631969172e67997eef94f9cc722a2fd36c783a193f54d",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/35/municipios"
+    }
+  },
+  {
+    "uf": "TO",
+    "count": 139,
+    "assetSha256": "c129734008e4398b33d243b74728977a131218ba5c7d7b110a88311c5b324829",
+    "source": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/17?formato=application/vnd.geo+json&qualidade=intermediaria&intrarregiao=municipio",
+      "retrievedAt": "2026-10-10",
+      "sha256": "9441d03772d17d45a03ea67e0e0961371c81afe508de2740de50c757c54ba347",
+      "crosswalk": "src/majority/municipalities-2026.json",
+      "nameSource": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/17/municipios"
+    }
+  },
+  {
+    "uf": "ES",
+    "count": 78,
+    "existing": true
+  }
+]

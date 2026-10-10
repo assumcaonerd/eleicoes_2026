@@ -106,12 +106,12 @@ export function appPage(user:any,active:boolean){
     <div class="map-imagery-status" id="mapImageryStatus" role="status" aria-live="polite"></div>
   </div>
   <div id="esStatePrint" style="display:none;margin:10px 0 16px;padding:16px;border:1px solid #b8c9d9;border-radius:12px;background:#f7f9fb">
-   <div style="font-weight:800;margin-bottom:7px">MAPA PROFISSIONAL DO ESPÍRITO SANTO</div>
+   <div id="statePrintTitle" style="font-weight:800;margin-bottom:7px">MAPA PROFISSIONAL</div>
    <div class="row">
      <button class="btn" id="esPrintPng" type="button">Baixar mapa PNG A2</button>
-     <button class="btn secondary" id="esPrintSvg" type="button">Baixar mapa SVG vetorial</button>
+     <button class="btn secondary" id="esPrintSvg" type="button">Baixar mapa SVG vetorial</button><button class="btn secondary" id="statePrintTable" type="button">Baixar relatório complementar paginado</button>
    </div>
-   <div class="map-note">Relatório A2, 300 dpi: os 78 municípios, limites oficiais do IBGE, nomes, votos e tabela completa. Disponível sem filtros territoriais, em qualquer zoom ou tipo de mapa.</div>
+   <div class="map-note" id="statePrintDescription">Mapa A2, 300 dpi, com toda a UF, independentemente do zoom. Relação integral disponível no relatório complementar paginado.</div>
    <div id="esPrintStatus" role="status" aria-live="polite" class="map-note"></div>
   </div>
   <div id="map" class="map-canvas"></div>
@@ -804,17 +804,21 @@ function updateESPrintControl(){
  if(!panel||!currentCandidate){if(panel)panel.style.display="none";return}
  var f=currentMapSelections();
  var statewide=!f.municipality&&!f.zone&&!f.neighborhood&&!f.place&&!f.section;
- var visible=currentLevel==="map"&&currentCandidate.uf==="ES"&&statewide;
+ var visible=currentLevel==="map"&&/^[A-Z]{2}$/.test(currentCandidate.uf)&&currentCandidate.uf!=="BR"&&statewide;
  panel.style.display=visible?"block":"none";
+ if(visible){var selectedUF=currentCandidate.uf;comparisonJSON("/api/map-report-info?uf="+selectedUF).then(function(info){if(!currentCandidate||currentCandidate.uf!==selectedUF)return;document.getElementById("statePrintTitle").textContent="MAPA PROFISSIONAL DE "+info.name.toLocaleUpperCase("pt-BR");document.getElementById("statePrintDescription").textContent=info.count+" "+info.unit+". Mapa A2, 300 dpi, com toda a UF, em qualquer zoom. "+(info.complementary?"A relação integral está no complemento paginado ("+info.pages+" páginas), preservando texto legível. ":"Tabela integral à esquerda. ")+"Nomes e votos também constam no complemento. Dados ausentes são identificados."}).catch(function(e){document.getElementById("esPrintStatus").textContent=e.message})}
+
 }
 async function downloadESMap(format){
- if(!currentCandidate||currentCandidate.uf!=="ES")return;
+ if(!currentCandidate)return;
  var status=document.getElementById("esPrintStatus");
- var controls=[document.getElementById("esPrintPng"),document.getElementById("esPrintSvg")];
+ var controls=[document.getElementById("esPrintPng"),document.getElementById("esPrintSvg"),document.getElementById("statePrintTable")];
+ if(controls.some(function(el){return el.disabled}))return;
+ var downloadCandidate=currentCandidate;
  controls.forEach(function(el){el.disabled=true});
- status.textContent="Conferindo os totais e gerando o relatório dos 78 municípios em alta resolução. Aguarde...";
+ status.textContent="Conferindo os registros da UF e gerando o arquivo integral. Aguarde...";
  try{
-  var target="/api/map-export-es?candidateId="+encodeURIComponent(currentCandidate.id)+"&format="+format;
+  var target="/api/map-export?candidateId="+encodeURIComponent(downloadCandidate.id)+"&uf="+encodeURIComponent(downloadCandidate.uf)+"&format="+format;
   var controller=new AbortController();
   var timer=setTimeout(function(){controller.abort()},120000);
   var response;
@@ -828,10 +832,10 @@ async function downloadESMap(format){
   var url=URL.createObjectURL(blob);
   var link=document.createElement("a");
   link.href=url;
-  link.download="mapa-completo-es-"+currentCandidate.number+"-2026."+format;
+  link.download="mapa-completo-"+downloadCandidate.uf.toLowerCase()+"-"+downloadCandidate.number+"-"+downloadCandidate.election_id+"-turno-"+downloadCandidate.round+"."+format;
   document.body.appendChild(link);link.click();link.remove();
   setTimeout(function(){URL.revokeObjectURL(url)},30000);
-  status.textContent="Relatório dos 78 municípios conferido: arquivo "+format.toUpperCase()+" disponível para impressão.";
+  status.textContent="Relatório integral gerado: arquivo "+format.toUpperCase()+" disponível para impressão.";
  }catch(error){
   status.textContent="Não foi possível gerar o mapa: "+(error.name==="AbortError"?"tempo limite excedido":error.message||"falha temporária");
  }finally{controls.forEach(function(el){el.disabled=false})}
@@ -942,6 +946,7 @@ document.getElementById("municipalitySelect").addEventListener("change",async fu
 });
 document.getElementById("esPrintPng").addEventListener("click",function(){downloadESMap("png")});
 document.getElementById("esPrintSvg").addEventListener("click",function(){downloadESMap("svg")});
+document.getElementById("statePrintTable").addEventListener("click",function(){downloadESMap("html")});
 document.getElementById("mapMunicipality").addEventListener("change",function(){
  territoryScope.municipality=this.value;
  territoryScope.neighborhood="";territoryScope.place="";territoryScope.zone="";territoryScope.section="";

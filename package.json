@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
-    "build": "tsc -p tsconfig.json && mkdir -p dist/src/ui && cp -R src/ui/. dist/src/ui/ && mkdir -p dist/src/web/cartography/fonts && cp src/web/cartography/fonts/* dist/src/web/cartography/fonts/",
+    "build": "tsc -p tsconfig.json && mkdir -p dist/src/ui && cp -R src/ui/. dist/src/ui/ && mkdir -p dist/src/web/cartography/fonts && cp src/web/cartography/fonts/* dist/src/web/cartography/fonts/ && mkdir -p dist/src/web/cartography/ufs && cp src/web/cartography/es-ibge.json dist/src/web/cartography/ && cp src/web/cartography/ufs/* dist/src/web/cartography/ufs/",
     "db:init": "tsx scripts/init-db.ts",
     "import:2026": "tsx scripts/import-2026.ts",
     "import:sections": "tsx scripts/import-sections-csv.ts",
@@ -15,7 +15,8 @@
     "test:brand": "node --import tsx scripts/test-brand.ts",
     "test:majority": "node --import tsx scripts/test-majority.ts",
     "test:indicators": "node --import tsx scripts/test-indicators.ts",
-    "import:totals": "tsx scripts/import-territorial-totals.ts"
+    "import:totals": "tsx scripts/import-territorial-totals.ts",
+    "test:national-map": "node --import tsx scripts/test-national-map.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "^1.0.1",
