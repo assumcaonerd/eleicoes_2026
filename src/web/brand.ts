@@ -1,6 +1,6 @@
 /** Original Siga o Voto artwork. No Politique assets are bundled. */
-export const brandColors = {primary:"#245FE5",navy:"#142B4A",background:"#F2F5FA",muted:"#56657A",border:"#DCE4EF",soft:"#EAF1FF"} as const;
-export const brandMark = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" rx="14" fill="#245FE5"/><path d="M24 39s13-12.3 13-22a13 13 0 0 0-26 0c0 9.7 13 22 13 22Z" fill="white"/><path d="m18 17 4 4 8-8" stroke="#245FE5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+export const brandColors = {primary:"#245FE5",navy:"#090F1F",action:"#137847",accent:"#FFD633",background:"#F2F5FA",muted:"#56657A",border:"#DCE4EF",soft:"#EAF1FF"} as const;
+export const brandMark = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none"><path d="m34 5 14 19-14 19-14-19Z" fill="#FFD633"/><circle cx="21" cy="24" r="20" fill="#245FE5"/><path d="M29 15c-2-2-5-3-8-3-5 0-8 3-8 6 0 8 17 4 17 12 0 4-4 6-9 6-4 0-7-2-9-4" stroke="white" stroke-width="4" stroke-linecap="round"/></svg>';
 const icons = {
  data:'<path d="M5 4h14v16H5zM9 8h6M9 12h6M9 16h3"/>',
  territory:'<path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6ZM9 3v15M15 6v15"/>',
@@ -47,5 +47,25 @@ body.sov-shell{font-family:SigaLato,system-ui,-apple-system,'Segoe UI',sans-seri
 @media(max-width:760px){.sov-shell .wrap{padding:18px}.sov-shell .nav{padding:8px 0 22px;margin-bottom:24px;flex-wrap:wrap;gap:16px}.sov-shell .nav>.row{margin-left:auto;gap:8px}.sov-shell .nav .btn{padding:10px 14px;min-height:44px}.sov-shell .card{padding:20px;border-radius:20px}.sov-shell .hero{padding:22px 0 38px}.sov-shell .grid{grid-template-columns:1fr}.sov-shell .metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.sov-shell .metric-card{padding:16px}.sov-shell .metric-card .n{font-size:26px}.sov-shell .tabs{gap:8px}.sov-shell .tab{padding:10px 12px;font-size:13px}.sov-shell .scopebar .field{min-width:0;width:100%}.sov-shell .map-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.sov-shell .map-canvas{height:520px}.sov-shell .auth{margin:28px auto}.brand-wordmark strong{font-size:19px}.brand-symbol{width:40px;height:40px}}
 @media(max-width:380px){.sov-shell .brand>.tag{display:none}.sov-shell .nav>.row{margin-left:0}.sov-shell .wrap{padding:14px}}
 @media(prefers-reduced-motion:reduce){.sov-shell *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+/* Public presentation: dark navy, yellow headlines, green actions.
+   The working dashboard keeps its light surfaces for dense electoral data. */
+.sov-shell .brand-wordmark strong{text-transform:uppercase;letter-spacing:.035em;font-size:20px}
+.sov-shell .btn:not(.secondary){background:${brandColors.action};border-color:${brandColors.action}}
+.sov-shell .btn:not(.secondary):hover{background:#0D6138;border-color:#0D6138;box-shadow:0 4px 16px rgba(19,120,71,.2)}
+.sov-shell .tab.active,.sov-shell .map-style-button.active{background:${brandColors.action};border-color:${brandColors.action}}
+body.sov-public{background:${brandColors.navy};color:#fff}
+.sov-public .nav{border-color:#293248}.sov-public .brand-wordmark strong{color:#fff}.sov-public .brand-wordmark small{color:#B8C4D8}
+.sov-public .brand>.tag{background:#FFD633;color:#090F1F}
+.sov-public .hero{padding:48px 0 56px}.sov-public .hero h1{color:${brandColors.accent};text-transform:uppercase;font-size:clamp(36px,4.8vw,62px);max-width:1050px;line-height:1.08;letter-spacing:-.02em}
+.sov-public .hero .muted{color:#E0E6F1}.sov-public .hero-eyebrow{color:${brandColors.accent}}.sov-public .hero-eyebrow:before{background:${brandColors.accent}}
+.sov-public .card{color:#142B4A;box-shadow:none;border-color:#DCE4EF}.sov-public .card h1,.sov-public .card h2,.sov-public .card h3{color:#142B4A}
+.sov-public main>h1{color:${brandColors.accent};text-transform:uppercase}
+.sov-public .footer{color:#B8C4D8;border-color:#293248}
+.hero-checks{display:flex;flex-wrap:wrap;gap:12px 28px;padding:0;margin:26px 0 0;list-style:none;font-size:14px;color:#E0E6F1}
+.hero-checks li{display:inline-flex;gap:9px;align-items:center}.hero-checks li:before{content:'✓';color:#45D18B;font-size:21px;font-weight:700}
+.sov-app .app-intro{background:${brandColors.navy};padding:30px 32px;border-radius:24px;margin-bottom:24px}
+.sov-app .app-intro h1{color:${brandColors.accent};text-transform:uppercase;font-size:clamp(28px,3.2vw,40px);margin-top:12px}
+.sov-app .app-intro .muted{color:#E0E6F1;margin-bottom:0}.sov-app .app-intro .hero-eyebrow{color:${brandColors.accent}}.sov-app .app-intro .hero-eyebrow:before{background:${brandColors.accent}}
+@media(max-width:760px){.sov-public .hero{padding:24px 0 36px}.sov-shell .brand-wordmark strong{font-size:18px}.sov-app .app-intro{padding:24px 20px;border-radius:20px}.hero-checks{display:grid;gap:8px}}
 @media print{body.sov-shell{background:white;color:#142B4A}.sov-shell .wrap{max-width:none;padding:0}.sov-shell .card{padding:0;border:0;box-shadow:none}.sov-shell .vote-comparison{position:static;box-shadow:none}.sov-shell .nav,.sov-shell .footer{display:none!important}}
 `;

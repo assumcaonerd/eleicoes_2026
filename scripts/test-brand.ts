@@ -8,7 +8,7 @@ import {handleWeb} from "../src/web/handler.js";
 const user={id:1,email:"visual-test@example.invalid",role:"admin"};
 const pages=[homePage(),homePage(user),authPage("login"),authPage("cadastro"),authPage("login","<script>invalid</script>"),appPage(user,true),appPage(user,false),plansPage(user),resetPasswordPage("token"),resetPasswordPage("", "",true),adminPage(user,{users:1,active:1,imports:1})];
 for(const page of pages){
- assert(page.includes('class="sov-shell"'));assert(page.includes('class="brand-symbol"'));assert(page.includes('INTELIGÊNCIA ELEITORAL'));assert(page.includes('<main>'));
+ assert(page.includes('class="sov-shell '));assert(page.includes('class="brand-symbol"'));assert(page.includes('INTELIGÊNCIA ELEITORAL'));assert(page.includes('<main>'));
  assert(page.includes("font-family:SigaLato"));assert(page.includes("font-display:swap"));assert(!page.includes("politique.app"));
  for(const match of page.matchAll(/<script(?: [^>]*)?>([\s\S]*?)<\/script>/g))new Script(match[1]);
 }
@@ -22,7 +22,8 @@ assert(authPage("login").includes('action="/login"'));assert(authPage("cadastro"
 assert(brandCss.includes("@media(max-width:760px)"));assert(brandCss.includes("@media print"));assert(brandCss.includes("prefers-reduced-motion"));assert(brandCss.includes(":focus-visible"));
 function luminance(hex:string){const rgb=hex.slice(1).match(/../g)!.map(v=>parseInt(v,16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722}
 function contrast(a:string,b:string){const l=[luminance(a),luminance(b)].sort((x,y)=>y-x);return(l[0]+.05)/(l[1]+.05)}
-for(const [fg,bg] of [["#FFFFFF",brandColors.primary],[brandColors.navy,brandColors.background],[brandColors.muted,brandColors.background],["#1B4FBF",brandColors.soft]])assert(contrast(fg,bg)>=4.5,`${fg}/${bg}`);
+for(const [fg,bg] of [["#FFFFFF",brandColors.primary],["#FFFFFF",brandColors.action],[brandColors.accent,brandColors.navy],["#E0E6F1",brandColors.navy],[brandColors.navy,brandColors.background],[brandColors.muted,brandColors.background],["#1B4FBF",brandColors.soft]])assert(contrast(fg,bg)>=4.5,`${fg}/${bg}`);
+assert(homePage().includes('class="sov-shell sov-public"'));assert(dashboard.includes('class="sov-shell sov-app"'));assert(homePage().includes('class="hero-checks"'));assert(dashboard.includes('class="app-intro"'));
 for(const [path,file] of [["lato-regular-v1.ttf","Lato-Regular.ttf"],["lato-bold-v1.ttf","Lato-Bold.ttf"],["mark.svg",null]] as const){
  let status=0,headers:Record<string,any>={},content:any;
  const res={writeHead:(s:number,h:Record<string,any>)=>{status=s;headers=h},end:(c:any)=>{content=c}};
