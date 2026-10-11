@@ -17,7 +17,8 @@
     "test:indicators": "node --import tsx scripts/test-indicators.ts",
     "import:totals": "tsx scripts/import-territorial-totals.ts",
     "import:totals:summary": "tsx scripts/import-majority-summary-totals.ts",
-    "test:national-map": "node --import tsx scripts/test-national-map.ts"
+    "test:national-map": "node --import tsx scripts/test-national-map.ts",
+    "test:billing": "node --import tsx --test scripts/test-billing.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "^1.0.1",

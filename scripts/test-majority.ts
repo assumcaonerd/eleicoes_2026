@@ -33,6 +33,9 @@ assert.equal((await majorityGeometry()).features.length,27);assert.equal((await 
 
 // Exercise the read-only integration contract without touching production or storing synthetic votes.
 const savedConnect=pool.connect.bind(pool);
+const savedFetch=globalThis.fetch;
+// Synthetic snapshot tests must not depend on live TSE indicators.
+globalThis.fetch=async()=>new Response(null,{status:503});
 await assert.rejects(majorityComparison([1,1]),/diferentes/);
 await assert.rejects(majorityComparison([1,2,3]),/dois candidatos/);
 let candidate:any={id:1,election_id:6259,round:1,office_code:3,uf:'ES',number:'00',ballot_name:'VALIDAÇÃO SINTÉTICA',tse_candidate_id:'test'};
@@ -53,7 +56,7 @@ try{
  await assert.rejects(majorityOverview(1,'SP'),/UF deve corresponder/);
  candidate={...candidate,round:2};await assert.rejects(majorityOverview(1),/primeiro turno/);
  candidate={...candidate,round:1,office_code:7};await assert.rejects(majorityOverview(1),/governador ou presidente/);
-}finally{(pool as any).connect=savedConnect}
+}finally{(pool as any).connect=savedConnect;globalThis.fetch=savedFetch}
 const page=majorityPage({id:1,email:'synthetic@example.invalid'}),ids=[...page.matchAll(/id="(majority[^"]+)"/g)].map(m=>m[1]);assert.equal(new Set(ids).size,ids.length);assert(page.includes('[hidden]{display:none!important}'));assert(!page.includes('Restaurar visualização'));assert(page.includes('id="majorityFilterField"'));assert(page.includes('id="majorityWinnersPanel"'));assert(page.includes('id="majorityStateWinners"'));assert(page.includes('id="majorityMunicipalityWinners"'));assert(!page.includes('<strong>Indisponíveis</strong>'));
 new Script(readFileSync(new URL('../src/ui/majority.js',import.meta.url),'utf8'));
 assert(page.includes('prefers-reduced-motion'));assert(page.includes('@media(max-width:800px)'));assert(page.includes('outline:3px solid #ffdc35'));

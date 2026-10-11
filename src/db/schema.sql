@@ -149,3 +149,18 @@ CREATE TABLE IF NOT EXISTS territorial_totals (
 );
 
 ALTER TABLE vote_facts ADD COLUMN IF NOT EXISTS source_sha256 TEXT;
+
+-- Billing migration: run db:init before deploying the billing release.
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS paid_through TIMESTAMPTZ;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS cancel_at_period_end BOOLEAN NOT NULL DEFAULT false;
+CREATE TABLE IF NOT EXISTS stripe_events(id TEXT PRIMARY KEY,event_type TEXT NOT NULL,processed_at TIMESTAMPTZ NOT NULL DEFAULT now());
+
+-- Preserve entitlements already granted by the previous release (one-time migration).
+CREATE TABLE IF NOT EXISTS billing_migrations(id TEXT PRIMARY KEY);
+WITH migration AS (
+ INSERT INTO billing_migrations(id) VALUES('paid-through-v1') ON CONFLICT DO NOTHING RETURNING id
+)
+UPDATE subscriptions SET paid_through=current_period_end
+WHERE EXISTS(SELECT 1 FROM migration) AND paid_through IS NULL AND status='active';
+
+CREATE TABLE IF NOT EXISTS billing_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL);

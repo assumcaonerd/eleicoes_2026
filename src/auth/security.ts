@@ -56,14 +56,19 @@ export async function currentUser(req: IncomingMessage) {
   return rows[0]??null;
 }
 
-export async function hasActiveAccess(userId:number) {
-  const first=await sql<any>("SELECT id FROM users WHERE disabled_at IS NULL ORDER BY created_at ASC LIMIT 1");
+export function subscriptionHasAccess(sub:{plan_type:string;status:string;paid_through?:Date|string|null;current_period_end?:Date|string|null},now=Date.now()) {
+  if(sub.plan_type==='lifetime')return ['active','trialing'].includes(sub.status);
+  if(!['monthly','annual'].includes(sub.plan_type))return false;
+  const end=sub.paid_through?new Date(sub.paid_through).getTime():0;
+  const trial=sub.status==='trialing'&&sub.current_period_end?new Date(sub.current_period_end).getTime():0;
+  return end>now||trial>now;
+}
+
+export async function hasActiveAccess(userId:number, query:typeof sql=sql) {
+  const first=await query<any>("SELECT id FROM users WHERE disabled_at IS NULL ORDER BY created_at ASC LIMIT 1");
   if (Number(first.rows[0]?.id) === Number(userId)) return true;
-  const {rows}=await sql<any>(`SELECT 1 FROM subscriptions
-    WHERE user_id=$1 AND status IN ('active','trialing')
-      AND (plan_type='lifetime' OR (plan_type IN ('monthly','annual') AND current_period_end>now()))
-    LIMIT 1`,[userId]);
-  return Boolean(rows[0]);
+  const {rows}=await query<any>("SELECT plan_type,status,paid_through,current_period_end FROM subscriptions WHERE user_id=$1",[userId]);
+  return rows.some(row=>subscriptionHasAccess(row));
 }
 
 export async function revokeCurrentSession(req: IncomingMessage) {

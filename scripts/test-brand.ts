@@ -19,7 +19,7 @@ const staticMarkup=dashboard.split("<script>")[0];
 const ids=[...staticMarkup.matchAll(/id="([^"]+)"/g)].map(m=>m[1]);assert.equal(new Set(ids).size,ids.length);
 for(const id of ["search","newSearch","voteComparison","map","mapState","mapMunicipality","mapZone","mapNeighborhood","mapPlace","mapSection","compareExportCsv","compareExportPdf","esPrintPng","esPrintSvg","esPrintStatus"])assert(ids.includes(id),id);
 for(const level of ["municipality","neighborhood","polling_place","zone","section","map","compare"])assert(dashboard.includes(`data-level="${level}"><svg class="sov-icon"`));
-assert(authPage("login").includes('action="/login"'));assert(authPage("cadastro").includes('minlength="12"'));assert(plansPage(user).includes('value="monthly"'));assert(plansPage(user).includes('value="lifetime"'));
+assert(authPage("login").includes('action="/login"'));assert(authPage("cadastro").includes('minlength="12"'));assert(plansPage(user).includes('value="monthly"'));assert(plansPage(user).includes('value="annual"'));
 assert(brandCss.includes("@media(max-width:760px)"));assert(brandCss.includes("@media print"));assert(brandCss.includes("prefers-reduced-motion"));assert(brandCss.includes(":focus-visible"));
 function luminance(hex:string){const rgb=hex.slice(1).match(/../g)!.map(v=>parseInt(v,16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722}
 function contrast(a:string,b:string){const l=[luminance(a),luminance(b)].sort((x,y)=>y-x);return(l[0]+.05)/(l[1]+.05)}

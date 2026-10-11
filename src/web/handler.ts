@@ -4,10 +4,10 @@ import { readFileSync } from "node:fs";
 import { brandMark } from "./brand.js";
 import { currentUser, hasActiveAccess, sessionCookie, clearSessionCookie, revokeCurrentSession, audit, hashPassword, hashToken } from "../auth/security.js";
 import { registerUser, loginUser } from "../auth/service.js";
-import { createCheckout, handleStripeWebhook } from "../billing/stripe.js";
+import { createCheckout, createPortal, subscriptionSummary, handleStripeWebhook } from "../billing/stripe.js";
 import { searchCandidates, compareCandidates, topTerritories, partyVotes, sourceStatus, sectionMap, sectionMetrics, candidateTerritoryOverview, territorialLevel, candidateVoteComparison, comparativeTerritories } from "../tools/queries.js";
 import { sql } from "../db/index.js";
-import { homePage, authPage, plansPage, appPage, adminPage, resetPasswordPage } from "./pages.js";
+import { homePage, authPage, plansPage, appPage, adminPage, subscriptionPage, resetPasswordPage } from "./pages.js";
 import {renderESMap,renderStateMap,reportInfo} from "./map-export.js";
 import {readOnlineIndicators} from '../majority/indicators.js';
 import {electionIdForOffice} from '../tse/url.js';
@@ -122,8 +122,18 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
       json(res,{error:'Consulta não encontrada.'},404);return true
     }catch(e:any){console.error('MAJORITY_QUERY_ERROR',e?.message);json(res,{error:e?.message??'Consulta indisponível.'},400);return true}
   }
+  if(url.pathname==="/assinatura"&&req.method==="GET"){
+    if(!user){redirect(res,"/login");return true}
+    res.setHeader("cache-control","private, no-store");
+    html(res,subscriptionPage(user,await subscriptionSummary(Number(user.id))));return true
+  }
+  if(url.pathname==="/assinatura/portal"&&req.method==="POST"){
+    if(!user){json(res,{error:"Não autenticado."},401);return true}
+    if(!process.env.APP_ORIGIN||req.headers.origin!==process.env.APP_ORIGIN){json(res,{error:"Origem inválida."},403);return true}
+    try{redirect(res,await createPortal(Number(user.id)))}catch{html(res,subscriptionPage(user,await subscriptionSummary(Number(user.id)),"Gerenciamento indisponível. Tente novamente mais tarde."),503)}return true
+  }
   if(url.pathname==="/planos"&&req.method==="GET"){html(res,plansPage(user,"",url.searchParams.get("selected")??""));return true}
-  if(url.pathname==="/checkout"&&req.method==="POST"){if(!user){redirect(res,"/login");return true}try{const d=await readBody(req) as any;const plan=d.plan==="annual"?"annual":"monthly";const target=await createCheckout({id:Number(user.id),email:user.email},plan);await audit(req,"CHECKOUT_STARTED",Number(user.id),{plan});if(!target)throw new Error("Checkout indisponível.");redirect(res,target);}catch(e:any){console.error("CHECKOUT_ERROR",e?.message);html(res,plansPage(user,"Não foi possível iniciar o pagamento. Verifique a configuração do meio de pagamento ou tente novamente."),400)}return true}
+  if(url.pathname==="/checkout"&&req.method==="POST"){if(!process.env.APP_ORIGIN||req.headers.origin!==process.env.APP_ORIGIN){json(res,{error:"Origem inválida."},403);return true}if(!user){redirect(res,"/login");return true}try{const d=await readBody(req) as any;if(d.plan!=="annual"&&d.plan!=="monthly")throw new Error("Plano inválido.");const plan=d.plan;const target=await createCheckout({id:Number(user.id),email:user.email},plan);await audit(req,"CHECKOUT_STARTED",Number(user.id),{plan});if(!target)throw new Error("Checkout indisponível.");redirect(res,target);}catch(e:any){console.error("CHECKOUT_ERROR",e?.message);html(res,plansPage(user,"Não foi possível iniciar o pagamento. Verifique a configuração do meio de pagamento ou tente novamente."),400)}return true}
   if(url.pathname==="/app"&&req.method==="GET"){if(!user){redirect(res,"/login");return true}const active=await hasActiveAccess(Number(user.id));html(res,appPage(user,active));return true}
   if(url.pathname==="/ops/merge-section-batch"&&req.method==="POST"){
     const key=String(req.headers["x-ops-key"]??"");
