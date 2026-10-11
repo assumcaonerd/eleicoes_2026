@@ -123,7 +123,7 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
     }catch(e:any){console.error('MAJORITY_QUERY_ERROR',e?.message);json(res,{error:e?.message??'Consulta indisponível.'},400);return true}
   }
   if(url.pathname==="/planos"&&req.method==="GET"){if(!user){redirect(res,"/login");return true}html(res,plansPage(user));return true}
-  if(url.pathname==="/checkout"&&req.method==="POST"){if(!user){redirect(res,"/login");return true}try{const d=await readBody(req) as any;const plan=d.plan==="lifetime"?"lifetime":"monthly";const target=await createCheckout({id:Number(user.id),email:user.email},plan);await audit(req,"CHECKOUT_STARTED",Number(user.id),{plan});if(!target)throw new Error("Checkout indisponível.");redirect(res,target);}catch(e:any){html(res,plansPage(user),400)}return true}
+  if(url.pathname==="/checkout"&&req.method==="POST"){if(!user){redirect(res,"/login");return true}try{const d=await readBody(req) as any;const plan=d.plan==="lifetime"?"lifetime":"monthly";const target=await createCheckout({id:Number(user.id),email:user.email},plan);await audit(req,"CHECKOUT_STARTED",Number(user.id),{plan});if(!target)throw new Error("Checkout indisponível.");redirect(res,target);}catch(e:any){console.error("CHECKOUT_ERROR",e?.message);html(res,plansPage(user,"Não foi possível iniciar o pagamento. Verifique a configuração do meio de pagamento ou tente novamente."),400)}return true}
   if(url.pathname==="/app"&&req.method==="GET"){if(!user){redirect(res,"/login");return true}const active=await hasActiveAccess(Number(user.id));html(res,appPage(user,active));return true}
   if(url.pathname==="/ops/merge-section-batch"&&req.method==="POST"){
     const key=String(req.headers["x-ops-key"]??"");
