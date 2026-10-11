@@ -2,7 +2,7 @@ import {gunzipSync} from 'node:zlib';
 import {readFileSync} from 'node:fs';
 import {states} from '../../majority/model.js';
 import catalog from '../../majority/municipalities-2026.json' with {type:'json'};
-import {buildReport,consolidate,type Candidate,type VoteRow,printText,colorScale,layoutLabels,interiorAnchor} from './report.js';
+import {buildReport,consolidate,type Candidate,type VoteRow,printText,colorScale,containedNameLabels,interiorAnchor} from './report.js';
 import {brandColors} from '../brand.js';
 export type Geo={type:string;coordinates:any};
 export type Unit={ibgeCode:string;tseCode:string;name:string;geometry:Geo;votes:number|null};
@@ -62,20 +62,20 @@ export function buildStateReport(r:StateReport,now=new Date()){
  const pieces=[`<svg xmlns="http://www.w3.org/2000/svg" width="420mm" height="594mm" viewBox="0 0 4961 7016"><title>MAPA PROFISSIONAL DE ${esc(info.name.toUpperCase())}</title><metadata>${esc(JSON.stringify({candidate:r.candidate,uf:r.uf,total:r.total,totalKind:r.totalKind,confirmedSum:sum,units:r.units.map(({geometry,...m})=>m),source:r.source,pinCoverage:r.pinCoverage,generatedAt:now.toISOString(),complementary:info.complementary}))}</metadata><rect width="4961" height="7016" fill="white"/><rect width="4961" height="880" fill="${brandColors.navy}"/>`,
  t('SIGA O VOTO',160,190,100,brandColors.accent,true),t(`MAPA PROFISSIONAL DE ${info.name.toUpperCase()}`,160,310,53,'#d3e6f4'),t(r.candidate.ballot_name,160,490,70,'white',true),t(`Nº ${r.candidate.number} · ${r.candidate.party_abbr||'Partido não informado'} · ${r.candidate.office_name}`,160,605,47,'white'),t(`Eleição ${r.candidate.election_id} · ${r.candidate.round}º turno${Number(r.candidate.office_code)===1?' · Votação presidencial nesta UF':''}`,160,720,43,'#d3e6f4'),
  '<rect x="130" y="1030" width="1460" height="5440" rx="20" fill="#f3f6f9"/>',t('PANORAMA ESTADUAL',185,1140,43,'#234766',true),t(fmt(r.total),185,1260,83,'#142d48',true),t(r.totalKind==='municipal-sum'?'Total: soma municipal completa':'Total oficial no recorte estadual',185,1340,37),t(`Soma confirmada: ${fmt(sum)} votos`,185,1430,37),t(`Registros: ${confirmed.length} / ${r.units.length}`,185,1510,37),t(`Zero confirmado: ${r.units.filter(m=>m.votes===0).length}`,185,1590,37),t(`Sem registro: ${r.units.length-confirmed.length}`,185,1670,37),t(r.uf==='DF'?'Brasília: unidade territorial oficial':`${r.units.length} municípios oficiais`,185,1770,35),t('TERRITÓRIO COMPLETO DA UF',1780,1070,43,'#234766',true)];
- if(info.complementary){pieces.push(t('RELAÇÃO INTEGRAL PAGINADA',185,1910,37,'#234766',true),t(`${info.pages} páginas complementares`,185,1990,36),t('A lista integral acompanha o mapa.',185,2070,36),t('Não há redução nem omissão de linhas.',185,2150,34),t('Chaves numéricas no mapa: 1 a '+r.units.length,185,2270,35),t('Nomes e votos estão no complemento',185,2350,35),t('e nos títulos vetoriais de cada limite.',185,2430,35));pieces.push(t('CHAVE · MUNICÍPIO',185,2530,34,'#536d83',true),t('VOTOS',1540,2530,34,'#536d83',true,'end'));for(const [i,m] of r.units.slice(0,60).entries()){const y=2610+i*55;pieces.push(`<g id="table-${m.ibgeCode}">`,t(i+1,185,y,32),t(m.name,270,y,32),t(fmt(m.votes),1540,y,33,'#142d48',true,'end'),'</g>')}pieces.push(t('Lista continua no complemento paginado.',185,6060,34),t('Todas as unidades estão incluídas.',185,6140,34));}
+ if(info.complementary){pieces.push(t('RELAÇÃO INTEGRAL PAGINADA',185,1910,37,'#234766',true),t(`${info.pages} páginas complementares`,185,1990,36),t('A lista integral acompanha o mapa.',185,2070,36),t('Não há redução nem omissão de linhas.',185,2150,34),t('Nomes dentro de cada município.',185,2270,35),t('Nomes e votos estão no complemento',185,2350,35),t('e nos títulos vetoriais de cada limite.',185,2430,35));pieces.push(t('CHAVE · MUNICÍPIO',185,2530,34,'#536d83',true),t('VOTOS',1540,2530,34,'#536d83',true,'end'));for(const [i,m] of r.units.slice(0,60).entries()){const y=2610+i*55;pieces.push(`<g id="table-${m.ibgeCode}">`,t(i+1,185,y,32),t(m.name,270,y,32),t(fmt(m.votes),1540,y,33,'#142d48',true,'end'),'</g>')}pieces.push(t('Lista continua no complemento paginado.',185,6060,34),t('Todas as unidades estão incluídas.',185,6140,34));}
  else{pieces.push(t(r.uf==='DF'?'UNIDADE OFICIAL':'MUNICÍPIO',185,1910,35,'#536d83',true),t('VOTOS',1540,1910,35,'#536d83',true,'end'));for(const [i,m] of r.units.entries()){const y=2000+i*55;pieces.push(`<g id="table-${m.ibgeCode}">`,t(m.name,185,y,34),t(fmt(m.votes),1540,y,35,'#142d48',true,'end'),'</g>')}}
  const projectedItems=r.units.map(m=>{const shapes=polygons(m.geometry).map(poly=>poly.map(ring=>ring.map(project) as [number,number][]));const areas=shapes.map(r=>Math.abs(r[0].reduce((sum,p,i,a)=>{const q=a[(i+1)%a.length];return sum+p[0]*q[1]-q[0]*p[1]},0)));const rings=shapes[areas.indexOf(Math.max(...areas))];return {m:{...m,votes:m.votes??0},rings,anchor:interiorAnchor(rings)}});
  let labeled=0;
  for(const m of r.units){const shapes=polygons(m.geometry);const path=shapes.map(poly=>poly.map(ring=>ring.map((q,i)=>`${i?'L':'M'}${project(q).map(v=>v.toFixed(2)).join(',')}`).join(' ')+'Z').join(' ')).join(' ');
   pieces.push(`<path id="municipality-${m.ibgeCode}" data-tse-code="${m.tseCode}" data-votes="${m.votes??'missing'}" d="${path}" fill="${m.votes===null?'#c2c4ca':scale.color(m.votes)}" fill-rule="evenodd" stroke="#52697c" stroke-width="2"><title>${esc(m.name)} · IBGE ${m.ibgeCode} · TSE ${m.tseCode}: ${fmt(m.votes)}${m.votes===null?'':' votos'}</title></path>`);
  }
- // Names only on the map; vote totals remain in the unchanged left table.
- const labelSize=info.complementary?22:42;
- const labels=layoutLabels(projectedItems,labelSize);
+ // Every name stays inside its own municipality; no boxes, pins or leader lines.
+ const labels=containedNameLabels(projectedItems,info.complementary?22:30);
  for(const l of labels){
-  if(l.external)pieces.push(`<path d="M${l.anchor[0]},${l.anchor[1]}L${l.x},${l.y}" stroke="#536d83" stroke-width="1.2"/>`);
-  pieces.push(`<g id="label-${l.code}" data-name="${esc(l.name)}"><rect x="${l.x-l.w/2}" y="${l.y-l.h/2}" width="${l.w}" height="${l.h}" rx="4" fill="white" fill-opacity=".94"/>`);
-  l.lines.forEach((line,i)=>pieces.push(t(line,l.x,l.y-l.h/2+labelSize+6+i*(labelSize+6),labelSize,'#142d48',true,'middle')));
+  const m=r.units.find(unit=>unit.ibgeCode===l.code)!;
+  const fill=m.votes!==null&&['#123f70','#377cae'].includes(scale.color(m.votes))?'#fff':'#142d48';
+  pieces.push(`<g id="label-${l.code}" data-name="${esc(l.name)}">`);
+  l.lines.forEach((line,i)=>pieces.push(t(line,l.x,l.y+(i-(l.lines.length-1)/2)*l.size*1.15+l.size*.35,l.size,fill,true,'middle')));
   pieces.push('</g>');labeled++;
  }
  pieces.push(t('LEGENDA',1780,6200,40,'#234766',true));const legend=[{color:'#c2c4ca',label:'Sem registro'},{color:'#e6e9ed',label:'Zero confirmado'},...scale.bins.map(b=>({color:b.color,label:`${fmt(b.min)} a ${fmt(b.max)}`}))];legend.forEach((b,i)=>{const x=1780+i%3*980,y=6250+Math.floor(i/3)*90;pieces.push(`<rect x="${x}" y="${y}" width="55" height="45" fill="${b.color}" stroke="#52697c"/>`,t(b.label,x+75,y+35,32))});
