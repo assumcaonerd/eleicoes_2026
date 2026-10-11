@@ -92,6 +92,10 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- Migração aditiva: mantém assinaturas vitalícias antigas, mas admite o novo plano anual.
+ALTER TABLE subscriptions DROP CONSTRAINT IF EXISTS subscriptions_plan_type_check;
+ALTER TABLE subscriptions ADD CONSTRAINT subscriptions_plan_type_check
+  CHECK (plan_type IN ('monthly','annual','lifetime'));
 CREATE INDEX IF NOT EXISTS subscriptions_user_idx ON subscriptions(user_id);
 CREATE INDEX IF NOT EXISTS subscriptions_provider_idx ON subscriptions(provider_subscription_id);
 
