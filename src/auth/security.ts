@@ -61,7 +61,7 @@ export async function hasActiveAccess(userId:number) {
   if (Number(first.rows[0]?.id) === Number(userId)) return true;
   const {rows}=await sql<any>(`SELECT 1 FROM subscriptions
     WHERE user_id=$1 AND status IN ('active','trialing')
-      AND (plan_type='lifetime' OR current_period_end IS NULL OR current_period_end>now())
+      AND (plan_type='lifetime' OR (plan_type IN ('monthly','annual') AND current_period_end>now()))
     LIMIT 1`,[userId]);
   return Boolean(rows[0]);
 }
