@@ -20,8 +20,9 @@ export function authPage(kind:"login"|"cadastro",error=""){
   return layout(kind==="login"?"Entrar":"Criar conta",'<div class="auth card"><h1>'+(kind==="login"?"Entrar":"Criar conta")+'</h1>'+err+'<form method="post" action="/'+kind+'">'+extra+'<label class="field">E-mail<input type="email" name="email" required autocomplete="email"></label><label class="field">Senha<input type="password" name="password" required minlength="12"></label><button class="btn" style="width:100%">'+(kind==="login"?"Entrar":"Continuar")+'</button></form></div>');
 }
 
-export function plansPage(user:any){
-  return layout("Planos",'<h1>Escolha seu acesso</h1><div class="grid"><div class="card"><div class="tag">Mensal</div><h2>Assinatura mensal</h2><p class="muted">Acesso enquanto a assinatura estiver ativa.</p><form method="post" action="/checkout"><input type="hidden" name="plan" value="monthly"><button class="btn">Assinar mensal</button></form></div><div class="card"><div class="tag">Pagamento único</div><h2>Acesso permanente</h2><p class="muted">Um único pagamento para manter o acesso.</p><form method="post" action="/checkout"><input type="hidden" name="plan" value="lifetime"><button class="btn">Comprar acesso</button></form></div></div>',user);
+export function plansPage(user:any,error=""){
+  const alert=error?'<div class="error" role="alert">'+esc(error)+'</div>':'';
+  return layout("Planos",'<h1>Escolha seu acesso</h1><p class="muted">Pagamento seguro pela Stripe. Os valores são cobrados em reais (BRL).</p>'+alert+'<div class="grid"><div class="card"><div class="tag">Mensal</div><h2>Assinatura mensal</h2><p class="metric">R$ 9,90 <span class="muted" style="font-size:16px">/ mês</span></p><p class="muted">Cobrança recorrente mensal. Acesso enquanto a assinatura estiver ativa.</p><form method="post" action="/checkout"><input type="hidden" name="plan" value="monthly"><button class="btn">Assinar por R$ 9,90/mês</button></form></div><div class="card"><div class="tag">Pagamento único</div><h2>Acesso permanente</h2><p class="metric">R$ 99,00</p><p class="muted">Pagamento único, sem mensalidade, para manter o acesso à plataforma.</p><form method="post" action="/checkout"><input type="hidden" name="plan" value="lifetime"><button class="btn">Comprar por R$ 99,00</button></form></div></div>',user);
 }
 
 export function appPage(user:any,active:boolean){
