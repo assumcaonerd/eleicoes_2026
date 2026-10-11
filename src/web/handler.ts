@@ -53,8 +53,8 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
   }
   if(req.method==="POST"&&!sameOrigin(req)&&url.pathname!=="/webhooks/stripe"){json(res,{error:"Origem inválida."},403);return true}
   if(url.pathname==="/"&&req.method==="GET"){const user=await currentUser(req);html(res,homePage(user));return true}
-  if(url.pathname==="/login"&&req.method==="GET"){html(res,authPage("login"));return true}
-  if(url.pathname==="/cadastro"&&req.method==="GET"){html(res,authPage("cadastro"));return true}
+  if(url.pathname==="/login"&&req.method==="GET"){html(res,authPage("login","",url.searchParams.get("plan")??""));return true}
+  if(url.pathname==="/cadastro"&&req.method==="GET"){html(res,authPage("cadastro","",url.searchParams.get("plan")??""));return true}
   if(url.pathname==="/redefinir-senha"&&req.method==="GET"){
     const token=url.searchParams.get("token")??"";
     if(!token){html(res,resetPasswordPage("", "Link inválido."),400);return true}
@@ -80,7 +80,7 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
       html(res,resetPasswordPage(token,e.message),400);return true
     }
   }
-  if(url.pathname==="/cadastro"&&req.method==="POST"){try{const d=await readBody(req) as any;const x=await registerUser(req,d);redirect(res,"/planos",sessionCookie(x.token,process.env.NODE_ENV==="production"));}catch(e:any){html(res,authPage("cadastro",e.message),400)}return true}
+  if(url.pathname==="/cadastro"&&req.method==="POST"){try{const d=await readBody(req) as any;const x=await registerUser(req,d);const selected=d.plan==="annual"?"annual":d.plan==="monthly"?"monthly":"";redirect(res,"/planos"+(selected?"?selected="+selected:""),sessionCookie(x.token,process.env.NODE_ENV==="production"));}catch(e:any){html(res,authPage("cadastro",e.message),400)}return true}
   if(url.pathname==="/login"&&req.method==="POST"){try{const d=await readBody(req) as any;const x=await loginUser(req,d);redirect(res,"/app",sessionCookie(x.token,process.env.NODE_ENV==="production"));}catch(e:any){html(res,authPage("login",e.message),401)}return true}
   if(url.pathname==="/logout"&&req.method==="POST"){await revokeCurrentSession(req);redirect(res,"/",clearSessionCookie());return true}
   if(url.pathname==="/webhooks/stripe"&&req.method==="POST"){try{const raw=await readBody(req,true) as Buffer;const sig=String(req.headers["stripe-signature"]??"");const event=await handleStripeWebhook(raw,sig);json(res,{received:true,event});}catch(e:any){json(res,{error:e.message},400)}return true}
@@ -122,7 +122,7 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
       json(res,{error:'Consulta não encontrada.'},404);return true
     }catch(e:any){console.error('MAJORITY_QUERY_ERROR',e?.message);json(res,{error:e?.message??'Consulta indisponível.'},400);return true}
   }
-  if(url.pathname==="/planos"&&req.method==="GET"){if(!user){redirect(res,"/login");return true}html(res,plansPage(user));return true}
+  if(url.pathname==="/planos"&&req.method==="GET"){html(res,plansPage(user,"",url.searchParams.get("selected")??""));return true}
   if(url.pathname==="/checkout"&&req.method==="POST"){if(!user){redirect(res,"/login");return true}try{const d=await readBody(req) as any;const plan=d.plan==="annual"?"annual":"monthly";const target=await createCheckout({id:Number(user.id),email:user.email},plan);await audit(req,"CHECKOUT_STARTED",Number(user.id),{plan});if(!target)throw new Error("Checkout indisponível.");redirect(res,target);}catch(e:any){console.error("CHECKOUT_ERROR",e?.message);html(res,plansPage(user,"Não foi possível iniciar o pagamento. Verifique a configuração do meio de pagamento ou tente novamente."),400)}return true}
   if(url.pathname==="/app"&&req.method==="GET"){if(!user){redirect(res,"/login");return true}const active=await hasActiveAccess(Number(user.id));html(res,appPage(user,active));return true}
   if(url.pathname==="/ops/merge-section-batch"&&req.method==="POST"){
