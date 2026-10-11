@@ -7,27 +7,25 @@ function stripe() {
   return new Stripe(key);
 }
 
-export async function createCheckout(user:{id:number;email:string},plan:"monthly"|"lifetime") {
+export async function createCheckout(user:{id:number;email:string},plan:"monthly"|"annual") {
   const s=stripe();
-  const price=plan==="monthly"?process.env.STRIPE_PRICE_MONTHLY:process.env.STRIPE_PRICE_LIFETIME;
+  const price=plan==="monthly"?process.env.STRIPE_PRICE_MONTHLY:process.env.STRIPE_PRICE_ANNUAL;
   if(!price) throw new Error(`Preço Stripe não configurado para ${plan}.`);
-  // A fonte de verdade do valor cobrado é o preço cadastrado na Stripe.
-  // Impede que um Price ID apontando para outro valor ou moeda seja usado por engano.
-  const priceDetails=await s.prices.retrieve(price);
-  const expectedAmount=plan==="monthly"?990:9900;
-  if(priceDetails.currency!=="brl"||priceDetails.unit_amount!==expectedAmount||!priceDetails.active)
-    throw new Error("Preço Stripe incompatível com o plano anunciado. Confira a moeda BRL e o valor cadastrado.");
-  if(plan==="monthly"&&(priceDetails.type!=="recurring"||priceDetails.recurring?.interval!=="month"||priceDetails.recurring?.interval_count!==1))
-    throw new Error("O plano mensal precisa ter recorrência mensal na Stripe.");
-  if(plan==="lifetime"&&priceDetails.type!=="one_time")
-    throw new Error("O acesso permanente precisa usar um preço de pagamento único na Stripe.");
+  const details=await s.prices.retrieve(price);
+  const expected=plan==="monthly"?990:9900;
+  const interval=plan==="monthly"?"month":"year";
+  if(!details.active||details.currency!=="brl"||details.unit_amount!==expected||
+     details.type!=="recurring"||details.recurring?.interval!==interval||
+     details.recurring?.interval_count!==1)
+    throw new Error("Preço Stripe incompatível: confira BRL, valor e recorrência do plano.");
   const origin=process.env.APP_ORIGIN;
   if(!origin) throw new Error("APP_ORIGIN não configurada.");
   const session=await s.checkout.sessions.create({
-    mode:plan==="monthly"?"subscription":"payment",
+    mode:"subscription",
     customer_email:user.email,
     client_reference_id:String(user.id),
     metadata:{userId:String(user.id),plan},
+    subscription_data:{metadata:{userId:String(user.id),plan}},
     line_items:[{price,quantity:1}],
     success_url:`${origin}/app?payment=success`,
     cancel_url:`${origin}/planos?payment=cancelled`
@@ -37,29 +35,52 @@ export async function createCheckout(user:{id:number;email:string},plan:"monthly
   return session.url;
 }
 
+async function syncSubscription(s:Stripe,subscriptionId:string) {
+  const sub=await s.subscriptions.retrieve(subscriptionId);
+  const first=sub.items.data[0];
+  const price=first?.price;
+  const plan=price?.id===process.env.STRIPE_PRICE_ANNUAL?"annual":
+    price?.id===process.env.STRIPE_PRICE_MONTHLY?"monthly":null;
+  if(!plan) return;
+  const end=first?.current_period_end ? new Date(first.current_period_end*1000) : null;
+  const status=sub.status==="active"||sub.status==="trialing"?sub.status:
+    sub.status==="past_due"?"past_due":sub.status==="canceled"?"cancelled":"pending";
+  const customer=typeof sub.customer==="string"?sub.customer:sub.customer.id;
+  await sql(`UPDATE subscriptions SET status=$2, plan_type=$3,
+    current_period_end=$4,provider_customer_id=$5,updated_at=now()
+    WHERE provider_subscription_id=$1`,[subscriptionId,status,plan,end,customer]);
+}
+
 export async function handleStripeWebhook(raw:Buffer,signature:string) {
   const secret=process.env.STRIPE_WEBHOOK_SECRET;
   if(!secret) throw new Error("STRIPE_WEBHOOK_SECRET não configurada.");
-  const event=stripe().webhooks.constructEvent(raw,signature,secret);
+  const s=stripe();
+  const event=s.webhooks.constructEvent(raw,signature,secret);
   if(event.type==="checkout.session.completed") {
     const session=event.data.object as Stripe.Checkout.Session;
-    const userId=Number(session.metadata?.userId||session.client_reference_id);
-    const plan=(session.metadata?.plan==="lifetime"?"lifetime":"monthly");
     const subscriptionId=typeof session.subscription==="string"?session.subscription:null;
     const customerId=typeof session.customer==="string"?session.customer:null;
-    await sql(`UPDATE subscriptions SET status='active',provider_customer_id=$2,provider_subscription_id=$3,updated_at=now(),
-      current_period_end=CASE WHEN $4='lifetime' THEN NULL ELSE now()+interval '31 days' END
-      WHERE provider_checkout_id=$1`,[session.id,customerId,subscriptionId,plan]);
-    if(!Number.isFinite(userId)) throw new Error("Webhook sem usuário válido.");
+    if(subscriptionId){
+      await sql(`UPDATE subscriptions SET provider_customer_id=$2,provider_subscription_id=$3,updated_at=now()
+        WHERE provider_checkout_id=$1`,[session.id,customerId,subscriptionId]);
+      await syncSubscription(s,subscriptionId);
+    }
+  }
+  if(event.type==="customer.subscription.created"||event.type==="customer.subscription.updated"||
+    event.type==="invoice.paid"||event.type==="invoice.payment_failed") {
+    const obj=event.data.object;
+    let subscriptionId:string|null=null;
+    if(event.type.startsWith("customer.subscription.")) subscriptionId=(obj as Stripe.Subscription).id;
+    else {
+      const invoice=obj as Stripe.Invoice;
+      const subscription=invoice.parent?.subscription_details?.subscription;
+      subscriptionId=typeof subscription==="string"?subscription:null;
+    }
+    if(subscriptionId) await syncSubscription(s,subscriptionId);
   }
   if(event.type==="customer.subscription.deleted") {
     const sub=event.data.object as Stripe.Subscription;
     await sql("UPDATE subscriptions SET status='cancelled',updated_at=now() WHERE provider_subscription_id=$1",[sub.id]);
-  }
-  if(event.type==="invoice.payment_failed") {
-    const invoice=event.data.object as Stripe.Invoice;
-    const subId=typeof invoice.parent?.subscription_details?.subscription==="string"?invoice.parent.subscription_details.subscription:null;
-    if(subId) await sql("UPDATE subscriptions SET status='past_due',updated_at=now() WHERE provider_subscription_id=$1",[subId]);
   }
   return event.type;
 }
