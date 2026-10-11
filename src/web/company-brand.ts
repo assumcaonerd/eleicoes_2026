@@ -15,9 +15,9 @@ export const companyCss = `
 .ctl-symbol{display:block;width:26px;height:24px;flex:none}.ctl-symbol svg{display:block;width:100%;height:100%}
 .sov-shell .footer{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
 .sov-public .ctl-signature{color:#B8C4D8}
-.ctl-auth{margin-top:24px;padding-top:20px;border-top:1px solid #293248;text-align:center;color:#FFFFFF}
+.ctl-auth,.sov-public .ctl-auth{margin-top:24px;padding-top:20px;border-top:1px solid #DCE4EF;text-align:center;color:#081525}
 .ctl-auth .ctl-lockup{justify-content:center;gap:12px}.ctl-auth .ctl-symbol{width:40px;height:37px}
-.ctl-prefix{display:block;margin-bottom:10px;font-size:11px;color:#B8C4D8}
+.ctl-prefix{display:block;margin-bottom:10px;font-size:11px;color:#56657A}
 .ctl-wordmark{display:flex;flex-direction:column;text-align:left;line-height:1.25}
 .ctl-wordmark strong{font-size:16px;letter-spacing:.07em}.ctl-wordmark small{font-size:10px;letter-spacing:.3em;margin-top:3px}
 @media(max-width:700px){.sov-shell .footer{align-items:flex-start;flex-direction:column;gap:14px}}
