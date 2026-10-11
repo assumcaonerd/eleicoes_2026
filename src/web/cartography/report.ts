@@ -105,20 +105,20 @@ function interiorAnchor(rings:Point[][]):Point{
 }
 export type Label={code:string;name:string;votes:number;x:number;y:number;w:number;h:number;anchor:Point;lines:string[];external:boolean};
 export function overlap(a:Label,b:Label,gap=14){return Math.abs(a.x-b.x)<(a.w+b.w)/2+gap&&Math.abs(a.y-b.y)<(a.h+b.h)/2+gap}
-function wrapName(name:string){
- if(measure(name,42,true)<=580)return [name];
+function wrapName(name:string,size=42,maxWidth=580){
+ if(measure(name,size,true)<=maxWidth)return [name];
  const words=name.split(" ");let best=[name],width=Infinity;
- for(let i=1;i<words.length;i++){const lines=[words.slice(0,i).join(" "),words.slice(i).join(" ")];const w=Math.max(...lines.map(s=>measure(s,42,true)));if(w<width){width=w;best=lines}}
+ for(let i=1;i<words.length;i++){const lines=[words.slice(0,i).join(" "),words.slice(i).join(" ")];const w=Math.max(...lines.map(s=>measure(s,size,true)));if(w<width){width=w;best=lines}}
  return best;
 }
 const labelFrame={left:1770,right:4790,top:1120,bottom:6210};
-function layoutLabels(items:{m:Municipality;rings:Point[][];anchor:Point}[]){
+function layoutLabels(items:{m:Municipality;rings:Point[][];anchor:Point}[],size=42){
  const labels:Label[]=[];
  const sorted=items.map(item=>({...item,room:distanceToBoundary(item.anchor,item.rings)})).sort((a,b)=>a.room-b.room||a.m.ibgeCode.localeCompare(b.m.ibgeCode));
  for(const item of sorted){
-  const lines=wrapName(item.m.name);
-  const w=Math.max(...lines.map(s=>measure(s,42,true)),measure(`${number(item.m.votes)} votos`,39))+28;
-  const h=lines.length*48+48;
+  const lines=wrapName(item.m.name,size,size===42?580:210);
+  const w=Math.max(...lines.map(s=>measure(s,size,true)))+16;
+  const h=lines.length*(size+6)+12;
   const base:Label={code:item.m.ibgeCode,name:item.m.name,votes:item.m.votes,x:item.anchor[0],y:item.anchor[1],w,h,lines,anchor:item.anchor,external:false};
   const valid=(l:Label)=>l.x-l.w/2>=labelFrame.left&&l.x+l.w/2<=labelFrame.right&&l.y-l.h/2>=labelFrame.top&&l.y+l.h/2<=labelFrame.bottom&&!((l.x+l.w/2>4100&&l.y-l.h/2<1620))&&!labels.some(other=>overlap(l,other));
   const contained=(l:Label)=>[[l.x-l.w/2,l.y-l.h/2],[l.x+l.w/2,l.y-l.h/2],[l.x+l.w/2,l.y+l.h/2],[l.x-l.w/2,l.y+l.h/2]].every(p=>inside(p as Point,item.rings));
@@ -212,19 +212,10 @@ export function buildReport(report:Report,generatedAt=new Date()){
   const end:Point=[Math.max(l.x-l.w/2,Math.min(l.x+l.w/2,l.anchor[0])),Math.max(l.y-l.h/2,Math.min(l.y+l.h/2,l.anchor[1]))];
   pieces.push(`<path d="M${l.anchor[0]},${l.anchor[1]}L${end[0]},${end[1]}" fill="none" stroke="#fff" stroke-width="8"/><path d="M${l.anchor[0]},${l.anchor[1]}L${end[0]},${end[1]}" fill="none" stroke="#536d83" stroke-width="2.5"/><circle cx="${l.anchor[0]}" cy="${l.anchor[1]}" r="5" fill="#536d83" stroke="#fff" stroke-width="2"/>`);
  }
- const keptPins:Point[]=[];
- for(const pin of report.pins??[]){
-  if(!Number.isFinite(pin.lat)||!Number.isFinite(pin.lng))continue;
-  const p=project([pin.lng,pin.lat]);
-  if(!projected.some(item=>inside(p,item.rings)))continue;
-  keptPins.push(p);
-  pieces.push(`<g transform="translate(${p[0]},${p[1]})"><path d="M0 0C-3-8-10-13-10-20A10 10 0 1 1 10-20C10-13 3-8 0 0Z" fill="#b72e3e" stroke="#fff" stroke-width="2"/><circle cy="-20" r="3.5" fill="#fff"/></g>`);
- }
  for(const l of labels){
   pieces.push(`<g id="label-${l.code}" data-name="${xml(l.name)}" data-votes="${l.votes}"><rect x="${l.x-l.w/2}" y="${l.y-l.h/2}" width="${l.w}" height="${l.h}" rx="8" fill="#fff" fill-opacity=".94"/>`);
   const top=l.y-l.h/2;
   l.lines.forEach((line,i)=>pieces.push(text(line,l.x,top+42+i*48,42,"#102b47",true,"middle")));
-  pieces.push(text(`${number(l.votes)} votos`,l.x,top+l.lines.length*48+40,39,"#365674",false,"middle"));
 
   pieces.push("</g>");
  }
@@ -232,7 +223,7 @@ export function buildReport(report:Report,generatedAt=new Date()){
  const legend=[{min:0,max:0,color:"#e6e9ed"},...bins];
  legend.forEach((b,i)=>{const x=1770+i*600;pieces.push(`<rect x="${x}" y="6402" width="72" height="50" rx="5" fill="${b.color}" stroke="#8499aa"/>`,text(b.min===0?"Zero votos":b.min===b.max?`${number(b.min)}`:`${number(b.min)} a ${number(b.max)}`,x+88,6440,33))});
  pieces.push(text("Faixas por quartis dos votos positivos. Zero somente com registro confirmado.",1770,6510,32,"#536d83"),
- text(`Pinos exibidos: ${keptPins.length}/${report.pins?.length??0}. ${report.pinCoverage??"Locais georreferenciados; disposição para leitura."}`,1770,6560,30,"#536d83"),
+ text("Rótulos do mapa: nomes dos municípios. Votos na tabela à esquerda.",1770,6560,30,"#536d83"),
  '<path d="M130 6620H4830" stroke="#ced8e1" stroke-width="3"/>',
  text("Fonte eleitoral: Tribunal Superior Eleitoral.  Fonte cartográfica: IBGE.",165,6725,39,"#365674"),
  text(`Eleição 2026 · ${report.candidate.round}º turno · Gerado em ${new Intl.DateTimeFormat("pt-BR",{timeZone:"America/Sao_Paulo",dateStyle:"short",timeStyle:"medium"}).format(generatedAt)} (Brasília)`,165,6805,37,"#365674"),
