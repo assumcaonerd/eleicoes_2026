@@ -17,7 +17,7 @@ const publicBenefits = [
   ["Rankings e indicadores", "Analise totais de votos, municípios de destaque e rankings disponíveis para os recortes selecionados."],
   ["Compare candidatos", "Coloque candidatos do mesmo cargo lado a lado e examine as diferenças de votação por território."],
   ["Relatórios e exportações", "Exporte relatórios e dados nos formatos disponibilizados pela plataforma, observada a cobertura de cada consulta."],
-  ["Filtros detalhados", "Refine as análises por município, bairro, zona, local e seção, quando esses registros estiverem disponíveis."],
+  ["Filtros detalhados", "Refine as análises por município, bairro, zona, local e seção."],
   ["Sua conta pessoal", "Acesse o painel por login e senha, com acesso condicionado à vigência da assinatura."]
 ] as const;
 
