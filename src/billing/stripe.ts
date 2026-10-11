@@ -42,7 +42,8 @@ async function syncSubscription(s:Stripe,subscriptionId:string) {
   const plan=price?.id===process.env.STRIPE_PRICE_ANNUAL?"annual":
     price?.id===process.env.STRIPE_PRICE_MONTHLY?"monthly":null;
   if(!plan) return;
-  const end=first?.current_period_end ? new Date(first.current_period_end*1000) : null;
+  const periodEnd=(first as Stripe.SubscriptionItem & {current_period_end?:number}|undefined)?.current_period_end;
+  const end=periodEnd ? new Date(periodEnd*1000) : null;
   const status=sub.status==="active"||sub.status==="trialing"?sub.status:
     sub.status==="past_due"?"past_due":sub.status==="canceled"?"cancelled":"pending";
   const customer=typeof sub.customer==="string"?sub.customer:sub.customer.id;
