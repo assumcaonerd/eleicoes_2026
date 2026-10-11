@@ -11,6 +11,16 @@ export async function createCheckout(user:{id:number;email:string},plan:"monthly
   const s=stripe();
   const price=plan==="monthly"?process.env.STRIPE_PRICE_MONTHLY:process.env.STRIPE_PRICE_LIFETIME;
   if(!price) throw new Error(`Preço Stripe não configurado para ${plan}.`);
+  // A fonte de verdade do valor cobrado é o preço cadastrado na Stripe.
+  // Impede que um Price ID apontando para outro valor ou moeda seja usado por engano.
+  const priceDetails=await s.prices.retrieve(price);
+  const expectedAmount=plan==="monthly"?990:9900;
+  if(priceDetails.currency!=="brl"||priceDetails.unit_amount!==expectedAmount||!priceDetails.active)
+    throw new Error("Preço Stripe incompatível com o plano anunciado. Confira a moeda BRL e o valor cadastrado.");
+  if(plan==="monthly"&&(priceDetails.type!=="recurring"||priceDetails.recurring?.interval!=="month"||priceDetails.recurring?.interval_count!==1))
+    throw new Error("O plano mensal precisa ter recorrência mensal na Stripe.");
+  if(plan==="lifetime"&&priceDetails.type!=="one_time")
+    throw new Error("O acesso permanente precisa usar um preço de pagamento único na Stripe.");
   const origin=process.env.APP_ORIGIN;
   if(!origin) throw new Error("APP_ORIGIN não configurada.");
   const session=await s.checkout.sessions.create({
