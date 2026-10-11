@@ -69,16 +69,17 @@ export function buildStateReport(r:StateReport,now=new Date()){
  for(const m of r.units){const shapes=polygons(m.geometry);const path=shapes.map(poly=>poly.map(ring=>ring.map((q,i)=>`${i?'L':'M'}${project(q).map(v=>v.toFixed(2)).join(',')}`).join(' ')+'Z').join(' ')).join(' ');
   pieces.push(`<path id="municipality-${m.ibgeCode}" data-tse-code="${m.tseCode}" data-votes="${m.votes??'missing'}" d="${path}" fill="${m.votes===null?'#c2c4ca':scale.color(m.votes)}" fill-rule="evenodd" stroke="#52697c" stroke-width="2"><title>${esc(m.name)} · IBGE ${m.ibgeCode} · TSE ${m.tseCode}: ${fmt(m.votes)}${m.votes===null?'':' votos'}</title></path>`);
  }
- const valid=r.pins.filter(p=>validPin(r,p));for(const p of valid){const [x,y]=project([p.lng,p.lat]);pieces.push(`<g class="polling-pin" transform="translate(${x},${y})"><path d="M0 0C-4-10-12-16-12-24A12 12 0 1 1 12-24C12-16 4-10 0 0Z" fill="#b72e3e" stroke="white" stroke-width="2"/></g>`)}
- // Every small-UF label is placed with the tested ES callout algorithm.
- if(!info.complementary){const labels=layoutLabels(projectedItems);for(const l of labels){const m=r.units.find(m=>m.ibgeCode===l.code)!;if(l.external)pieces.push(`<path d="M${l.anchor[0]},${l.anchor[1]}L${l.x},${l.y}" stroke="#536d83" stroke-width="2"/>`);pieces.push(`<g id="label-${m.ibgeCode}"><rect x="${l.x-l.w/2}" y="${l.y-l.h/2}" width="${l.w}" height="${l.h}" fill="white" fill-opacity=".94"/>`);l.lines.forEach((line,i)=>pieces.push(t(line,l.x,l.y-l.h/2+42+i*48,42,'#142d48',true,'middle')));pieces.push(t(fmt(m.votes)+(m.votes===null?'':' votos'),l.x,l.y-l.h/2+l.lines.length*48+40,39,'#365674',false,'middle'),'</g>');labeled++;}}
- else{
-  // Stable numerical keys connect every polygon to the complete paginated table.
-  const used:{x:number;y:number}[]=[];
-  for(const [i,item] of projectedItems.entries()){let [x,y]=item.anchor;const free=(x:number,y:number)=>x>=1815&&x<=4745&&y>=1200&&y<=5990&&!used.some(p=>Math.abs(x-p.x)<85&&Math.abs(y-p.y)<52);if(!free(x,y)){let found=false;for(let radius=52;radius<5500&&!found;radius+=52){const n=Math.ceil(radius*2*Math.PI/50);for(let k=0;k<n;k++){const a=k*2*Math.PI/n,tx=item.anchor[0]+Math.cos(a)*radius,ty=item.anchor[1]+Math.sin(a)*radius;if(free(tx,ty)){x=tx;y=ty;found=true;break}}}if(!found)throw new Error('Espaço insuficiente para chaves cartográficas legíveis.');pieces.push(`<path d="M${item.anchor[0]},${item.anchor[1]}L${x},${y}" stroke="#536d83" stroke-width="1.2"/>`)}used.push({x,y});pieces.push(`<g id="label-${item.m.ibgeCode}"><rect x="${x-38}" y="${y-28}" width="76" height="45" rx="8" fill="white" fill-opacity=".94"/>`,t(i+1,x,y+5,33,'#142d48',true,'middle'),'</g>');labeled++;}
+ // Names only on the map; vote totals remain in the unchanged left table.
+ const labelSize=info.complementary?22:42;
+ const labels=layoutLabels(projectedItems,labelSize);
+ for(const l of labels){
+  if(l.external)pieces.push(`<path d="M${l.anchor[0]},${l.anchor[1]}L${l.x},${l.y}" stroke="#536d83" stroke-width="1.2"/>`);
+  pieces.push(`<g id="label-${l.code}" data-name="${esc(l.name)}"><rect x="${l.x-l.w/2}" y="${l.y-l.h/2}" width="${l.w}" height="${l.h}" rx="4" fill="white" fill-opacity=".94"/>`);
+  l.lines.forEach((line,i)=>pieces.push(t(line,l.x,l.y-l.h/2+labelSize+6+i*(labelSize+6),labelSize,'#142d48',true,'middle')));
+  pieces.push('</g>');labeled++;
  }
  pieces.push(t('LEGENDA',1780,6200,40,'#234766',true));const legend=[{color:'#c2c4ca',label:'Sem registro'},{color:'#e6e9ed',label:'Zero confirmado'},...scale.bins.map(b=>({color:b.color,label:`${fmt(b.min)} a ${fmt(b.max)}`}))];legend.forEach((b,i)=>{const x=1780+i%3*980,y=6250+Math.floor(i/3)*90;pieces.push(`<rect x="${x}" y="${y}" width="55" height="45" fill="${b.color}" stroke="#52697c"/>`,t(b.label,x+75,y+35,32))});
- pieces.push(t(`Pinos: ${valid.length} coordenadas dentro do território.`,160,6640,35),t(r.pinCoverage,160,6705,32),t('Fontes: TSE (votos e códigos); IBGE (malha e nomes oficiais).',160,6770,35),t(`Gerado: ${now.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})} (Brasília). A2 · 300 dpi.`,160,6850,35),t('Ausência de registro não é zero. Títulos vetoriais preservam nomes, códigos e votos.',160,6920,32),'</svg>');
+ pieces.push(t('Rótulos do mapa: nomes dos municípios. Votos na tabela à esquerda.',160,6640,35),t(r.pinCoverage,160,6705,32),t('Fontes: TSE (votos e códigos); IBGE (malha e nomes oficiais).',160,6770,35),t(`Gerado: ${now.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})} (Brasília). A2 · 300 dpi.`,160,6850,35),t('Ausência de registro não é zero. Títulos vetoriais preservam nomes, códigos e votos.',160,6920,32),'</svg>');
  return {svg:pieces.join(''),labels:[],municipalities:r.units.length,total:r.total,complementary:info.complementary||labeled<r.units.length};
 }
 export function complementaryReport(r:StateReport,now=new Date()){
