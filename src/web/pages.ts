@@ -5,24 +5,88 @@ import {brandCss,brandMark,brandIcon} from "./brand.js";
 function esc(v:unknown){return String(v??"").replace(/[&<>"']/g,function(c){return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"} as any)[c]})}
 
 export function layout(title:string,body:string,user?:any){
-  var actions = user ? '<a class="btn secondary" href="/app">Painel</a><form method="post" action="/logout"><button class="btn secondary">Sair</button></form>' : '<a class="btn secondary" href="/login">Entrar</a><a class="btn" href="/cadastro">Assinar</a>';
+  var actions = user ? '<a class="btn secondary" href="/planos">Planos e preços</a><a class="btn secondary" href="/app">Painel</a><form method="post" action="/logout"><button class="btn secondary">Sair</button></form>' : '<a class="btn secondary" href="/planos">Planos e preços</a><a class="btn secondary" href="/login">Entrar</a><a class="btn" href="/planos">Assinar</a>';
   return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#090F1F"><link rel="icon" href="/favicon.ico?v=1" sizes="any"><link rel="icon" type="image/svg+xml" href="/assets/siga-voto/favicon-v1.svg"><link rel="icon" type="image/png" sizes="32x32" href="/assets/siga-voto/favicon-32-v1.png"><link rel="apple-touch-icon" sizes="180x180" href="/assets/siga-voto/favicon-180-v1.png"><title>'+esc(title)+' | Siga o Voto</title><style>'+css+brandCss+'</style></head><body class="sov-shell '+(title==="Aplicativo"?"sov-app":"sov-public")+'"><div class="wrap"><nav class="nav" aria-label="Navegação principal"><a href="/" class="brand" aria-label="Siga o Voto, início"><span class="brand-symbol" aria-hidden="true">'+brandMark+'</span><span class="brand-wordmark"><strong>Siga o Voto</strong><small>INTELIGÊNCIA ELEITORAL</small></span><span class="tag">2026</span></a><div class="row">'+actions+'</div></nav><main>'+body+'</main><div class="footer">Siga o Voto 2026 · Fonte original dos dados eleitorais: Tribunal Superior Eleitoral. Plataforma independente.</div></div></body></html>';
 }
 
+const publicBenefits = [
+  ["Pesquise candidatos", "Busque por nome ou número, selecione o cargo e o estado para consultar os resultados de 2026."],
+  ["Veja a votação por território", "Explore resultados por estado, município, bairro, zona eleitoral, local de votação e seção, conforme a disponibilidade da base."],
+  ["Mapas eleitorais interativos", "Visualize a distribuição territorial dos votos, com camadas de mapa e informações geográficas onde houver dados."],
+  ["Presidente e governador", "Consulte os painéis de eleições majoritárias e compare resultados por estado e município."],
+  ["Rankings e indicadores", "Analise totais de votos, municípios de destaque e rankings disponíveis para os recortes selecionados."],
+  ["Compare candidatos", "Coloque candidatos do mesmo cargo lado a lado e examine as diferenças de votação por território."],
+  ["Relatórios e exportações", "Exporte relatórios e dados nos formatos disponibilizados pela plataforma, observada a cobertura de cada consulta."],
+  ["Filtros detalhados", "Refine as análises por município, bairro, zona, local e seção, quando esses registros estiverem disponíveis."],
+  ["Sua conta pessoal", "Acesse o painel por login e senha, com acesso condicionado à vigência da assinatura."]
+] as const;
+
+function benefitsMarkup(){
+  return '<section class="sov-benefits" id="recursos"><div class="sov-section-intro"><span>O QUE ESTÁ INCLUÍDO</span><h2>Conheça os recursos da plataforma</h2><p>Os dois planos oferecem os mesmos recursos da edição 2026, conforme a disponibilidade e a abrangência dos dados oficiais importados.</p></div><div class="sov-benefit-grid">'+publicBenefits.map(([title,description])=>'<article class="sov-benefit"><span class="sov-benefit-check" aria-hidden="true">✓</span><div><h3>'+esc(title)+'</h3><p>'+esc(description)+'</p></div></article>').join('')+'</div></section>';
+}
+function planCards(user?:any,selected?:string){
+  const buttons=(plan:"monthly"|"annual",label:string)=>
+    user?'<form method="post" action="/checkout"><input type="hidden" name="plan" value="'+plan+'"><button class="sov-plan-action" type="submit">'+label+'</button></form>':
+      '<a class="sov-plan-action" href="/cadastro?plan='+plan+'">'+label+'</a>';
+  return '<section id="planos" class="sov-pricing"><div class="sov-section-intro"><span>PLANOS E PREÇOS</span><h2>Escolha seu plano</h2><p>Os mesmos recursos em ambas as modalidades. Escolha o período de cobrança que prefere.</p></div><div class="sov-price-grid">'+
+    '<article class="sov-price-card'+(selected==="monthly"?' sov-plan-selected':'')+'"><div class="sov-price-kicker">PLANO MENSAL</div><h3>Flexibilidade para analisar os resultados</h3><div class="sov-price-amount">R$ 9,90 <span>/mês</span></div><p class="sov-price-copy">Acesso aos recursos da edição 2026, mediante assinatura ativa.</p><ul><li>Consultas e análises eleitorais</li><li>Mapas, comparações e rankings</li><li>Relatórios e exportações disponíveis</li><li>Renovação automática mensal</li></ul>'+buttons("monthly","ASSINAR MENSAL")+'</article>'+
+    '<article class="sov-price-card sov-price-highlight'+(selected==="annual"?' sov-plan-selected':'')+'"><div class="sov-sale-label">OFERTA ESPECIAL DE LANÇAMENTO</div><div class="sov-price-kicker">PLANO ANUAL</div><h3>Mais economia para acompanhar os dados</h3><div class="sov-price-amount">R$ 99,00 <span>/ano</span></div><p class="sov-price-saving">Economize R$ 19,80 (16,7%) em relação a 12 mensalidades.</p><ul><li>Todos os recursos do plano mensal</li><li>Mapas e relatórios disponíveis</li><li>Acesso durante a vigência anual</li><li>Renovação automática a cada 12 meses</li></ul>'+buttons("annual","ASSINAR ANUAL")+'</article></div>'+
+    '<p class="sov-price-note">Preços em reais (BRL). Assinaturas com renovação automática até o cancelamento. O plano anual não é vitalício. A cobertura de dados e os formatos de exportação variam conforme o território e a disponibilidade das informações.</p></section>';
+}
+const marketingCss=`<style>
+.sov-marketing{--navy:#0b1733;--gold:#ffd633;--green:#167a48}
+.sov-marketing .sov-section-intro{text-align:center;max-width:760px;margin:0 auto 28px}
+.sov-marketing .sov-section-intro>span{color:#a97906;font-size:12px;letter-spacing:1.6px;font-weight:800}
+.sov-marketing .sov-section-intro h2{font-size:clamp(28px,3.2vw,39px);margin:10px 0}
+.sov-marketing .sov-section-intro p{color:#56657a;margin:0;font-size:16px}
+.sov-marketing .sov-pricing{background:#0b1733;padding:44px 26px 30px;border-radius:24px;margin:46px 0;color:#fff}
+.sov-marketing .sov-pricing .sov-section-intro h2{color:#ffd633}
+.sov-marketing .sov-pricing .sov-section-intro>span{color:#ffd633}
+.sov-marketing .sov-pricing .sov-section-intro p{color:#d5dfef}
+.sov-price-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;max-width:940px;margin:0 auto}
+.sov-price-card{background:#17294c;border:1px solid #384a68;border-radius:19px;padding:26px;display:flex;flex-direction:column;min-width:0}
+.sov-price-highlight{border:2px solid #ffd633}
+.sov-sale-label{background:#ffd633;color:#11203a;border-radius:7px;font-size:11px;font-weight:900;padding:9px 12px;text-align:center;margin-bottom:18px;letter-spacing:.3px}
+.sov-price-kicker{font-size:12px;font-weight:800;letter-spacing:1.3px;color:#f4c748}
+.sov-marketing .sov-price-card h3{color:#fff;font-size:21px;margin:10px 0 20px;min-height:50px}
+.sov-price-amount{font-size:clamp(34px,4vw,46px);font-weight:900;line-height:1.2;color:#ffd633;white-space:nowrap}
+.sov-price-amount span{font-size:15px;font-weight:400;color:#d6e1ee}
+.sov-price-copy,.sov-price-saving{color:#e2e9f4;min-height:46px;font-size:14px}
+.sov-price-saving{color:#ffe69a;font-weight:700}
+.sov-price-card ul{list-style:none;margin:4px 0 24px;padding:0;display:grid;gap:12px}
+.sov-price-card li{position:relative;padding-left:22px;color:#f5f7fb;font-size:14px}
+.sov-price-card li:before{content:'✓';position:absolute;left:0;color:#66dca5;font-weight:900}
+.sov-plan-action{display:block;width:100%;text-align:center;background:#167a48;color:white!important;padding:15px 12px;border:0;border-radius:10px;text-decoration:none;font-size:14px;font-weight:800;cursor:pointer;margin-top:auto}
+.sov-plan-action:hover{background:#109054}
+.sov-price-note{font-size:12px;line-height:1.6;max-width:920px;margin:20px auto 0;color:#c5d3e8;text-align:center}
+.sov-plan-selected{box-shadow:0 0 0 3px #73cda9}
+.sov-benefits{margin:56px 0 48px}
+.sov-benefit-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.sov-benefit{display:flex;gap:12px;background:white;border:1px solid #dce4ef;border-radius:16px;padding:20px}
+.sov-benefit-check{display:flex;align-items:center;justify-content:center;background:#e3f7ed;color:#157b49;border-radius:50%;width:27px;height:27px;flex-shrink:0;font-weight:900}
+.sov-marketing .sov-benefit h3{font-size:16px;margin:0 0 8px}
+.sov-benefit p{font-size:13px;line-height:1.6;color:#56657a;margin:0}
+@media(max-width:850px){.sov-benefit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.sov-price-grid,.sov-benefit-grid{grid-template-columns:1fr}.sov-marketing .sov-pricing{padding:28px 14px}.sov-marketing .sov-price-card h3{min-height:0}.sov-shell .nav{flex-wrap:wrap}.sov-shell .nav>.row{flex-wrap:wrap}.sov-shell .nav>.row a,.sov-shell .nav>.row button{font-size:12px;padding:9px 10px;min-height:38px}}
+</style>`;
+
 export function homePage(user?:any){
-  var buttons = user ? '<a class="btn" href="/app">Abrir aplicativo</a>' : '<a class="btn" href="/cadastro">Criar acesso</a><a class="btn secondary" href="/login">Já sou assinante</a>';
-  return layout("Início",'<section class="hero"><div class="hero-eyebrow">Dados oficiais. Visão territorial.</div><h1>Inteligência eleitoral para entender cada voto.</h1><p class="muted" style="font-size:19px;max-width:730px">Consulte candidatos, municípios, bairros, zonas, locais de votação e seções em uma base própria construída a partir dos dados oficiais da Justiça Eleitoral.</p><div class="row" style="margin-top:24px">'+buttons+'</div><ul class="hero-checks"><li>Dados oficiais do TSE</li><li>Consultas por território</li><li>Comparação de candidatos</li></ul></section><div class="grid"><div class="card"><span class="feature-icon">'+brandIcon("data")+'</span><b>Base 2026</b><p class="muted">Dados oficiais preservados localmente.</p></div><div class="card"><span class="feature-icon">'+brandIcon("territory")+'</span><b>Detalhamento</b><p class="muted">Município, bairro, zona, local e seção conforme disponibilidade oficial.</p></div><div class="card"><span class="feature-icon">'+brandIcon("access")+'</span><b>Acesso privado</b><p class="muted">Conta individual e assinatura ativa.</p></div></div>',user);
+  const buttons=user?'<a class="btn" href="/app">Abrir aplicativo</a>':'<a class="btn" href="#planos">Ver planos e preços</a><a class="btn secondary" href="/login">Já sou assinante</a>';
+  return layout("Início",marketingCss+'<div class="sov-marketing"><section class="hero"><div class="hero-eyebrow">Dados oficiais. Visão territorial.</div><h1>Inteligência eleitoral para entender cada voto.</h1><p class="muted" style="font-size:19px;max-width:730px">Explore a votação de 2026 com consultas por candidato, filtros territoriais, mapas e comparações a partir de bases oficiais.</p><div class="row" style="margin-top:24px">'+buttons+'</div><ul class="hero-checks"><li>Dados oficiais do TSE</li><li>Consultas por território</li><li>Comparação entre candidatos</li></ul></section>'+planCards(user)+benefitsMarkup()+'</div>',user);
 }
 
-export function authPage(kind:"login"|"cadastro",error=""){
-  var extra = kind==="cadastro" ? '<label class="field">Nome<input name="name" autocomplete="name"></label>' : '';
-  var err = error ? '<div class="error">'+esc(error)+'</div>' : '';
-  return layout(kind==="login"?"Entrar":"Criar conta",'<div class="auth card"><h1>'+(kind==="login"?"Entrar":"Criar conta")+'</h1>'+err+'<form method="post" action="/'+kind+'">'+extra+'<label class="field">E-mail<input type="email" name="email" required autocomplete="email"></label><label class="field">Senha<input type="password" name="password" required minlength="12"></label><button class="btn" style="width:100%">'+(kind==="login"?"Entrar":"Continuar")+'</button></form></div>');
+export function authPage(kind:"login"|"cadastro",error="",selectedPlan=""){
+  const plan=selectedPlan==="annual"?"annual":selectedPlan==="monthly"?"monthly":"";
+  const extra=kind==="cadastro"?'<label class="field">Nome<input name="name" autocomplete="name"></label>':'';
+  const hint=plan?'<p class="muted">Plano escolhido: <strong>'+(plan==="annual"?'Anual, R$ 99,00/ano':'Mensal, R$ 9,90/mês')+'</strong>. Após o cadastro, confirme sua assinatura.</p>':'';
+  const err=error?'<div class="error">'+esc(error)+'</div>':'';
+  const hidden=plan?'<input type="hidden" name="plan" value="'+plan+'">':'';
+  return layout(kind==="login"?"Entrar":"Criar conta",'<div class="auth card"><h1>'+(kind==="login"?"Entrar":"Criar conta")+'</h1>'+hint+err+'<form method="post" action="/'+kind+'">'+hidden+extra+'<label class="field">E-mail<input type="email" name="email" required autocomplete="email"></label><label class="field">Senha<input type="password" name="password" required minlength="12"></label><button class="btn" style="width:100%">'+(kind==="login"?"Entrar":"Continuar")+'</button></form></div>');
 }
 
-export function plansPage(user:any,error=""){
+export function plansPage(user?:any,error="",selectedPlan=""){
   const alert=error?'<div class="error" role="alert">'+esc(error)+'</div>':'';
-  return layout("Planos",'<h1>Escolha seu acesso</h1><p class="muted">Pagamento seguro pela Stripe. Valores em reais (BRL).</p>'+alert+'<div class="grid"><div class="card"><div class="tag">Mensal</div><h2>Assinatura mensal</h2><p class="metric">R$ 9,90 <span class="muted" style="font-size:16px">/ mês</span></p><p class="muted">Cobrança automática a cada mês enquanto a assinatura estiver ativa.</p><form method="post" action="/checkout"><input type="hidden" name="plan" value="monthly"><button class="btn">Assinar por R$ 9,90/mês</button></form></div><div class="card"><div class="tag" style="background:#fff1b8;color:#614700;font-weight:850">Oferta especial de lançamento</div><h2>Assinatura anual</h2><p class="metric">R$ 99,00 <span class="muted" style="font-size:16px">/ ano</span></p><p class="muted">Economize R$ 19,80 (16,7%) em comparação com 12 mensalidades. Renovação automática a cada 12 meses, até o cancelamento.</p><form method="post" action="/checkout"><input type="hidden" name="plan" value="annual"><button class="btn">Assinar por R$ 99,00/ano</button></form></div></div>',user);
+  return layout("Planos",marketingCss+'<div class="sov-marketing">'+alert+planCards(user,selectedPlan)+benefitsMarkup()+'</div>',user);
 }
 
 export function appPage(user:any,active:boolean){
