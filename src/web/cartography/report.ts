@@ -1,3 +1,4 @@
+import {companyExport} from "../company-brand.js";
 import {readFileSync} from "node:fs";
 import opentype from "opentype.js";
 import {brandColors,brandMark} from "../brand.js";
@@ -245,7 +246,7 @@ export function buildReport(report:Report,generatedAt=new Date()){
  '<path d="M130 6620H4830" stroke="#ced8e1" stroke-width="3"/>',
  text("Fonte eleitoral: Tribunal Superior Eleitoral.  Fonte cartográfica: IBGE.",165,6725,39,"#365674"),
  text(`Eleição 2026 · ${report.candidate.round}º turno · Gerado em ${new Intl.DateTimeFormat("pt-BR",{timeZone:"America/Sao_Paulo",dateStyle:"short",timeStyle:"medium"}).format(generatedAt)} (Brasília)`,165,6805,37,"#365674"),
- text("SIGA O VOTO 2026",165,6900,35,"#102b47",true),text("A2 · 300 dpi · Cartografia vetorial · 78/78 municípios",4830,6900,33,"#536d83",false,"end"),"</svg>");
+ companyExport(165,6860,62,text),text("A2 · 300 dpi · Cartografia vetorial · 78/78 municípios",4830,6900,33,"#536d83",false,"end"),"</svg>");
  const svg=pieces.join("");
  if(/NaN|Infinity/.test(svg))throw new Error("Coordenada gráfica inválida. Exportação bloqueada.");
  return {svg,labels,municipalities:78,total:report.total};
