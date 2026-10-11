@@ -1,4 +1,4 @@
-const css = "*{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f6f8;color:#151515}a{color:inherit}.wrap{max-width:1100px;margin:auto;padding:28px}.nav{display:flex;justify-content:space-between;align-items:center;padding:20px 0}.brand{font-weight:900;font-size:21px}.card{background:#fff;border:1px solid #e7e7e7;border-radius:20px;padding:24px;box-shadow:0 10px 35px rgba(0,0,0,.05)}.hero{padding:70px 0}.hero h1{font-size:52px;line-height:1;margin:0 0 18px;max-width:750px}.muted{color:#68717a}.btn{display:inline-block;border:0;border-radius:12px;padding:12px 18px;background:#111;color:#fff;text-decoration:none;font-weight:750;cursor:pointer}.btn.secondary{background:#fff;color:#111;border:1px solid #ddd}.row{display:flex;gap:12px;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}.field{display:flex;flex-direction:column;gap:6px;margin:12px 0}input,select{padding:13px;border:1px solid #d7dce0;border-radius:10px;font:inherit}.auth{max-width:460px;margin:55px auto}.error{background:#fff1f0;color:#9d1717;padding:12px;border-radius:10px;margin:12px 0}.metric{font-size:34px;font-weight:900}.tag{display:inline-flex;padding:5px 9px;border-radius:999px;background:#edf0f3;font-size:12px}.footer{padding:35px 0;color:#777;font-size:12px}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:12px;border-bottom:1px solid #eee}th{font-size:12px;text-transform:uppercase;color:#68717a}@media(max-width:700px){.hero h1{font-size:38px}.wrap{padding:18px}}";
+const css = ".sov-candidate-identity{display:flex;align-items:center;gap:14px;min-width:0}.sov-candidate-photo{width:48px;height:64px;object-fit:contain;flex:none;border-radius:6px;background:#fff}.sov-candidate-photo[hidden]{display:none}*{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f6f8;color:#151515}a{color:inherit}.wrap{max-width:1100px;margin:auto;padding:28px}.nav{display:flex;justify-content:space-between;align-items:center;padding:20px 0}.brand{font-weight:900;font-size:21px}.card{background:#fff;border:1px solid #e7e7e7;border-radius:20px;padding:24px;box-shadow:0 10px 35px rgba(0,0,0,.05)}.hero{padding:70px 0}.hero h1{font-size:52px;line-height:1;margin:0 0 18px;max-width:750px}.muted{color:#68717a}.btn{display:inline-block;border:0;border-radius:12px;padding:12px 18px;background:#111;color:#fff;text-decoration:none;font-weight:750;cursor:pointer}.btn.secondary{background:#fff;color:#111;border:1px solid #ddd}.row{display:flex;gap:12px;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}.field{display:flex;flex-direction:column;gap:6px;margin:12px 0}input,select{padding:13px;border:1px solid #d7dce0;border-radius:10px;font:inherit}.auth{max-width:460px;margin:55px auto}.error{background:#fff1f0;color:#9d1717;padding:12px;border-radius:10px;margin:12px 0}.metric{font-size:34px;font-weight:900}.tag{display:inline-flex;padding:5px 9px;border-radius:999px;background:#edf0f3;font-size:12px}.footer{padding:35px 0;color:#777;font-size:12px}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:12px;border-bottom:1px solid #eee}th{font-size:12px;text-transform:uppercase;color:#68717a}@media(max-width:700px){.hero h1{font-size:38px}.wrap{padding:18px}}";
 
 import {brandCss,brandMark,brandIcon} from "./brand.js";
 
@@ -109,7 +109,7 @@ export function appPage(user:any,active:boolean){
 <div id="searchResults" class="candidate-list"></div>
 </div>
 <section id="dashboard" class="dash"><div class="card">
-<div class="dash-head"><div class="dash-title"><div class="tag">Raio-X eleitoral</div><h2 id="candName"></h2><div class="muted" id="candMeta"></div></div><button class="btn secondary" type="button" id="newSearch">Trocar candidato</button></div>
+<div class="dash-head"><div class="sov-candidate-identity"><img id="candPhoto" class="sov-candidate-photo" width="48" height="64" alt="" decoding="async" hidden><div class="dash-title"><div class="tag">Raio-X eleitoral</div><h2 id="candName"></h2><div class="muted" id="candMeta"></div></div></div><button class="btn secondary" type="button" id="newSearch">Trocar candidato</button></div>
 <div class="vote-comparison" id="voteComparison" aria-live="polite"><span class="muted">Carregando comparação de votos...</span></div>
 <div class="metrics">
 <div class="metric-card"><div class="muted">Votos totais</div><div class="n" id="totalVotes">0</div></div>
@@ -484,10 +484,27 @@ document.getElementById("search").addEventListener("submit",async function(e){
   if(button)button.disabled=false;
  }
 });
+
+function showCandidatePhoto(c){
+ var photo=document.getElementById("candPhoto");
+ var sq=String(c.tse_candidate_id||""),e=String(c.election_id||"");
+ var scope=Number(c.office_code)===1?"br":String(c.uf||"").toLowerCase();
+ if(!/^[0-9]{7,20}$/.test(sq)||!/^\\d{1,6}$/.test(e)||!/^[a-z]{2}$/.test(scope)){
+  photo.hidden=true;photo.removeAttribute("src");return;
+ }
+ var src="/assets/candidate-photos/"+e+"/"+scope+"/"+sq+".webp";
+ if(photo.getAttribute("src")===src)return;
+ photo.hidden=true;
+ photo.onload=function(){photo.hidden=false};
+ photo.onerror=function(){photo.hidden=true};
+ photo.src=src;
+}
+
 async function openCandidate(id){
  var r=await fetch("/api/candidate-overview?candidateId="+id),d=await r.json();if(!r.ok){document.getElementById("searchResults").innerHTML='<div class="error">'+escHtml(d.error)+'</div>';return}
  currentCandidate=d.candidate;overview=d;territoryScope={municipality:"",neighborhood:"",place:"",zone:"",section:""};
  document.getElementById("candName").textContent=d.candidate.ballot_name;
+ showCandidatePhoto(d.candidate);
  document.getElementById("candMeta").textContent="Nº "+d.candidate.number+" · "+(d.candidate.party_abbr||"")+" · "+d.candidate.office_name+" · "+d.candidate.uf;
  document.getElementById("totalVotes").textContent=fmt(d.total_votes);
  document.getElementById("municipalitiesCount").textContent=fmt(d.municipalities_count);

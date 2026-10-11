@@ -15,6 +15,7 @@ import municipalities2026 from '../majority/municipalities-2026.json' with {type
 import {majorityPage} from '../majority/page.js';
 import {majorityOverview,majorityGeometry,majoritySections,majorityComparison} from '../majority/data.js';
 import {territoryCSV} from '../majority/model.js';
+import {loadCandidatePhoto,officialPhotoUrl} from "../tse/photos.js";
 
 async function readBody(req:IncomingMessage,raw=false){
   const chunks:Buffer[]=[];
@@ -35,6 +36,14 @@ function sameOrigin(req:IncomingMessage){const origin=req.headers.origin;if(!ori
 
 export async function handleWeb(req:IncomingMessage,res:ServerResponse){
   const url=new URL(req.url??"/","http://local");
+  if(req.method==="GET"&&url.pathname.startsWith("/assets/candidate-photos/")){
+    if(!officialPhotoUrl(url.pathname)){res.writeHead(404,{"cache-control":"public, max-age=300"});res.end();return true}
+    const photo=await loadCandidatePhoto(url.pathname);
+    res.writeHead(photo.bytes?200:404,{
+      "content-type":"image/webp","cache-control":photo.maxAge?"public, max-age="+photo.maxAge:"no-store",
+      "x-content-type-options":"nosniff"
+    });res.end(photo.bytes??undefined);return true;
+  }
   const faviconFiles:Record<string,{file:string,type:string}>={
     "/favicon.ico":{file:"favicon-v1.ico",type:"image/x-icon"},
     "/assets/siga-voto/favicon-v1.svg":{file:"favicon-v1.svg",type:"image/svg+xml"},
