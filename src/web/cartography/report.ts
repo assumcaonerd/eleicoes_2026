@@ -147,6 +147,29 @@ function layoutLabels(items:{m:Municipality;rings:Point[][];anchor:Point}[],size
  }
  return labels;
 }
+
+/** Fit each complete name inside an interior disk, without boxes or external callouts. */
+export function containedNameLabels(items:{m:Municipality;rings:Point[][];anchor:Point}[],maxSize=30){
+ return items.map(item=>{
+  const room=distanceToBoundary(item.anchor,item.rings)*.88;
+  const words=item.m.name.split(" ");
+  const options:string[][]=[[item.m.name]];
+  for(let i=1;i<words.length;i++)options.push([words.slice(0,i).join(" "),words.slice(i).join(" ")]);
+  for(let i=1;i<words.length-1;i++)for(let j=i+1;j<words.length;j++)
+   options.push([words.slice(0,i).join(" "),words.slice(i,j).join(" "),words.slice(j).join(" ")]);
+  let lines=options[0],size=0;
+  for(const option of options){
+   const width=Math.max(...option.map(line=>measure(line,1,true)));
+   const height=option.length*1.15;
+   const fitted=Math.min(maxSize,room/Math.hypot(width/2,height/2));
+   if(fitted>size){size=fitted;lines=option}
+  }
+  return {code:item.m.ibgeCode,name:item.m.name,votes:item.m.votes,x:item.anchor[0],y:item.anchor[1],
+   w:Math.max(...lines.map(line=>measure(line,size,true))),h:lines.length*size*1.15,
+   anchor:item.anchor,lines,external:false,size};
+ });
+}
+
 export function buildReport(report:Report,generatedAt=new Date()){
  if(report.municipalities.length!==78||report.municipalities.reduce((s,m)=>s+m.votes,0)!==report.total)throw new Error("Relatório inconsistente.");
  const mainland=report.municipalities.flatMap(m=>polygons(m.geometry).filter(poly=>poly[0].every(p=>p[0]<-38)));
@@ -170,8 +193,8 @@ export function buildReport(report:Report,generatedAt=new Date()){
   const path=shapes.map(poly=>poly.map(r=>r.map((p,i)=>`${i?"L":"M"}${p[0].toFixed(2)},${p[1].toFixed(2)}`).join(" ")+"Z").join(" ")).join(" ");
   return {m,rings,path,anchor:interiorAnchor(rings)};
  });
- const labels=layoutLabels(projected);
- for(let i=0;i<labels.length;i++)for(let j=i+1;j<labels.length;j++)if(overlap(labels[i],labels[j]))throw new Error("Sobreposição de rótulos. Exportação bloqueada.");
+ const labels=containedNameLabels(projected);
+ for(let i=0;i<labels.length;i++)for(let j=i+1;j<labels.length;j++)if(overlap(labels[i],labels[j],0))throw new Error("Sobreposição de rótulos. Exportação bloqueada.");
  const {bins,color}=colorScale(report.municipalities.map(m=>m.votes));
  const pieces=[`<svg xmlns="http://www.w3.org/2000/svg" width="420mm" height="594mm" viewBox="0 0 ${WIDTH} ${HEIGHT}" role="img" aria-labelledby="report-title">`,
  `<title id="report-title">Siga o Voto 2026: ${xml(report.candidate.ballot_name)}, 78 municípios do Espírito Santo</title>`,
@@ -208,15 +231,10 @@ export function buildReport(report:Report,generatedAt=new Date()){
  pieces.push('<rect x="4100" y="1190" width="690" height="400" rx="10" fill="#f3f6f9" stroke="#c9d5df" stroke-width="2"/>',text("ILHAS OCEÂNICAS",4130,1250,31,"#234766",true),text("Vitória · escalas independentes",4130,1565,27,"#536d83"));
  // Draw polygons, then leaders, then fully outlined labels. Never clip municipalities or labels.
  for(const p of projected)pieces.push(`<path id="municipality-${p.m.ibgeCode}" data-tse-code="${p.m.tseCode}" data-votes="${p.m.votes}" d="${p.path}" fill="${color(p.m.votes)}" fill-rule="evenodd" stroke="#52697c" stroke-width="3.2" stroke-linejoin="round"><title>${xml(p.m.name)}: ${number(p.m.votes)} votos</title></path>`);
- for(const l of labels.filter(l=>l.external)){
-  const end:Point=[Math.max(l.x-l.w/2,Math.min(l.x+l.w/2,l.anchor[0])),Math.max(l.y-l.h/2,Math.min(l.y+l.h/2,l.anchor[1]))];
-  pieces.push(`<path d="M${l.anchor[0]},${l.anchor[1]}L${end[0]},${end[1]}" fill="none" stroke="#fff" stroke-width="8"/><path d="M${l.anchor[0]},${l.anchor[1]}L${end[0]},${end[1]}" fill="none" stroke="#536d83" stroke-width="2.5"/><circle cx="${l.anchor[0]}" cy="${l.anchor[1]}" r="5" fill="#536d83" stroke="#fff" stroke-width="2"/>`);
- }
  for(const l of labels){
-  pieces.push(`<g id="label-${l.code}" data-name="${xml(l.name)}" data-votes="${l.votes}"><rect x="${l.x-l.w/2}" y="${l.y-l.h/2}" width="${l.w}" height="${l.h}" rx="8" fill="#fff" fill-opacity=".94"/>`);
-  const top=l.y-l.h/2;
-  l.lines.forEach((line,i)=>pieces.push(text(line,l.x,top+42+i*48,42,"#102b47",true,"middle")));
-
+  const fill=["#123f70","#377cae"].includes(color(l.votes))?"#fff":"#102b47";
+  pieces.push(`<g id="label-${l.code}" data-name="${xml(l.name)}">`);
+  l.lines.forEach((line,i)=>pieces.push(text(line,l.x,l.y+(i-(l.lines.length-1)/2)*l.size*1.15+l.size*.35,l.size,fill,true,"middle")));
   pieces.push("</g>");
  }
  pieces.push(text("INTENSIDADE DA VOTAÇÃO",1770,6360,38,"#234766",true));
