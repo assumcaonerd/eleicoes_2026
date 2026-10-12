@@ -249,7 +249,11 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
     const city=data.municipalities.find((r:any)=>String(r.municipality_code)===municipality);
     const scope=level==="municipality"?"Todos os municípios":[city?.municipality_name||(municipality?"Município "+municipality:"Todos os municípios"),neighborhood,place?"Local "+place:null,zoneText!==null?"Zona "+zoneText:null].filter(Boolean).join(" · ");
     res.setHeader("cache-control","no-store");
-    html(res,votingReport(data,rows,level,scope));return true
+    const candidate:any=data.candidate;
+    const photoPath="/assets/candidate-photos/"+candidate.election_id+"/"+(Number(candidate.office_code)===1?"br":String(candidate.uf).toLowerCase())+"/"+candidate.tse_candidate_id+".webp";
+    const photo=await loadCandidatePhoto(photoPath);
+    const portrait=photo.bytes?"data:image/webp;base64,"+photo.bytes.toString("base64"):undefined;
+    html(res,votingReport(data,rows,level,scope,portrait));return true
   }
   if(url.pathname==="/api/comparison-export.csv"&&req.method==="GET"){
     if(!user){json(res,{error:"Não autenticado."},401);return true}
