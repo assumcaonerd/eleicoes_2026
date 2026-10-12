@@ -1,3 +1,4 @@
+import {readPolymarket} from "./polymarket.js";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { URL } from "node:url";
 import { readFileSync } from "node:fs";
@@ -36,6 +37,14 @@ function sameOrigin(req:IncomingMessage){const origin=req.headers.origin;if(!ori
 
 export async function handleWeb(req:IncomingMessage,res:ServerResponse){
   const url=new URL(req.url??"/","http://local");
+  if(req.method==='GET'&&url.pathname==='/api/polymarket'){
+    try{json(res,await readPolymarket())}catch{json(res,{error:'Polymarket temporariamente indisponível.'},503)}return true;
+  }
+  if(req.method==='GET'&&url.pathname==='/assets/siga-voto/polymarket.js'){
+    res.writeHead(200,{'content-type':'application/javascript; charset=utf-8','cache-control':'public, max-age=300','x-content-type-options':'nosniff'});
+    res.end(readFileSync(new URL('../ui/polymarket.js',import.meta.url)));return true;
+  }
+
   if(req.method==="GET"&&url.pathname.startsWith("/assets/candidate-photos/")){
     if(!officialPhotoUrl(url.pathname)){res.writeHead(404,{"cache-control":"public, max-age=300"});res.end();return true}
     const photo=await loadCandidatePhoto(url.pathname);
