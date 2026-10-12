@@ -127,6 +127,7 @@ export function appPage(user:any,active:boolean){
 <button class="tab" data-level="section">${brandIcon("section")}Seções</button>
 <button class="tab" data-level="map">${brandIcon("map")}Mapa</button><button class="tab" data-level="compare">${brandIcon("compare")}Comparar candidatos</button>
 </div>
+<div style="margin:12px 0"><button class="btn" type="button" id="downloadVotingReport">Baixar relatório da votação (PDF)</button><span class="muted" style="margin-left:12px">Todos os registros do recorte selecionado</span></div>
 <div class="scopebar" id="scopebar" style="display:none"><label class="field">Município<select id="municipalitySelect"></select></label></div>
 <div id="territoryTitle" class="topline"><h3 style="margin:0">Ranking por município</h3></div>
 <div id="territoryContent" class="territory-card" style="margin-top:12px"></div>
@@ -611,6 +612,7 @@ async function loadTerritory(){
 }
 async function showLevel(level){
  currentLevel=level;
+ document.getElementById("downloadVotingReport").disabled=level==="map"||level==="compare";
  document.querySelectorAll(".tab").forEach(function(t){t.classList.toggle("active",t.dataset.level===level)});
  var scope=document.getElementById("scopebar"),title=document.getElementById("territoryTitle"),content=document.getElementById("territoryContent"),mapWrap=document.getElementById("mapWrap"),customCompare=document.getElementById("customCompare");
  mapWrap.style.display="none";content.style.display="block";customCompare.style.display="none";
@@ -983,6 +985,17 @@ async function loadMap(preserveScope){
 function applyMapFilter(changed){
  rebuildMapFilters(changed);renderMapRows();refreshComparison();
 }
+document.getElementById("downloadVotingReport").addEventListener("click",function(){
+ if(!currentCandidate||currentLevel==="map"||currentLevel==="compare")return;
+ var p=new URLSearchParams({candidateId:String(currentCandidate.id),level:currentLevel});
+ if(currentLevel!=="municipality"){
+  if(territoryScope.municipality)p.set("municipality",territoryScope.municipality);
+  if(territoryScope.neighborhood)p.set("neighborhood",territoryScope.neighborhood);
+  if(territoryScope.place)p.set("polling_place",territoryScope.place);
+  if(territoryScope.zone)p.set("zone",territoryScope.zone);
+ }
+ window.open("/api/voting-report?"+p.toString(),"_blank","noopener");
+});
 document.querySelectorAll(".tab").forEach(function(t){t.addEventListener("click",function(){showLevel(t.dataset.level)})});
 [0,1].forEach(function(i){document.getElementById("compareSearch"+(i+1)).addEventListener("input",function(){lookupCompareCandidates(i)})});
 document.getElementById("compareMunicipality").addEventListener("change",function(){

@@ -340,6 +340,7 @@ export async function territorialLevel(args:{
   pollingPlaceCode?:string;
   zone?:number;
   limit?:number;
+  complete?:boolean;
 }) {
   const summary=await candidateSummary(args.candidateId);
   if(!summary.candidate) return [];
@@ -356,7 +357,7 @@ export async function territorialLevel(args:{
   const uf=String(cand.uf);
   const number=String(cand.number);
   const municipality=args.municipalityCode??null;
-  const limit=Math.min(args.limit??500,1000);
+  const limit=args.complete ? null : Math.min(args.limit??500,1000);
 
   let query="";
   let params:any[]=[];
@@ -458,7 +459,7 @@ export async function territorialLevel(args:{
   }
   const rows=[...merged.values()]
     .sort((a:any,b:any)=>Number(b.votes)-Number(a.votes))
-    .slice(0,limit);
+    .slice(0,limit??undefined);
   return rows.map((r:any,i:number)=>({...r,rank:i+1,pct_total:total>0?Number(((Number(r.votes)/total)*100).toFixed(2)):0}));
 }
 

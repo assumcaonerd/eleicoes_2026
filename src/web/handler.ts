@@ -1,3 +1,4 @@
+import {votingReport} from './voting-report.js';
 import {readPolymarket} from "./polymarket.js";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { URL } from "node:url";
@@ -232,6 +233,23 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
     const data=await candidateTerritoryOverview(candidateId);
     if(!data){json(res,{error:"Candidato não encontrado."},404);return true}
     json(res,data);return true
+  }
+  if(url.pathname==="/api/voting-report"&&req.method==="GET"){
+    if(!user){json(res,{error:"Não autenticado."},401);return true}
+    if(!await hasActiveAccess(Number(user.id))){json(res,{error:"Assinatura inativa."},402);return true}
+    const candidateId=Number(url.searchParams.get("candidateId")),level=url.searchParams.get("level")||"municipality";
+    const zoneText=url.searchParams.get("zone");
+    if(!Number.isSafeInteger(candidateId)||candidateId<=0||!["municipality","neighborhood","polling_place","zone","section"].includes(level)||(zoneText!==null&&(!Number.isSafeInteger(Number(zoneText))||Number(zoneText)<0))){json(res,{error:"Consulta inválida."},400);return true}
+    const data=await candidateTerritoryOverview(candidateId);
+    if(!data){json(res,{error:"Candidato não encontrado."},404);return true}
+    const municipality=url.searchParams.get("municipality")||undefined;
+    const neighborhood=url.searchParams.get("neighborhood")||undefined;
+    const place=url.searchParams.get("polling_place")||undefined;
+    const rows=level==="municipality"?data.municipalities:await territorialLevel({candidateId,level:level as any,municipalityCode:municipality,neighborhood,pollingPlaceCode:place,zone:zoneText===null?undefined:Number(zoneText),complete:true});
+    const city=data.municipalities.find((r:any)=>String(r.municipality_code)===municipality);
+    const scope=level==="municipality"?"Todos os municípios":[city?.municipality_name||(municipality?"Município "+municipality:"Todos os municípios"),neighborhood,place?"Local "+place:null,zoneText!==null?"Zona "+zoneText:null].filter(Boolean).join(" · ");
+    res.setHeader("cache-control","no-store");
+    html(res,votingReport(data,rows,level,scope));return true
   }
   if(url.pathname==="/api/comparison-export.csv"&&req.method==="GET"){
     if(!user){json(res,{error:"Não autenticado."},401);return true}
