@@ -10,8 +10,10 @@ const pages=(report.match(/class="sheet"/g)||[]).length;
 assert.equal(pages,67);
 assert(report.includes("@page{size:A4 portrait;margin:30mm 20mm 20mm 30mm}"));
 assert(report.includes("width:160mm;margin:0;padding:0;break-after:page;min-height:247mm"));
-assert.equal((report.match(/sigaovoto.com.br/g)||[]).length,pages);
+assert.equal((report.match(/<footer>/g)||[]).length,pages);
 assert(report.includes('Página 67 de 67'));
 assert(votingReport(data,[],'neighborhood','Todos').includes('Nenhum dado encontrado'));
 for(const script of appPage({id:1},true).match(/<script>([\s\S]*?)<\/script>/g)||[])new Function(script.replace(/^<script>|<\/script>$/g,''));
 console.log('Relatório: 1.205 registros, paginação, marca em todas as páginas, HTML seguro e JavaScript válidos.');
+
+assert.equal((report.match(/href="https:\/\/www.sigaovoto.com.br\/"/g)||[]).length,pages);
