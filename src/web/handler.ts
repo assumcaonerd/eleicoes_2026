@@ -37,6 +37,11 @@ function sameOrigin(req:IncomingMessage){const origin=req.headers.origin;if(!ori
 
 export async function handleWeb(req:IncomingMessage,res:ServerResponse){
   const url=new URL(req.url??"/","http://local");
+  if(req.method==='GET'&&['/assets/siga-voto/polymarket/flavio.webp','/assets/siga-voto/polymarket/lula.webp'].includes(url.pathname)){
+    const file=url.pathname.endsWith('/flavio.webp')?'flavio.webp':'lula.webp';
+    res.writeHead(200,{'content-type':'image/webp','cache-control':'public, max-age=86400','x-content-type-options':'nosniff'});
+    res.end(readFileSync(new URL('../ui/polymarket/'+file,import.meta.url)));return true;
+  }
   if(req.method==='GET'&&url.pathname==='/api/polymarket'){
     try{json(res,await readPolymarket())}catch{json(res,{error:'Polymarket temporariamente indisponível.'},503)}return true;
   }
