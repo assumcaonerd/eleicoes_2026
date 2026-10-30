@@ -125,7 +125,8 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
         const municipality=url.searchParams.get('municipality')||undefined;
         if(!/^[A-Z]{2}$/.test(state)||!municipalities2026.some(m=>m.uf===state&&(!municipality||m.code===municipality)))
           throw new Error('Território oficial inválido.');
-        const live=await readOnlineIndicators({electionId:electionIdForOffice(1),round:1,office:1,uf:state,municipalityCode:municipality});
+        const round=Number(url.searchParams.get('round')||1);
+        const live=await readOnlineIndicators({electionId:electionIdForOffice(1,round),round,office:1,uf:state,municipalityCode:municipality});
         json(res,{uf:state,municipality:municipality||null,...live});return true
       }
       if(url.pathname==='/api/majority/compare'){json(res,await majorityComparison((url.searchParams.get('ids')??'').split(',').map(Number),uf));return true}

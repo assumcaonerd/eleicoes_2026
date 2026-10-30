@@ -37,7 +37,7 @@ function showWinnersPanel(){
  return true;
 }
 function winnerLine(name,state,code,flavio,lula){
- var key=state+':'+(code||'');
+ var key=state+':'+(code||'')+':'+candidate.round;
  var count='<small>Flávio: '+fmt(flavio)+' · Lula: '+fmt(lula)+'</small>';
  var cached=onlineTotalsCache.get(key);
  var totals=cached?totalText(cached):'V / B / N: aguardando consulta ao TSE';
@@ -69,7 +69,7 @@ function pumpTotals(){
   var key=onlineTotalsQueue.shift();onlineTotalsActive++;
   (async function(k){
    try{
-    var parts=k.split(':'),p=new URLSearchParams({uf:parts[0]});
+    var parts=k.split(':'),p=new URLSearchParams({uf:parts[0],round:parts[2]||'1'});
     if(parts[1])p.set('municipality',parts[1]);
     var result=await json('/api/majority/online-totals?'+p.toString());
     onlineTotalsCache.set(k,result);
