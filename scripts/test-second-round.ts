@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {electionIdForOffice,scopeResultUrl} from '../src/tse/url.js';
+import {parseIndicators} from '../src/majority/indicators.js';
+assert.equal(electionIdForOffice(1,2),6258);
+assert.equal(electionIdForOffice(3,2),6260);
+assert.throws(()=>electionIdForOffice(6,2));
+assert.throws(()=>electionIdForOffice(1,3));
+assert.match(scopeResultUrl({office:1,round:2,uf:'ES',municipalityCode:'57053'}),/6258\/dados\/es\/es57053-c0001-e006258-u.json$/);
+assert.match(scopeResultUrl({office:3,round:2,uf:'ES'}),/6260\/dados\/es\/es-c0003-e006260-u.json$/);
+const p={ele:'6258',t:'2',f:'o',tpabr:'br',cdabr:'br',dv:'s',tf:'s',and:'f',dt:'25/10/2026',ht:'23:00:00',idg:'1',carg:[{cd:'1'}],v:{vv:'100',vb:'2',tvn:'3'},e:{c:'105',a:'5'},s:{pstn:'100,00'}};
+const scope={electionId:6258,round:2,office:1,uf:'BR'};
+assert.equal(parseIndicators(p,scope).valid_votes,100);
+assert.throws(()=>parseIndicators({...p,t:'1'},scope));
+assert.throws(()=>parseIndicators({...p,ele:'6257'},scope));
+assert.throws(()=>parseIndicators({...p,cdabr:'es'},scope));
+console.log('Segundo turno: IDs, URLs e rejeição de turno/eleição/território divergentes validados.');

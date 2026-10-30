@@ -1,13 +1,14 @@
 import { sql } from "../db/index.js";
 import { sectionsSqlForUf, sectionsSqlAllForUf } from "../db/sections.js";
 
-export async function searchCandidates(args: { query: string; officeCode?: number; uf?: string; limit?: number }) {
+export async function searchCandidates(args: { query: string; round?: number; officeCode?: number; uf?: string; limit?: number }) {
   const q = args.query.trim();
   const { rows } = await sql(`
     SELECT id, election_id, round, office_code, office_name, uf, number, ballot_name, full_name, party_abbr, status
     FROM candidates
     WHERE ($1::text IS NULL OR uf=$1)
       AND ($2::int IS NULL OR office_code=$2)
+      AND round=$5
       AND (
         number=$3
         OR unaccent(ballot_name) ILIKE '%' || unaccent($3) || '%'
@@ -16,7 +17,7 @@ export async function searchCandidates(args: { query: string; officeCode?: numbe
       )
     ORDER BY CASE WHEN number=$3 THEN 0 ELSE 1 END, similarity(unaccent(ballot_name),unaccent($3)) DESC, ballot_name
     LIMIT $4
-  `, [args.uf?.toUpperCase() ?? null, args.officeCode ?? null, q, Math.min(args.limit ?? 20, 50)]);
+  `, [args.uf?.toUpperCase() ?? null, args.officeCode ?? null, q, Math.min(args.limit ?? 20, 50), args.round ?? 1]);
   return rows;
 }
 

@@ -10,9 +10,10 @@ body.sov-shell{background:#090f1f;color:#fff}.sov-shell .card{background:#121d30
 .map-label-icon{background:none;border:none}
 @media(max-width:800px){.majority-map-names{right:6px;top:6px;width:min(290px,calc(100% - 12px))}.majority-map-names[open]{width:min(320px,calc(100% - 12px))}.majority-map-names summary{padding:9px 10px;font-size:11px}.majority-map-names .majority-winners-body{max-height:48vh;padding:0 10px 10px}}@media(max-width:800px){.majority-grid{grid-template-columns:1fr}.majority-list{max-height:250px}.majority-map{height:55vh;min-height:360px}.majority-metrics{grid-template-columns:1fr 1fr}.majority-grid summary{padding:12px;cursor:pointer}}</style>
 <div class="row"><a class="btn secondary" href="/app">Consultas de deputados e demais recursos</a></div>
-<h1>PRESIDENTE E GOVERNADOR</h1><p class="muted">Resultados armazenados de 2026, primeiro turno. Fonte eleitoral: TSE.</p>
+<h1>PRESIDENTE E GOVERNADOR</h1><p class="muted">Resultados armazenados de 2026, primeiro e segundo turnos. Fonte eleitoral: TSE.</p>
 <form id="majoritySearch" class="card"><div class="grid">
 <label class="field">Cargo<select id="majorityOffice"><option value="1" selected>Presidente</option><option value="3">Governador</option></select></label>
+<label class="field">Turno<select id="majorityRound"><option value="2" selected>2º turno</option><option value="1">1º turno</option></select></label>
 <label class="field">Estado<select id="majorityUF"><option value=""></option>${states.map(s=>`<option value="${s.uf}">${s.name} (${s.uf})</option>`).join('')}</select></label>
 <label class="field">Candidato<input id="majorityQuery" placeholder="Nome ou número" autocomplete="off"></label></div>
 <button class="btn" type="submit">Buscar candidatos</button><div id="majorityResults" class="majority-search-results" role="status" aria-live="polite"></div></form>

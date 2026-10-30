@@ -54,7 +54,7 @@ try{
  fixture=[...esfacts,{uf:'ES',municipality_code:'',votes:essum+1,source_kind:'tse_scope'}];assert.equal((await majorityOverview(1)).reconciliation,'divergent');
  fixture=[...esfacts,esfacts[0]];await assert.rejects(majorityOverview(1),/duplicados/);
  await assert.rejects(majorityOverview(1,'SP'),/UF deve corresponder/);
- candidate={...candidate,round:2};await assert.rejects(majorityOverview(1),/primeiro turno/);
+ candidate={...candidate,round:2};await assert.rejects(majorityOverview(1),/primeiro ou segundo turno/);
  candidate={...candidate,round:1,office_code:7};await assert.rejects(majorityOverview(1),/governador ou presidente/);
 }finally{(pool as any).connect=savedConnect;globalThis.fetch=savedFetch}
 const page=majorityPage({id:1,email:'synthetic@example.invalid'}),ids=[...page.matchAll(/id="(majority[^"]+)"/g)].map(m=>m[1]);assert.equal(new Set(ids).size,ids.length);assert(page.includes('[hidden]{display:none!important}'));assert(!page.includes('Restaurar visualização'));assert(page.includes('id="majorityFilterField"'));assert(page.includes('id="majorityWinnersPanel"'));assert(page.includes('id="majorityStateWinners"'));assert(page.includes('id="majorityMunicipalityWinners"'));assert(!page.includes('<strong>Indisponíveis</strong>'));

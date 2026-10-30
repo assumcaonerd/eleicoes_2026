@@ -1,7 +1,7 @@
 import type {PoolClient} from 'pg';
 import {createHash} from 'node:crypto';
 import {fetchJson} from '../tse/client.js';
-import {scopeResultUrl} from '../tse/url.js';
+import {electionIdForOffice,scopeResultUrl} from '../tse/url.js';
 export const indicatorSpecification='https://www.tse.jus.br/eleicoes/eleicoes-2026-content/arquivos/divulgacao-de-resultados/tse-ea20-arquivo-de-resultado-unificado';
 export type TotalScope={electionId:number;round:number;office:number;uf:string;municipalityCode?:string;zone?:number};
 export function parseIndicators(p:any,scope:TotalScope){
@@ -35,13 +35,13 @@ const pendingOnline=new Map<string,Promise<OnlineTotals>>();
 /** Consult the official TSE EA20 result, never fabricate a denominator.
  * A short positive TTL and inflight deduplication avoid hammering the TSE. */
 export async function readOnlineIndicators(scope:TotalScope):Promise<OnlineTotals>{
- if(scope.round!==1||![1,3].includes(scope.office)||!/^(BR|[A-Z]{2})$/.test(scope.uf)||!!scope.municipalityCode&&!/^\d{5}$/.test(scope.municipalityCode)||!!scope.municipalityCode&&scope.uf==='BR'||scope.zone!==undefined)throw new Error('Recorte EA20 online inválido.');
+ if(![1,2].includes(scope.round)||scope.electionId!==electionIdForOffice(scope.office,scope.round)||![1,3].includes(scope.office)||!/^(BR|[A-Z]{2})$/.test(scope.uf)||!!scope.municipalityCode&&!/^\d{5}$/.test(scope.municipalityCode)||!!scope.municipalityCode&&scope.uf==='BR'||scope.zone!==undefined)throw new Error('Recorte EA20 online inválido.');
  const key=[scope.electionId,scope.round,scope.office,scope.uf,scope.municipalityCode||''].join(':');
  const cached=onlineCache.get(key);
  if(cached&&cached.expires>Date.now())return cached.value;
  const inFlight=pendingOnline.get(key);if(inFlight)return inFlight;
  const job=(async()=>{
-  let url=scopeResultUrl({office:scope.office,uf:scope.uf,municipalityCode:scope.municipalityCode});
+  let url=scopeResultUrl({round:scope.round,office:scope.office,uf:scope.uf,municipalityCode:scope.municipalityCode});
   if(scope.office===1&&scope.uf!=='BR'&&!scope.municipalityCode)url=url.replace('/dados/br/br-','/dados/'+scope.uf.toLowerCase()+'/'+scope.uf.toLowerCase()+'-');
   const raw=await fetchJson<any>(url);
   const value={totals:parseIndicators(raw,scope),source_url:url,fetched_at:new Date().toISOString()};

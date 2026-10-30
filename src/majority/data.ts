@@ -26,7 +26,7 @@ export async function majorityOverview(candidateId:number,uf?:string,existingCli
   await client.query("SET LOCAL statement_timeout='15000ms'");
   const c=(await client.query('SELECT * FROM candidates WHERE id=$1',[candidateId])).rows[0];
   if(!c||![1,3].includes(Number(c.office_code)))throw new Error('Selecione governador ou presidente.');
-  if(c.election_id!==electionIdForOffice(Number(c.office_code))||c.round!==1||config.tseCycle!=='ele2026')throw new Error('Este módulo utiliza apenas a base 2026, primeiro turno, configurada e validada.');
+  if(c.election_id!==electionIdForOffice(Number(c.office_code),c.round)||![1,2].includes(c.round)||config.tseCycle!=='ele2026')throw new Error('Este módulo utiliza apenas a base 2026, primeiro ou segundo turno, configurada e validada.');
   if(c.office_code===3&&uf&&uf!==c.uf)throw new Error('A UF deve corresponder à candidatura de governador.');
   const scopeUf=c.office_code===3?c.uf:uf;
   const municipalities=await catalog(scopeUf);

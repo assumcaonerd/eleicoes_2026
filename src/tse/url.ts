@@ -2,17 +2,23 @@ import { config } from "../config.js";
 
 export const pad = (value: string | number, size: number) => String(value).padStart(size, "0");
 
-export function electionIdForOffice(office: number) {
+export function electionIdForOffice(office: number, round = 1) {
+  if (round === 2) {
+    if (![1,3].includes(office)) throw new Error("Cargo sem segundo turno.");
+    return office === 1 ? 6258 : 6260;
+  }
+  if (round !== 1) throw new Error("Turno inválido.");
   return office === 1 ? config.federalElection : config.stateElection;
 }
 
 export function scopeResultUrl(args: {
   office: number;
+  round?: number;
   uf: string;
   municipalityCode?: string;
   zone?: number;
 }) {
-  const election = electionIdForOffice(args.office);
+  const election = electionIdForOffice(args.office, args.round);
   const uf = args.uf.toLowerCase();
   const cargo = pad(args.office, 4);
   const ele = pad(election, 6);

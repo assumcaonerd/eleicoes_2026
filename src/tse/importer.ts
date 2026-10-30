@@ -1,5 +1,5 @@
 import {createHash} from "node:crypto";
-import {storeIndicators} from "../majority/indicators.js";
+import {parseIndicators,storeIndicators} from "../majority/indicators.js";
 import {pool} from "../db/index.js";
 import { offices } from "../config.js";
 import { sql } from "../db/index.js";
@@ -20,47 +20,51 @@ async function mapLimit<T>(items:T[], limit:number, fn:(item:T)=>Promise<void>) 
 }
 
 async function upsertCandidate(args: {
-  electionId: number; office: number; uf: string; candidate: ReturnType<typeof extractCandidates>[number]; updatedAt?: Date;
+  round?: number; electionId: number; office: number; uf: string; candidate: ReturnType<typeof extractCandidates>[number]; updatedAt?: Date;
 }) {
   const { rows } = await sql<{ id: string }>(`
     INSERT INTO candidates
-      (election_id, office_code, office_name, uf, tse_candidate_id, number, ballot_name, full_name, party_number, party_abbr, status, source_updated_at)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+      (election_id, office_code, office_name, uf, tse_candidate_id, number, ballot_name, full_name, party_number, party_abbr, status, source_updated_at, round)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
     ON CONFLICT (election_id, office_code, uf, number, tse_candidate_id)
-    DO UPDATE SET ballot_name=EXCLUDED.ballot_name, full_name=EXCLUDED.full_name,
+    DO UPDATE SET round=EXCLUDED.round, ballot_name=EXCLUDED.ballot_name, full_name=EXCLUDED.full_name,
       party_number=EXCLUDED.party_number, party_abbr=EXCLUDED.party_abbr,
       status=EXCLUDED.status, source_updated_at=EXCLUDED.source_updated_at
     RETURNING id
   `, [args.electionId, args.office, offices[args.office as keyof typeof offices] ?? `Cargo ${args.office}`, args.uf,
       args.candidate.tseCandidateId ?? '', args.candidate.number, args.candidate.ballotName, args.candidate.fullName ?? null,
-      args.candidate.partyNumber ?? null, args.candidate.partyAbbr ?? null, args.candidate.status ?? null, args.updatedAt ?? new Date()]);
+      args.candidate.partyNumber ?? null, args.candidate.partyAbbr ?? null, args.candidate.status ?? null, args.updatedAt ?? new Date(), args.round ?? 1]);
   return Number(rows[0].id);
 }
 
-async function storeScope(args: {
-  office: number; uf: string; municipalityCode?: string; municipalityName?: string; zone?: number;
+export async function storeScope(args: {
+  office: number; round?: number; uf: string; municipalityCode?: string; municipalityName?: string; zone?: number;
 }) {
   const url = scopeResultUrl(args);
   const { data, file } = await fetchAndPersist<any>(url);
+  const round = args.round ?? 1;
+  if(String(data.ele)!==String(electionIdForOffice(args.office,round)) || Number(data.t)!==round || data.f!=="o" || data.dv!=="s" || !data.carg?.some((c:any)=>Number(c.cd)===args.office)) throw new Error("Resultado TSE diverge da eleição, turno ou cargo.");
+  if([1,3].includes(args.office)) parseIndicators(data,{electionId:electionIdForOffice(args.office,round),round,office:args.office,uf:args.uf,municipalityCode:args.municipalityCode,zone:args.zone});
   const candidates = extractCandidates(data);
+  if(!candidates.length) throw new Error("Resultado sem candidatos.");
   const sourceDigest=createHash("sha256").update(JSON.stringify(data)).digest("hex");
-  const electionId = electionIdForOffice(args.office);
+  const electionId = electionIdForOffice(args.office,round);
 
   for (const candidate of candidates) {
-    const candidateId = await upsertCandidate({ electionId, office: args.office, uf: args.uf, candidate });
+    const candidateId = await upsertCandidate({ round, electionId, office: args.office, uf: args.uf, candidate });
     await sql(`
       INSERT INTO vote_facts
-        (election_id, office_code, candidate_id, uf, municipality_code, municipality_name, zone, votes, source_kind, source_file, source_updated_at, source_sha256)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,now(),$11)
+        (election_id, office_code, candidate_id, uf, municipality_code, municipality_name, zone, votes, source_kind, source_file, source_updated_at, source_sha256, round)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,now(),$11,$12)
       ON CONFLICT (election_id, round, office_code, candidate_id, uf,
         municipality_code, neighborhood, zone, section, polling_place_code, source_kind)
       DO UPDATE SET votes=EXCLUDED.votes, source_file=EXCLUDED.source_file, source_updated_at=now(), source_sha256=EXCLUDED.source_sha256
     `, [electionId, args.office, candidateId, args.uf, args.municipalityCode ?? '', args.municipalityName ?? null,
-      args.zone ?? -1, candidate.votes, args.zone == null ? (args.municipalityCode ? "tse_municipality" : "tse_scope") : "tse_zone", file, sourceDigest]);
+      args.zone ?? -1, candidate.votes, args.zone == null ? (args.municipalityCode ? "tse_municipality" : "tse_scope") : "tse_zone", file, sourceDigest, round]);
   }
   if([1,3].includes(args.office)){
     const client=await pool.connect();
-    try{await storeIndicators(client,data,{electionId,round:1,office:args.office,uf:args.uf,municipalityCode:args.municipalityCode,zone:args.zone},url,file)}finally{client.release()}
+    try{await storeIndicators(client,data,{electionId,round,office:args.office,uf:args.uf,municipalityCode:args.municipalityCode,zone:args.zone},url,file)}finally{client.release()}
   }
   return candidates.length;
 }
