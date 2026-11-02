@@ -164,3 +164,14 @@ UPDATE subscriptions SET paid_through=current_period_end
 WHERE EXISTS(SELECT 1 FROM migration) AND paid_through IS NULL AND status='active';
 
 CREATE TABLE IF NOT EXISTS billing_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL);
+
+-- Public Senate editorial positions; editing is owner-only in the application.
+CREATE TABLE IF NOT EXISTS senate_positions (
+ senator_id TEXT PRIMARY KEY,
+ position TEXT NOT NULL CHECK(position IN ('alcolumbre','marinho','indefinido')),
+ source_url TEXT NOT NULL DEFAULT '',
+ publication_date DATE,
+ version INTEGER NOT NULL DEFAULT 1,
+ updated_by BIGINT NOT NULL REFERENCES users(id),
+ updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

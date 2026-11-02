@@ -1,3 +1,5 @@
+import {ownsSenate,readSenators,saveSenatePosition,senateOriginAllowed,senateBase} from "./senate.js";
+import {senateAdminPage} from "./senate-admin.js";
 import {votingReport} from './voting-report.js';
 import {readPolymarket} from "./polymarket.js";
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -38,6 +40,27 @@ function sameOrigin(req:IncomingMessage){const origin=req.headers.origin;if(!ori
 
 export async function handleWeb(req:IncomingMessage,res:ServerResponse){
   const url=new URL(req.url??"/","http://local");
+  if(url.pathname==="/admin/senado"||url.pathname==="/admin/senado/posicao"){
+    res.setHeader("cache-control","private, no-store");res.setHeader("x-robots-tag","noindex, nofollow");
+    const owner=await currentUser(req);
+    if(!ownsSenate(owner)){json(res,{error:"Acesso negado."},403);return true}
+    if(req.method==="GET"&&url.pathname==="/admin/senado"){
+      html(res,senateAdminPage(owner,await readSenators(),url.searchParams.get('saved')==='1'?'Posicionamento salvo. O placar público foi atualizado.':'',false,url.searchParams.get('id')||''));return true;
+    }
+    if(req.method==="POST"&&url.pathname==="/admin/senado/posicao"){
+      if(!senateOriginAllowed(req)){json(res,{error:"Origem inválida."},403);return true}
+      try{const saved=await saveSenatePosition(owner,req,await readBody(req));redirect(res,"/admin/senado?saved=1&id="+encodeURIComponent(saved.senator_id))}
+      catch(e:any){html(res,senateAdminPage(owner,await readSenators(),e.message,true),400)}return true;
+    }
+    json(res,{error:"Método não permitido."},405);return true;
+  }
+  if(req.method==="GET"&&url.pathname==="/assets/senado/senadores.js"){
+    try{
+      const senators=await readSenators();
+      res.writeHead(200,{"content-type":"application/javascript; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff"});res.end("window.SENADORES="+JSON.stringify(senators).replace(/</g,"\\u003c")+";");
+    }catch(e){console.error("SENATE_DATA_UNAVAILABLE");res.writeHead(503,{"content-type":"application/javascript; charset=utf-8","cache-control":"no-store"});res.end("window.SENADO_UNAVAILABLE=true;window.SENADORES="+JSON.stringify(senateBase)+";")}
+    return true;
+  }
   // Public Senate page and its own assets must be served before session/subscription checks.
   if(req.method==="GET"&&(url.pathname==="/senado"||url.pathname==="/senado/")){
     res.setHeader("cache-control","public, max-age=60");
@@ -45,7 +68,7 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
   }
   if(req.method==="GET"&&url.pathname.startsWith("/assets/senado/")){
     const asset=url.pathname.slice("/assets/senado/".length);
-    if(asset!=="senadores.js"&&!/^img\/(?:senadores\/)?[a-z0-9-]+\.(?:jpg|png|webp)$/.test(asset)){
+    if(!/^img\/(?:senadores\/)?[a-z0-9-]+\.(?:jpg|png|webp)$/.test(asset)){
       res.writeHead(404);res.end();return true;
     }
     try{

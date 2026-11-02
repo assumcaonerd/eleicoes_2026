@@ -4,6 +4,12 @@ import {readFileSync,readdirSync} from 'node:fs';
 import vm from 'node:vm';
 import {handleWeb} from '../src/web/handler.js';
 import {homePage} from '../src/web/pages.js';
+import {PGlite} from '@electric-sql/pglite';
+import {pool} from '../src/db/index.js';
+const testDatabase=new PGlite();
+await testDatabase.exec('CREATE TABLE senate_positions(senator_id text,position text,source_url text,publication_date date,version int,updated_at timestamptz)');
+const originalQuery=pool.query;
+(pool as any).query=(text:string,params?:unknown[])=>testDatabase.query(text,params);
 const server=createServer(async(req,res)=>{try{if(!await handleWeb(req,res)){res.writeHead(404);res.end()}}catch(e){res.writeHead(500);res.end(String(e))}});
 await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));
 const address=server.address() as {port:number};const origin=`http://127.0.0.1:${address.port}`;
@@ -25,4 +31,4 @@ try{
  const app=await fetch(origin+'/app',{redirect:'manual'});assert.equal(app.status,303);assert.equal(app.headers.get('location'),'/login');
  for(const path of ['/api/candidates?q=teste','/api/majority/overview?candidateId=1'])assert.equal((await fetch(origin+path)).status,401,path);
  console.log('Senado: homepage entry, anonymous access, session independence, 81 records, all assets, path validation and paid-route protection passed.');
-}finally{await new Promise<void>((resolve,reject)=>server.close(e=>e?reject(e):resolve()))}
+}finally{await new Promise<void>((resolve,reject)=>server.close(e=>e?reject(e):resolve()));pool.query=originalQuery;await testDatabase.close()}
