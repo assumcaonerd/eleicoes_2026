@@ -6,7 +6,7 @@ export type Position='alcolumbre'|'marinho'|'indefinido';
 export const senateLabels={alcolumbre:'Alcolumbre',marinho:'Rogério Marinho',indefinido:'Sem posicionamento'};
 export const senateBase=JSON.parse(readFileSync(new URL('../ui/senado/base.json',import.meta.url),'utf8')).map((s:any)=>({...s,id:s.uf.toLowerCase()+'-'+s.nome.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/-$/,'')}));
 type Query=(text:string,params?:unknown[])=>Promise<{rows:any[]}>;
-export function ownsSenate(user:any,owner=process.env.SENATE_OWNER_EMAIL){return Boolean(owner&&user&&!user.disabled_at&&user.role==='superadmin'&&String(user.email).toLowerCase()===owner.trim().toLowerCase())}
+export function ownsSenate(user:any,owner=process.env.SENATE_OWNER_EMAIL){return Boolean(owner&&user&&!user.disabled_at&&String(user.email).toLowerCase()===owner.trim().toLowerCase())}
 export function senateOriginAllowed(req:IncomingMessage){
  try{const origin=new URL(String(req.headers.origin||''));const configured=new URL(process.env.APP_ORIGIN||'');return origin.protocol===configured.protocol&&origin.port===configured.port&&origin.hostname.replace(/^www\./,'')===configured.hostname.replace(/^www\./,'')&&origin.origin===String(req.headers.origin)}catch{return false}
 }
