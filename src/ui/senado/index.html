@@ -208,7 +208,7 @@
       <p class="sub">Acompanhe os posicionamentos cadastrados dos 81 senadores por estado.</p><p class="sov-data-note">Consulta gratuita, sem login. Posicionamentos públicos não equivalem a votos apurados.</p>
     </div>
 
-    <div class="arena" role="img" aria-label="Cabo de guerra entre Davi Alcolumbre e Rogério Marinho">
+    <div class="arena" role="img" aria-label="Montagem ilustrativa: Davi Alcolumbre e Rogério Marinho no cabo de guerra, com Lula e Flávio Bolsonaro observando">
       <img class="congresso" src="/assets/senado/img/congresso-dark.jpg" alt="">
       <div class="center-line"></div>
       <!-- coordenadas em "unidades da foto do Marinho"; a corda passa em y=690 nas duas imagens -->
@@ -226,6 +226,19 @@
           <mask id="maskA" maskUnits="userSpaceOnUse" x="-200" y="0" width="1700" height="920"><rect x="-200" y="0" width="1700" height="920" fill="url(#fadeA)" /></mask>
           <mask id="maskM" maskUnits="userSpaceOnUse" x="1700" y="0" width="1700" height="1000"><rect x="1700" y="0" width="1700" height="1000" fill="url(#fadeM)" /></mask>
         </defs>
+        <!-- Observadores em camada própria: não acompanham o movimento da corda. -->
+        <defs>
+          <linearGradient id="observerFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0.67" stop-color="white"/><stop offset="1" stop-color="black"/></linearGradient>
+          <mask id="observerMask" maskContentUnits="objectBoundingBox"><rect width="1" height="1" fill="url(#observerFade)"/></mask>
+        </defs>
+        <g id="spectators" pointer-events="none" opacity="0.95" style="filter:drop-shadow(0 12px 22px #0009)">
+          <svg x="760" y="0" width="760" height="760" viewBox="120 8 410 395" preserveAspectRatio="xMidYMid meet" mask="url(#observerMask)">
+            <image href="/assets/senado/img/lula-observador.png" width="619" height="410" style="filter:brightness(.86) saturate(.88)"/>
+          </svg>
+          <svg x="1770" y="0" width="580" height="760" viewBox="125 155 260 357" preserveAspectRatio="xMidYMid meet" mask="url(#observerMask)">
+            <image href="/assets/senado/img/flavio-observador.png" width="512" height="512" style="filter:brightness(.88) saturate(.88)"/>
+          </svg>
+        </g>
         <g id="tug">
           <g id="shake">
             <rect x="1380" y="657" width="500" height="68" fill="url(#corda)" />
