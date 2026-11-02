@@ -15,7 +15,6 @@ export function validateSenateUpdate(input:any){
  const position=String(input.position||'') as Position;if(!Object.hasOwn(senateLabels,position))throw Error('Posicionamento inválido.');
  const version=Number(input.version);if(!Number.isSafeInteger(version)||version<0)throw Error('Versão inválida.');
  let source=String(input.source||'').trim();if(source.length>2000)throw Error('Link muito longo.');
- if(position!=='indefinido'&&!source)throw Error('Informe o link da declaração para registrar o apoio.');
  if(source){let u:URL;try{u=new URL(source)}catch{throw Error('Link inválido.')}if(u.protocol!=='https:'||u.username||u.password)throw Error('Use um link HTTPS sem credenciais.');source=u.href}
  const date=String(input.date||'');if(date&&(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(Date.parse(date))||new Date(date).toISOString().slice(0,10)!==date))throw Error('Data inválida.');
  return {id,position,version,source,date};

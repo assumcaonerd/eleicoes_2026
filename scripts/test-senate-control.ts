@@ -15,8 +15,9 @@ try{
  assert(ownsSenate(owner));assert(ownsSenate({...owner,role:'user'}));assert(ownsSenate({...owner,role:'admin'}));for(const u of [null,other,{...owner,disabled_at:'2026-01-01'}])assert(!ownsSenate(u));assert(!ownsSenate(owner,''));
  assert(senateOriginAllowed(req));assert(senateOriginAllowed({...req,headers:{origin:'https://example.test'}} as IncomingMessage));for(const origin of ['', 'https://evil.test','http://www.example.test','https://example.test.evil.test'])assert(!senateOriginAllowed({...req,headers:{origin}} as IncomingMessage));
  const id=senateBase[0].id;const input={id,position:'marinho',source:'https://example.test/declaracao',date:'2026-11-02',version:0};
- for(const bad of [{...input,id:'fake'},{...input,position:'empate'},{...input,source:''},{...input,source:'javascript:alert(1)'},{...input,source:'https://u:p@example.test/'},{...input,date:'2026-02-30'},{...input,version:-1}])assert.throws(()=>validateSenateUpdate(bad));
+ for(const bad of [{...input,id:'fake'},{...input,position:'empate'},{...input,source:'javascript:alert(1)'},{...input,source:'https://u:p@example.test/'},{...input,date:'2026-02-30'},{...input,version:-1}])assert.throws(()=>validateSenateUpdate(bad));
  await assert.rejects(saveSenatePosition(other,req,input,query),/Acesso negado/);
+ assert.equal(validateSenateUpdate({...input,source:''}).source,'');
  await saveSenatePosition(owner,req,input,query);let rows=await readSenators(query);assert.equal(rows.length,81);assert.equal(rows[0].posicao,'marinho');assert.equal(rows[0].version,1);assert.equal(rows[0].fonte,input.source);assert(!('updated_by' in rows[0]));
  await assert.rejects(saveSenatePosition(owner,req,input,query),/outra janela/);
  await saveSenatePosition(owner,req,{...input,position:'alcolumbre',version:1},query);rows=await readSenators(query);assert.equal(rows[0].posicao,'alcolumbre');assert.equal(rows[0].version,2);
