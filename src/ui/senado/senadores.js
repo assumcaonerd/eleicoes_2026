@@ -1,0 +1,118 @@
+// Composição do Senado a partir de 1º/fev/2027 (81 senadores).
+//
+// posicao: "alcolumbre" | "marinho" | "indefinido"
+// instagram / x: só o @ (sem a URL). Vazio = o ícone abre uma busca pelo nome.
+// mandato: 2035 = eleito em 2026 | 2031 = eleito em 2022 (ou suplente que assume)
+// foto: arquivo em img/senadores/ (s<código>.jpg = foto oficial do Senado). Vazio = iniciais.
+// nomeCompleto: quando igual ao nome de urna, ainda não foi confirmado.
+
+window.SENADORES = [
+  // AC
+  { nome: "Alan Rick", nomeCompleto: "Alan Rick Miranda", partido: "Republicanos", uf: "AC", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s5672.jpg" },
+  { nome: "Marcio Bittar", nomeCompleto: "Marcio Miguel Bittar", partido: "PL", uf: "AC", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "s285.jpg" },
+  { nome: "Mara Rocha", nomeCompleto: "Mara Rocha", partido: "Republicanos", uf: "AC", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "mara-rocha.jpg" },
+  // AL
+  { nome: "Renan Filho", nomeCompleto: "José Renan Vasconcelos Calheiros Filho", partido: "MDB", uf: "AL", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s5207.jpg" },
+  { nome: "Arthur Lira", nomeCompleto: "Arthur César Pereira de Lira", partido: "PP", uf: "AL", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "arthur-lira.jpg" },
+  { nome: "Marina JHC", nomeCompleto: "Marina Cândia", partido: "PSDB", uf: "AL", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "marina-jhc.jpg" },
+  // AM
+  { nome: "Cheila Moreira", nomeCompleto: "Cheila Moreira", partido: "PT", uf: "AM", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "cheila-moreira.jpg", obs: "Suplente de Omar Aziz, eleito governador" },
+  { nome: "Eduardo Braga", nomeCompleto: "Carlos Eduardo de Souza Braga", partido: "MDB", uf: "AM", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "s4994.jpg" },
+  { nome: "Plínio Valério", nomeCompleto: "Francisco Plínio Valério Tomaz", partido: "PSDB", uf: "AM", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "s5502.jpg" },
+  // AP
+  { nome: "Davi Alcolumbre", nomeCompleto: "David Samuel Alcolumbre Tobelem", partido: "União", uf: "AP", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s3830.jpg", obs: "Candidato" },
+  { nome: "Rayssa Furlan", nomeCompleto: "Rayssa Furlan", partido: "Podemos", uf: "AP", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "rayssa-furlan.jpg" },
+  { nome: "Lucas Barreto", nomeCompleto: "Luiz Cantuária Barreto", partido: "PSD", uf: "AP", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "s5926.jpg" },
+  // BA
+  { nome: "Otto Alencar", nomeCompleto: "Otto Roberto Mendonça de Alencar", partido: "PSD", uf: "BA", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s5523.jpg" },
+  { nome: "Rui Costa", nomeCompleto: "Rui Costa dos Santos", partido: "PT", uf: "BA", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "rui-costa.jpg" },
+  { nome: "Jaques Wagner", nomeCompleto: "Jaques Wagner", partido: "PT", uf: "BA", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "s581.jpg" },
+  // CE
+  { nome: "Camilo Santana", nomeCompleto: "Camilo Sobreira de Santana", partido: "PT", uf: "CE", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s6336.jpg" },
+  { nome: "Cid Gomes", nomeCompleto: "Cid Ferreira Gomes", partido: "PSB", uf: "CE", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "s5973.jpg" },
+  { nome: "Luizianne Lins", nomeCompleto: "Luizianne de Oliveira Lins", partido: "Rede", uf: "CE", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "luizianne-lins.jpg" },
+  // DF
+  { nome: "Damares Alves", nomeCompleto: "Damares Regina Alves", partido: "Republicanos", uf: "DF", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s6335.jpg" },
+  { nome: "Michelle Bolsonaro", nomeCompleto: "Michelle de Paula Firmo Reinaldo Bolsonaro", partido: "PL", uf: "DF", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "michelle-bolsonaro.jpg" },
+  { nome: "Bia Kicis", nomeCompleto: "Beatriz Kicis Torrents de Sordi", partido: "PL", uf: "DF", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "bia-kicis.jpg" },
+  // ES
+  { nome: "Magno Malta", nomeCompleto: "Magno Pereira Malta", partido: "PL", uf: "ES", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s631.jpg" },
+  { nome: "Renato Casagrande", nomeCompleto: "José Renato Casagrande", partido: "PSB", uf: "ES", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "renato-casagrande.jpg" },
+  { nome: "Evair de Melo", nomeCompleto: "Evair de Melo", partido: "Republicanos", uf: "ES", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "evair-de-melo.jpg" },
+  // GO
+  { nome: "Wilder Morais", nomeCompleto: "Wilder Pedro de Morais", partido: "PL", uf: "GO", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s5070.jpg" },
+  { nome: "Gustavo Gayer", nomeCompleto: "Gustavo Gayer Machado de Araujo", partido: "PL", uf: "GO", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "gustavo-gayer.jpg" },
+  { nome: "Gracinha Caiado", nomeCompleto: "Gracinha Caiado", partido: "União", uf: "GO", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "gracinha-caiado.jpg" },
+  // MA
+  { nome: "Ana Paula Lobato", nomeCompleto: "Ana Paula Dias Lobato Nova Alves", partido: "PSB", uf: "MA", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s6358.jpg" },
+  { nome: "André Fufuca", nomeCompleto: "André Fufuca", partido: "PP", uf: "MA", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "andre-fufuca.jpg" },
+  { nome: "Lahesio Bonfim", nomeCompleto: "Lahesio Bonfim", partido: "Novo", uf: "MA", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "lahesio-bonfim.jpg" },
+  // MG
+  { nome: "Alex Diniz", nomeCompleto: "Alex Diniz", partido: "PL", uf: "MG", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "alex-diniz.jpg", obs: "Suplente de Cleitinho, eleito governador" },
+  { nome: "Domingos Sávio", nomeCompleto: "Domingos Sávio Campos Resende", partido: "PL", uf: "MG", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "domingos-savio.jpg" },
+  { nome: "Marília Campos", nomeCompleto: "Marília Aparecida Campos", partido: "PT", uf: "MG", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "marilia-campos.jpg" },
+  // MS
+  { nome: "Tereza Cristina", nomeCompleto: "Tereza Cristina Correa da Costa Dias", partido: "PP", uf: "MS", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s5736.jpg" },
+  { nome: "Reinaldo Azambuja", nomeCompleto: "Reinaldo Azambuja Silva", partido: "PL", uf: "MS", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "reinaldo-azambuja.jpg" },
+  { nome: "Capitão Contar", nomeCompleto: "Capitão Contar", partido: "PL", uf: "MS", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "capitao-contar.jpg" },
+  // MT
+  { nome: "Wellington Fagundes", nomeCompleto: "Wellington Antonio Fagundes", partido: "PL", uf: "MT", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s1173.jpg" },
+  { nome: "Mauro Mendes", nomeCompleto: "Mauro Mendes Ferreira", partido: "União", uf: "MT", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "mauro-mendes.jpg" },
+  { nome: "Zé Medeiros", nomeCompleto: "José Medeiros", partido: "PL", uf: "MT", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "ze-medeiros.jpg" },
+  // PA
+  { nome: "Beto Faro", nomeCompleto: "José Roberto Oliveira Faro", partido: "PT", uf: "PA", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s4639.jpg" },
+  { nome: "Helder Barbalho", nomeCompleto: "Helder Zahluth Barbalho", partido: "MDB", uf: "PA", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "helder-barbalho.jpg" },
+  { nome: "Chicão", nomeCompleto: "Chicão", partido: "União", uf: "PA", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "" },
+  // PB
+  { nome: "Efraim Filho", nomeCompleto: "Efraim de Araújo Morais Filho", partido: "PL", uf: "PB", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s4642.jpg" },
+  { nome: "João Azevêdo", nomeCompleto: "João Azevêdo Lins Filho", partido: "PSB", uf: "PB", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "joao-azevedo.jpg" },
+  { nome: "Veneziano Vital do Rêgo", nomeCompleto: "Veneziano Vital do Rêgo Segundo Neto", partido: "MDB", uf: "PB", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "s5748.jpg" },
+  // PE
+  { nome: "Teresa Leitão", nomeCompleto: "Maria Teresa Leitão de Melo", partido: "PT", uf: "PE", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s6338.jpg" },
+  { nome: "Humberto Costa", nomeCompleto: "Humberto Sérgio Costa Lima", partido: "PT", uf: "PE", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "s5008.jpg" },
+  { nome: "Marília Arraes", nomeCompleto: "Marília Arraes de Alencar", partido: "PDT", uf: "PE", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "marilia-arraes.jpg" },
+  // PI
+  { nome: "Jussara Lima", nomeCompleto: "Antônia Jussara Gomes Alves Sousa Lima", partido: "PSD", uf: "PI", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s6369.jpg" },
+  { nome: "Marcelo Castro", nomeCompleto: "Marcelo Costa e Castro", partido: "MDB", uf: "PI", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "s742.jpg" },
+  { nome: "Júlio César", nomeCompleto: "Júlio César de Carvalho Lima", partido: "PSD", uf: "PI", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "julio-cesar.jpg" },
+  // PR
+  { nome: "Luís Felipe Cunha", nomeCompleto: "Luís Felipe Cunha", partido: "PL", uf: "PR", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "luis-felipe-cunha.jpg", obs: "Suplente de Sergio Moro, eleito governador" },
+  { nome: "Filipe Barros", nomeCompleto: "Filipe Barros Baptista de Toledo Ribeiro", partido: "PL", uf: "PR", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "filipe-barros.jpg" },
+  { nome: "Deltan Dallagnol", nomeCompleto: "Deltan Martinazzo Dallagnol", partido: "Novo", uf: "PR", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "deltan-dallagnol.jpg", obs: "Registro sub judice no TSE" },
+  // RJ
+  { nome: "Romário", nomeCompleto: "Romario de Souza Faria", partido: "Sem partido", uf: "RJ", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s5322.jpg" },
+  { nome: "Carlos Portinho", nomeCompleto: "Carlos Francisco Portinho", partido: "PL", uf: "RJ", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "s5936.jpg" },
+  { nome: "Carlos Jordy", nomeCompleto: "Carlos Augusto Soares Jordy", partido: "PL", uf: "RJ", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "carlos-jordy.jpg" },
+  // RN
+  { nome: "Rogério Marinho", nomeCompleto: "Rogério Simonetti Marinho", partido: "PL", uf: "RN", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s4694.jpg", obs: "Candidato" },
+  { nome: "Styvenson Valentim", nomeCompleto: "Eann Styvenson Valentim Mendes", partido: "Podemos", uf: "RN", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "s5959.jpg" },
+  { nome: "Samanda de Lula", nomeCompleto: "Samanda Alves", partido: "PT", uf: "RN", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "samanda-de-lula.jpg" },
+  // RO
+  { nome: "Jaime Bagattoli", nomeCompleto: "Jaime Maximino Bagattoli", partido: "PL", uf: "RO", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s6340.jpg" },
+  { nome: "Fernando Máximo", nomeCompleto: "Fernando Máximo", partido: "PL", uf: "RO", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "fernando-maximo.jpg" },
+  { nome: "Bruno Scheid", nomeCompleto: "Bruno Scheid", partido: "PL", uf: "RO", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "bruno-scheid.jpg" },
+  // RR
+  { nome: "Dr. Hiran", nomeCompleto: "Hiran Manuel Gonçalves da Silva", partido: "PP", uf: "RR", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s5793.jpg" },
+  { nome: "Nicoletti", nomeCompleto: "Antonio Carlos Nicoletti", partido: "PL", uf: "RR", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "nicoletti.jpg" },
+  { nome: "Teresa Surita", nomeCompleto: "Teresa Surita", partido: "MDB", uf: "RR", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "teresa-surita.jpg" },
+  // RS
+  { nome: "Hamilton Mourão", nomeCompleto: "Antonio Hamilton Martins Mourão", partido: "Republicanos", uf: "RS", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s6341.jpg" },
+  { nome: "Ubiratan Sanderson", nomeCompleto: "Ubiratan Sanderson", partido: "PL", uf: "RS", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "ubiratan-sanderson.jpg" },
+  { nome: "Marcel van Hattem", nomeCompleto: "Marcel van Hattem", partido: "Novo", uf: "RS", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "marcel-van-hattem.jpg" },
+  // SC
+  { nome: "Jorge Seif", nomeCompleto: "Jorge Seif Júnior", partido: "PL", uf: "SC", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s6342.jpg" },
+  { nome: "Caroline de Toni", nomeCompleto: "Caroline de Toni", partido: "PL", uf: "SC", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "caroline-de-toni.jpg" },
+  { nome: "Carlos Bolsonaro", nomeCompleto: "Carlos Nantes Bolsonaro", partido: "PL", uf: "SC", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "carlos-bolsonaro.jpg" },
+  // SE
+  { nome: "Laércio Oliveira", nomeCompleto: "Laércio José de Oliveira", partido: "PP", uf: "SE", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s4811.jpg" },
+  { nome: "Rogério Carvalho", nomeCompleto: "Rogério Carvalho Santos", partido: "PT", uf: "SE", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "s5352.jpg" },
+  { nome: "Alessandro Vieira", nomeCompleto: "Alessandro Vieira", partido: "MDB", uf: "SE", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "s5982.jpg" },
+  // SP
+  { nome: "Marcos Pontes", nomeCompleto: "Marcos Cesar Pontes", partido: "PL", uf: "SP", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s6009.jpg" },
+  { nome: "Guilherme Derrite", nomeCompleto: "Guilherme Muraro Derrite", partido: "PP", uf: "SP", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "guilherme-derrite.jpg" },
+  { nome: "André do Prado", nomeCompleto: "André do Prado", partido: "PL", uf: "SP", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "andre-do-prado.jpg" },
+  // TO
+  { nome: "Professora Dorinha", nomeCompleto: "Maria Auxiliadora Seabra Rezende", partido: "União", uf: "TO", mandato: 2031, posicao: "indefinido", instagram: "", x: "", foto: "s5386.jpg" },
+  { nome: "Eduardo Gomes", nomeCompleto: "Carlos Eduardo Torres Gomes", partido: "PL", uf: "TO", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "s3777.jpg" },
+  { nome: "Alexandre Guimarães", nomeCompleto: "Alexandre Guimarães", partido: "MDB", uf: "TO", mandato: 2035, posicao: "indefinido", instagram: "", x: "", foto: "alexandre-guimaraes.jpg" },
+];

@@ -71,9 +71,20 @@ const marketingCss=`<style>
 @media(max-width:700px){.sov-price-grid,.sov-benefit-grid{grid-template-columns:1fr}.sov-marketing .sov-pricing{padding:28px 14px}.sov-marketing .sov-price-card h3{min-height:0}.sov-shell .nav{flex-wrap:wrap}.sov-shell .nav>.row{flex-wrap:wrap}.sov-shell .nav>.row a,.sov-shell .nav>.row button{font-size:12px;padding:9px 10px;min-height:38px}}
 </style>`;
 
+
+function senateEntry(){
+  return `<style>
+.sov-senate-entry{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:26px;margin:12px 0 32px;padding:30px 32px;border:1px solid #426451;border-radius:22px;background:radial-gradient(ellipse at 100% 0,#244c36,transparent 65%),#12283b;box-shadow:0 18px 44px #0002}
+.sov-senate-kicker{display:inline-flex;gap:8px;align-items:center;color:#a5efbf;font-size:11px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase}.sov-senate-kicker:before{content:'';width:7px;height:7px;background:#74e69b;border-radius:50%}
+.sov-senate-entry h2{color:#ffd633;font-size:clamp(25px,3vw,36px);line-height:1.15;margin:12px 0;letter-spacing:-.02em}.sov-senate-entry p{color:#e0e9ed;max-width:590px;margin:0;font-size:15px;line-height:1.6}
+.sov-senate-entry .sov-senate-action{display:inline-flex;justify-content:center;align-items:center;gap:15px;min-height:50px;padding:14px 20px;background:#ffd633;color:#0b1733;font-weight:850;text-decoration:none;border-radius:10px;white-space:nowrap}.sov-senate-entry .sov-senate-action:hover{background:#ffe475}.sov-senate-side{text-align:center}.sov-senate-side small{display:block;color:#bdcfd0;font-size:11px;margin-top:10px}
+@media(max-width:700px){.sov-senate-entry{grid-template-columns:1fr;padding:24px;gap:20px;margin-top:0}.sov-senate-side{text-align:left}.sov-senate-action{width:100%}}
+</style><section class="sov-senate-entry" aria-labelledby="senate-entry-title"><div><span class="sov-senate-kicker">Presidência do Senado 2027 · acesso gratuito</span><h2 id="senate-entry-title">Quem vai presidir o Senado?</h2><p>Acompanhe o placar de apoios, explore o mapa dos estados e consulte os perfis dos 81 senadores.</p></div><div class="sov-senate-side"><a class="sov-senate-action" href="/senado">Ver placar do Senado <span aria-hidden="true">↗</span></a><small>Aberto a todos. Sem login ou assinatura.</small></div></section>`;
+}
+
 export function homePage(user?:any){
   const buttons=user?'<a class="btn" href="/app">Abrir aplicativo</a>':'<a class="btn" href="#planos">Ver planos e preços</a><a class="btn secondary" href="/login">Já sou assinante</a>';
-  return layout("Início",marketingCss+'<div class="sov-marketing"><section class="hero"><div class="hero-eyebrow">Dados oficiais. Visão territorial.</div><h1>Inteligência eleitoral para entender cada voto.</h1><p class="muted" style="font-size:19px;max-width:730px">Explore a votação de 2026 com consultas por candidato, filtros territoriais, mapas e comparações a partir de bases oficiais.</p><div class="row" style="margin-top:24px">'+buttons+'</div><ul class="hero-checks"><li>Dados oficiais do TSE</li><li>Consultas por território</li><li>Comparação entre candidatos</li></ul></section>'+planCards(user)+benefitsMarkup()+'</div>',user);
+  return layout("Início",marketingCss+'<div class="sov-marketing">'+senateEntry()+'<section class="hero"><div class="hero-eyebrow">Dados oficiais. Visão territorial.</div><h1>Inteligência eleitoral para entender cada voto.</h1><p class="muted" style="font-size:19px;max-width:730px">Explore a votação de 2026 com consultas por candidato, filtros territoriais, mapas e comparações a partir de bases oficiais.</p><div class="row" style="margin-top:24px">'+buttons+'</div><ul class="hero-checks"><li>Dados oficiais do TSE</li><li>Consultas por território</li><li>Comparação entre candidatos</li></ul></section>'+planCards(user)+benefitsMarkup()+'</div>',user);
 }
 
 export function authPage(kind:"login"|"cadastro",error="",selectedPlan=""){

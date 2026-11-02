@@ -38,6 +38,23 @@ function sameOrigin(req:IncomingMessage){const origin=req.headers.origin;if(!ori
 
 export async function handleWeb(req:IncomingMessage,res:ServerResponse){
   const url=new URL(req.url??"/","http://local");
+  // Public Senate page and its own assets must be served before session/subscription checks.
+  if(req.method==="GET"&&(url.pathname==="/senado"||url.pathname==="/senado/")){
+    res.setHeader("cache-control","public, max-age=60");
+    html(res,readFileSync(new URL("../ui/senado/index.html",import.meta.url),"utf8"));return true;
+  }
+  if(req.method==="GET"&&url.pathname.startsWith("/assets/senado/")){
+    const asset=url.pathname.slice("/assets/senado/".length);
+    if(asset!=="senadores.js"&&!/^img\/(?:senadores\/)?[a-z0-9-]+\.(?:jpg|png|webp)$/.test(asset)){
+      res.writeHead(404);res.end();return true;
+    }
+    try{
+      const content=readFileSync(new URL("../ui/senado/"+asset,import.meta.url));
+      const type=asset.endsWith(".js")?"application/javascript; charset=utf-8":asset.endsWith(".webp")?"image/webp":asset.endsWith(".png")?"image/png":"image/jpeg";
+      res.writeHead(200,{"content-type":type,"cache-control":"public, max-age="+(asset.endsWith(".js")?60:86400),"x-content-type-options":"nosniff"});res.end(content);
+    }catch(error:any){if(error.code!=="ENOENT")throw error;res.writeHead(404);res.end()}
+    return true;
+  }
   if(req.method==='GET'&&['/assets/siga-voto/polymarket/flavio.webp','/assets/siga-voto/polymarket/lula.webp'].includes(url.pathname)){
     const file=url.pathname.endsWith('/flavio.webp')?'flavio.webp':'lula.webp';
     res.writeHead(200,{'content-type':'image/webp','cache-control':'public, max-age=86400','x-content-type-options':'nosniff'});
