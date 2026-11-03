@@ -205,3 +205,17 @@ WITH migration AS (
 )
 INSERT INTO audit_logs(user_id,event_type,metadata)
 SELECT updated_by,'SENATE_EDITORIAL_PROJECTION',jsonb_build_object('senatorId',senator_id,'position',position,'classification',classification) FROM changed;
+
+-- Owner correction: keep Damares and Tereza uncommitted.
+WITH migration AS (
+ INSERT INTO senate_editorial_migrations VALUES('undecided-damares-tereza-2026-11-03-v3') ON CONFLICT DO NOTHING RETURNING id
+), owner_account AS (SELECT updated_by AS id FROM senate_positions ORDER BY updated_at DESC LIMIT 1), changed AS (
+ INSERT INTO senate_positions(senator_id,position,classification,editorial_note,source_url,updated_by,version)
+ SELECT x.senator_id,x.position,x.classification,x.editorial_note,x.source_url,o.id,1
+ FROM jsonb_to_recordset('[{"senator_id": "df-damares-alves", "position": "indefinido", "classification": "tendencia", "editorial_note": "Sem posicionamento confirmado. Mantida em aberto por decisão do responsável editorial em 03/11/2026.", "source_url": ""}, {"senator_id": "ms-tereza-cristina", "position": "indefinido", "classification": "tendencia", "editorial_note": "Sem posicionamento neste mapeamento, diante da possibilidade de candidatura própria à presidência do Senado.", "source_url": ""}]'::jsonb) AS x(senator_id text,position text,classification text,editorial_note text,source_url text),owner_account o
+ WHERE EXISTS(SELECT 1 FROM migration)
+ ON CONFLICT(senator_id) DO UPDATE SET position=excluded.position,classification=excluded.classification,editorial_note=excluded.editorial_note,source_url=excluded.source_url,publication_date=NULL,updated_at=now(),version=senate_positions.version+1
+ RETURNING senator_id,position,classification,updated_by
+)
+INSERT INTO audit_logs(user_id,event_type,metadata)
+SELECT updated_by,'SENATE_EDITORIAL_PROJECTION',jsonb_build_object('senatorId',senator_id,'position',position,'classification',classification) FROM changed;
