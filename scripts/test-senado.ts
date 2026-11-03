@@ -7,7 +7,7 @@ import {homePage} from '../src/web/pages.js';
 import {PGlite} from '@electric-sql/pglite';
 import {pool} from '../src/db/index.js';
 const testDatabase=new PGlite();
-await testDatabase.exec('CREATE TABLE senate_positions(senator_id text,position text,source_url text,publication_date date,version int,updated_at timestamptz)');
+await testDatabase.exec(`CREATE TABLE senate_positions(senator_id text,position text,source_url text,publication_date date,version int,updated_at timestamptz,classification text default 'tendencia',editorial_note text default '')`);
 const originalQuery=pool.query;
 (pool as any).query=(text:string,params?:unknown[])=>testDatabase.query(text,params);
 const server=createServer(async(req,res)=>{try{if(!await handleWeb(req,res)){res.writeHead(404);res.end()}}catch(e){res.writeHead(500);res.end(String(e))}});
@@ -21,7 +21,7 @@ try{
    assert(!r.headers.has('set-cookie'));await r.arrayBuffer();
   }
  }
- const page=await(await fetch(origin+'/senado')).text();assert(!page.includes('fonts.googleapis.com'));assert(!page.includes('AtContent/'));assert(page.includes('Consulta gratuita, sem login.'));
+ const page=await(await fetch(origin+'/senado')).text();assert(!page.includes('fonts.googleapis.com'));assert(!page.includes('AtContent/'));assert(page.includes('Projeção editorial:'));
  const context={window:{} as any};vm.runInNewContext(readFileSync('src/ui/senado/senadores.js','utf8'),context);
  const senators=context.window.SENADORES;assert.equal(senators.length,81);assert.equal(new Set(senators.map((s:any)=>s.uf)).size,27);
  for(const uf of new Set(senators.map((s:any)=>s.uf)))assert.equal(senators.filter((s:any)=>s.uf===uf).length,3);

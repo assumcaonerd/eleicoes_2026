@@ -17,27 +17,29 @@ export function validateSenateUpdate(input:any){
  let source=String(input.source||'').trim();if(source.length>2000)throw Error('Link muito longo.');
  if(source){let u:URL;try{u=new URL(source)}catch{throw Error('Link inválido.')}if(u.protocol!=='https:'||u.username||u.password)throw Error('Use um link HTTPS sem credenciais.');source=u.href}
  const date=String(input.date||'');if(date&&(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(Date.parse(date))||new Date(date).toISOString().slice(0,10)!==date))throw Error('Data inválida.');
- return {id,position,version,source,date};
+ const classification=String(input.classification||'tendencia');if(!['declaracao','partido','tendencia','terceiro'].includes(classification))throw Error('Categoria inválida.');
+ const note=String(input.note||'').trim();if(note.length>1500)throw Error('Observação muito longa.');
+ return {id,position,version,source,date,classification,note};
 }
 export async function readSenators(query:Query=sql){
- const {rows}=await query('SELECT senator_id,position,source_url,publication_date,version,updated_at FROM senate_positions');
+ const {rows}=await query('SELECT senator_id,position,source_url,publication_date,version,updated_at,classification,editorial_note FROM senate_positions');
  const updates=new Map(rows.map(r=>[r.senator_id,r]));
- return senateBase.map((s:any)=>{const r=updates.get(s.id);return {...s,posicao:r?.position??s.posicao,fonte:r?.source_url||'',dataPublicacao:r?.publication_date?new Date(r.publication_date).toISOString().slice(0,10):'',version:r?.version??0,atualizadoEm:r?.updated_at??null}});
+ return senateBase.map((s:any)=>{const r=updates.get(s.id);return {...s,posicao:r?.position??s.posicao,fonte:r?.source_url||'',dataPublicacao:r?.publication_date?new Date(r.publication_date).toISOString().slice(0,10):'',classificacao:r?.classification??'tendencia',observacao:r?.editorial_note??'',version:r?.version??0,atualizadoEm:r?.updated_at??null}});
 }
 export async function saveSenatePosition(user:any,req:IncomingMessage,input:any,query:Query=sql){
  if(!ownsSenate(user))throw Error('Acesso negado.');if(!senateOriginAllowed(req))throw Error('Origem inválida.');
  const d=validateSenateUpdate(input);
  const {rows}=await query(`WITH changed AS (
- INSERT INTO senate_positions(senator_id,position,source_url,publication_date,updated_by,version)
- SELECT $1,$2,$3,NULLIF($4,'')::date,$5,1 WHERE $6::int=0
- ON CONFLICT(senator_id) DO UPDATE SET position=excluded.position,source_url=excluded.source_url,publication_date=excluded.publication_date,updated_by=excluded.updated_by,updated_at=now(),version=senate_positions.version+1 WHERE senate_positions.version=$6
+ INSERT INTO senate_positions(senator_id,position,source_url,publication_date,updated_by,version,classification,editorial_note)
+ SELECT $1,$2,$3,NULLIF($4,'')::date,$5,1,$8,$9 WHERE $6::int=0
+ ON CONFLICT(senator_id) DO UPDATE SET position=excluded.position,classification=excluded.classification,editorial_note=excluded.editorial_note,source_url=excluded.source_url,publication_date=excluded.publication_date,updated_by=excluded.updated_by,updated_at=now(),version=senate_positions.version+1 WHERE senate_positions.version=$6
  RETURNING senator_id,version
  ), updated AS (
- UPDATE senate_positions SET position=$2,source_url=$3,publication_date=NULLIF($4,'')::date,updated_by=$5,updated_at=now(),version=version+1
+ UPDATE senate_positions SET classification=$8,editorial_note=$9,position=$2,source_url=$3,publication_date=NULLIF($4,'')::date,updated_by=$5,updated_at=now(),version=version+1
  WHERE senator_id=$1 AND version=$6 AND $6::int>0 RETURNING senator_id,version
  ), result AS (SELECT * FROM changed UNION ALL SELECT * FROM updated), logged AS (
  INSERT INTO audit_logs(user_id,event_type,metadata,ip_hash)
- SELECT $5,'SENATE_POSITION_UPDATED',jsonb_build_object('senatorId',$1::text,'position',$2::text,'source',$3::text,'version',result.version),$7 FROM result RETURNING id
- ) SELECT result.* FROM result,logged`,[d.id,d.position,d.source,d.date,Number(user.id),d.version,hashIp(clientIp(req))]);
+ SELECT $5,'SENATE_POSITION_UPDATED',jsonb_build_object('senatorId',$1::text,'position',$2::text,'source',$3::text,'version',result.version,'classification',$8::text,'note',$9::text),$7 FROM result RETURNING id
+ ) SELECT result.* FROM result,logged`,[d.id,d.position,d.source,d.date,Number(user.id),d.version,hashIp(clientIp(req)),d.classification,d.note]);
  if(rows.length!==1)throw Error('Este registro mudou em outra janela. Reabra o painel antes de salvar.');return rows[0];
 }

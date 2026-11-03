@@ -205,7 +205,7 @@
     <div class="wrap">
       <p class="eyebrow">Eleição para presidente do Senado · fev/2027</p>
       <h1>Como vota, Senador?</h1>
-      <p class="sub">Acompanhe os posicionamentos cadastrados dos 81 senadores por estado.</p><p class="sov-data-note">Consulta gratuita, sem login. Posicionamentos públicos não equivalem a votos apurados.</p>
+      <p class="sub">Acompanhe os posicionamentos cadastrados dos 81 senadores por estado.</p><p class="sov-data-note">Projeção editorial: inclui tendências políticas, orientação partidária e relatos não confirmados. As cores não significam votos declarados. Consulte a categoria e a observação de cada senador.</p>
     </div>
 
     <div class="arena" role="img" aria-label="Montagem ilustrativa: Davi Alcolumbre e Rogério Marinho no cabo de guerra, com Lula e Flávio Bolsonaro observando">
@@ -261,11 +261,11 @@
       <div class="tags">
         <div class="tag a">
           <div class="ribbon">Davi Alcolumbre</div>
-          <div class="score"><span id="votesA">0</span><small>votos</small></div>
+          <div class="score"><span id="votesA">0</span><small>mapeados</small></div>
         </div>
         <div class="tag m">
           <div class="ribbon">Rogério Marinho</div>
-          <div class="score"><span id="votesM">0</span><small>votos</small></div>
+          <div class="score"><span id="votesM">0</span><small>mapeados</small></div>
         </div>
       </div>
     </div>
@@ -292,7 +292,7 @@
     <div class="wrap">
       <div class="mapa-head">
         <div>
-          <h2>Mapa dos votos</h2>
+          <h2>Mapa de tendências e apoios</h2>
           <p class="section-sub">Cada estado é pintado pelo candidato com mais apoio entre seus 3 senadores. Clique na foto para ver o perfil.</p>
         </div>
         <div class="legend">
@@ -397,6 +397,7 @@
     const ICON_IG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>';
     const ICON_X = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.8 3h3.1l-6.8 7.8L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8L17.8 3Zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5Z"/></svg>';
 
+    const CATEGORIA={declaracao:'Declaração pública reportada',partido:'Orientação partidária',tendencia:'Tendência política · sem declaração oficial',terceiro:'Relato de terceiro · não confirmado'};
     const senadores = window.SENADORES || [];
     const state = { pos: "", uf: "", q: "" };
 
@@ -532,8 +533,8 @@
           <div class="uf-tag">${esc(UF_NOME[s.uf])} · ${esc(s.uf)}</div>
           <h3 id="perfil-nome">${esc(s.nome)}</h3>
           ${s.nomeCompleto && s.nomeCompleto !== s.nome ? `<div class="full">${esc(s.nomeCompleto)}</div>` : ""}
-          <span class="pill perfil-pos ${s.posicao}">${s.posicao === "indefinido" ? "Sem posicionamento" : "Apoio cadastrado a " + LABEL[s.posicao]}</span>
-          <dl class="facts">
+          <span class="pill perfil-pos ${s.posicao}">${s.posicao === "indefinido" ? "Sem posicionamento" : "Projeção: " + LABEL[s.posicao]}</span>
+          <p class="obs">${esc(CATEGORIA[s.classificacao]||CATEGORIA.tendencia)}</p>${s.observacao ? `<p class="obs">${esc(s.observacao)}</p>` : ""}<dl class="facts">
             <div><dt>Partido</dt><dd>${esc(s.partido)}</dd></div>
             <div><dt>Estado</dt><dd>${esc(UF_NOME[s.uf])}</dd></div>
             <div><dt>Mandato até</dt><dd>${s.mandato}</dd></div>
@@ -572,7 +573,7 @@
               ${s.obs ? `<div class="obs">${esc(s.obs)}</div>` : ""}
             </div>
           </div>
-          <div class="card-bottom">
+          <p class="obs">${esc(CATEGORIA[s.classificacao]||CATEGORIA.tendencia)}</p>${s.observacao ? `<p class="obs">${esc(s.observacao)}</p>` : ""}<div class="card-bottom">
             <span class="pill">${LABEL[s.posicao]}</span>
             <div class="social">${socialLinks(s)}</div>
           </div>
