@@ -247,3 +247,17 @@ WITH migration AS (
 )
 INSERT INTO audit_logs(user_id,event_type,metadata)
 SELECT updated_by,'SENATE_EDITORIAL_PROJECTION',jsonb_build_object('senatorId',senator_id,'position',position,'classification',classification) FROM changed;
+
+-- Michelle Bolsonaro remains uncommitted.
+WITH migration AS (
+ INSERT INTO senate_editorial_migrations VALUES('michelle-uncommitted-2026-11-05-v6') ON CONFLICT DO NOTHING RETURNING id
+), owner_account AS (SELECT updated_by AS id FROM senate_positions ORDER BY updated_at DESC LIMIT 1), changed AS (
+ INSERT INTO senate_positions(senator_id,position,classification,editorial_note,source_url,updated_by,version)
+ SELECT x.senator_id,x.position,x.classification,x.editorial_note,x.source_url,o.id,1
+ FROM jsonb_to_recordset('[{"senator_id": "df-michelle-bolsonaro", "position": "indefinido", "classification": "tendencia", "editorial_note": "Sem posicionamento registrado para a presidência do Senado. Classificação revista pelo responsável editorial em 05/11/2026; apoio a Rogério Marinho não confirmado.", "source_url": ""}]'::jsonb) AS x(senator_id text,position text,classification text,editorial_note text,source_url text),owner_account o
+ WHERE EXISTS(SELECT 1 FROM migration)
+ ON CONFLICT(senator_id) DO UPDATE SET position=excluded.position,classification=excluded.classification,editorial_note=excluded.editorial_note,source_url=excluded.source_url,publication_date=NULL,updated_at=now(),version=senate_positions.version+1
+ RETURNING senator_id,position,classification,updated_by
+)
+INSERT INTO audit_logs(user_id,event_type,metadata)
+SELECT updated_by,'SENATE_EDITORIAL_PROJECTION',jsonb_build_object('senatorId',senator_id,'position',position,'classification',classification) FROM changed;
