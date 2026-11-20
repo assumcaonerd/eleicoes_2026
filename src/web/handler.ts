@@ -11,7 +11,7 @@ import { registerUser, loginUser } from "../auth/service.js";
 import { createCheckout, createPortal, subscriptionSummary, handleStripeWebhook } from "../billing/stripe.js";
 import { searchCandidates, compareCandidates, topTerritories, partyVotes, sourceStatus, sectionMap, sectionMetrics, candidateTerritoryOverview, territorialLevel, candidateVoteComparison, comparativeTerritories } from "../tools/queries.js";
 import { sql } from "../db/index.js";
-import { homePage, authPage, plansPage, appPage, adminPage, subscriptionPage, resetPasswordPage } from "./pages.js";
+import { homePage, authPage, plansPage, appPage, adminPage, subscriptionPage, resetPasswordPage, offlinePage, webManifest } from "./pages.js";
 import {renderESMap,renderStateMap,reportInfo} from "./map-export.js";
 import {readOnlineIndicators} from '../majority/indicators.js';
 import {electionIdForOffice} from '../tse/url.js';
@@ -102,8 +102,19 @@ export async function handleWeb(req:IncomingMessage,res:ServerResponse){
   const faviconFiles:Record<string,{file:string,type:string}>={
     "/favicon.ico":{file:"favicon-v1.ico",type:"image/x-icon"},
     "/assets/siga-voto/favicon-v1.svg":{file:"favicon-v1.svg",type:"image/svg+xml"},
-    ...Object.fromEntries([16,32,48,180,192].map(size=>["/assets/siga-voto/favicon-"+size+"-v1.png",{file:"favicon-"+size+"-v1.png",type:"image/png"}]))
+    ...Object.fromEntries([16,32,48,180,192].map(size=>["/assets/siga-voto/favicon-"+size+"-v1.png",{file:"favicon-"+size+"-v1.png",type:"image/png"}])),
+    ...Object.fromEntries(["icon-512-v1.png","icon-maskable-192-v1.png","icon-maskable-512-v1.png"].map(file=>["/assets/siga-voto/"+file,{file,type:"image/png"}]))
   };
+  if(req.method==="GET"&&url.pathname==="/manifest.webmanifest"){
+    res.writeHead(200,{"content-type":"application/manifest+json; charset=utf-8","cache-control":"public, max-age=3600","x-content-type-options":"nosniff"});
+    res.end(JSON.stringify(webManifest()));return true;
+  }
+  if(req.method==="GET"&&url.pathname==="/sw.js"){
+    // Sem cache HTTP: o navegador precisa ver logo uma versão nova do service worker.
+    res.writeHead(200,{"content-type":"application/javascript; charset=utf-8","cache-control":"no-cache","service-worker-allowed":"/","x-content-type-options":"nosniff"});
+    res.end(readFileSync(new URL("../ui/sw.js",import.meta.url)));return true;
+  }
+  if(req.method==="GET"&&url.pathname==="/offline"){html(res,offlinePage());return true}
   const favicon=faviconFiles[url.pathname];
   if(req.method==="GET"&&favicon){
     const content=readFileSync(new URL("../ui/icons/"+favicon.file,import.meta.url));

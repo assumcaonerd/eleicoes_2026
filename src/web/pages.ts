@@ -6,10 +6,65 @@ import {companyCss,companySignature} from "./company-brand.js";
 
 function esc(v:unknown){return String(v??"").replace(/[&<>"']/g,function(c){return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"} as any)[c]})}
 
+// --- App instalável (PWA) ---------------------------------------------------
+const pwaCss = ".sov-install-help{position:fixed;inset:0;z-index:1000;display:flex;align-items:flex-end;justify-content:center;padding:16px;background:rgba(9,15,31,.72)}.sov-install-help[hidden]{display:none}.sov-install-help .card{width:100%;max-width:420px}.sov-install-help ol{padding-left:20px;line-height:1.6}@media (display-mode:standalone){body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}}";
+
+// Registra o service worker e mostra "Instalar app" só quando faz sentido:
+// Android/Chrome avisam com beforeinstallprompt; no iPhone não há esse aviso,
+// então o botão abre as instruções de "Adicionar à Tela de Início".
+const pwaScript = `(function(){
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}
+var btn=document.getElementById('sov-install'),help=document.getElementById('sov-install-help'),close=document.getElementById('sov-install-close');
+var installed=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+if(!btn||installed)return;
+var deferred=null;
+var ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferred=e;btn.hidden=false});
+window.addEventListener('appinstalled',function(){deferred=null;btn.hidden=true});
+if(ios)btn.hidden=false;
+btn.addEventListener('click',function(){
+ if(deferred){deferred.prompt();deferred.userChoice.then(function(){deferred=null;btn.hidden=true},function(){})}
+ else if(ios&&help){help.hidden=false}
+});
+if(close)close.addEventListener('click',function(){help.hidden=true});
+})();`;
+
+export function webManifest(){
+  return {
+    id:"/app",
+    name:"Siga o Voto",
+    short_name:"Siga o Voto",
+    description:"Inteligência eleitoral: votos de 2026 por estado, município, bairro, local de votação e seção.",
+    lang:"pt-BR",
+    dir:"ltr",
+    start_url:"/app",
+    scope:"/",
+    display:"standalone",
+    background_color:"#090F1F",
+    theme_color:"#090F1F",
+    categories:["news","reference"],
+    icons:[
+      {src:"/assets/siga-voto/favicon-192-v1.png",sizes:"192x192",type:"image/png",purpose:"any"},
+      {src:"/assets/siga-voto/icon-512-v1.png",sizes:"512x512",type:"image/png",purpose:"any"},
+      {src:"/assets/siga-voto/icon-maskable-192-v1.png",sizes:"192x192",type:"image/png",purpose:"maskable"},
+      {src:"/assets/siga-voto/icon-maskable-512-v1.png",sizes:"512x512",type:"image/png",purpose:"maskable"}
+    ],
+    shortcuts:[
+      {name:"Painel",url:"/app",icons:[{src:"/assets/siga-voto/favicon-192-v1.png",sizes:"192x192",type:"image/png"}]},
+      {name:"Presidente e governador",short_name:"Majoritárias",url:"/app/majority",icons:[{src:"/assets/siga-voto/favicon-192-v1.png",sizes:"192x192",type:"image/png"}]}
+    ]
+  };
+}
+
+export function offlinePage(){
+  return layout("Sem conexão",'<div class="card"><h1>Sem conexão com a internet</h1><p class="muted">O Siga o Voto precisa de internet para consultar os resultados. Verifique sua conexão e tente de novo.</p><button type="button" class="btn" onclick="location.reload()">Tentar de novo</button></div>');
+}
+
 export function layout(title:string,body:string,user?:any){
   var actions = user ? '<a class="btn secondary" href="/assinatura">Minha assinatura</a><a class="btn secondary" href="/planos">Planos e preços</a><a class="btn secondary" href="/app">Painel</a><form method="post" action="/logout"><button class="btn secondary">Sair</button></form>' : '<a class="btn secondary" href="/planos">Planos e preços</a><a class="btn secondary" href="/login">Entrar</a><a class="btn" href="/planos">Assinar</a>';
   actions+=(ownsSenate(user)?'<a class="btn secondary" href="/admin/senado">Controle do Senado</a>':'');
-  return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#090F1F"><link rel="icon" href="/favicon.ico?v=1" sizes="any"><link rel="icon" type="image/svg+xml" href="/assets/siga-voto/favicon-v1.svg"><link rel="icon" type="image/png" sizes="32x32" href="/assets/siga-voto/favicon-32-v1.png"><link rel="apple-touch-icon" sizes="180x180" href="/assets/siga-voto/favicon-180-v1.png"><title>'+esc(title)+' | Siga o Voto</title><style>'+css+brandCss+companyCss+'</style></head><body class="sov-shell '+(title==="Aplicativo"?"sov-app":"sov-public")+'"><div class="wrap"><nav class="nav" aria-label="Navegação principal"><a href="/" class="brand" aria-label="Siga o Voto, início"><span class="brand-symbol" aria-hidden="true">'+brandMark+'</span><span class="brand-wordmark"><strong>Siga o Voto</strong><small>INTELIGÊNCIA ELEITORAL</small></span><span class="tag">2026</span></a><div class="row">'+actions+'</div></nav><main>' +body+'</main><footer class="footer"><span>Siga o Voto 2026 · Fonte original dos dados eleitorais: Tribunal Superior Eleitoral. Plataforma independente.</span>'+companySignature()+'</footer></div></body></html>';
+  actions+='<button type="button" class="btn secondary" id="sov-install" hidden>Instalar app</button>';
+  return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#090F1F"><link rel="manifest" href="/manifest.webmanifest"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Siga o Voto"><link rel="icon" href="/favicon.ico?v=1" sizes="any"><link rel="icon" type="image/svg+xml" href="/assets/siga-voto/favicon-v1.svg"><link rel="icon" type="image/png" sizes="32x32" href="/assets/siga-voto/favicon-32-v1.png"><link rel="apple-touch-icon" sizes="180x180" href="/assets/siga-voto/favicon-180-v1.png"><title>'+esc(title)+' | Siga o Voto</title><style>'+css+brandCss+companyCss+pwaCss+'</style></head><body class="sov-shell '+(title==="Aplicativo"?"sov-app":"sov-public")+'"><div class="wrap"><nav class="nav" aria-label="Navegação principal"><a href="/" class="brand" aria-label="Siga o Voto, início"><span class="brand-symbol" aria-hidden="true">'+brandMark+'</span><span class="brand-wordmark"><strong>Siga o Voto</strong><small>INTELIGÊNCIA ELEITORAL</small></span><span class="tag">2026</span></a><div class="row">'+actions+'</div></nav><main>' +body+'</main><footer class="footer"><span>Siga o Voto 2026 · Fonte original dos dados eleitorais: Tribunal Superior Eleitoral. Plataforma independente.</span>'+companySignature()+'</footer></div><div class="sov-install-help" id="sov-install-help" role="dialog" aria-modal="true" aria-labelledby="sov-install-title" hidden><div class="card"><h2 id="sov-install-title">Instalar no iPhone</h2><ol><li>Toque no botão <strong>Compartilhar</strong> do Safari (quadrado com seta para cima).</li><li>Escolha <strong>Adicionar à Tela de Início</strong>.</li><li>Toque em <strong>Adicionar</strong>.</li></ol><button type="button" class="btn" id="sov-install-close">Entendi</button></div></div><script>'+pwaScript+'</script></body></html>';
 }
 
 const publicBenefits = [

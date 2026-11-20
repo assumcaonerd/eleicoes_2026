@@ -21,6 +21,7 @@
     "test:billing": "node --import tsx --test scripts/test-billing.ts",
     "test:http": "node --import tsx scripts/test-http-hardening.ts",
     "test:tse-url": "node --import tsx scripts/test-tse-url.ts",
+    "test:pwa": "node --import tsx scripts/test-pwa.ts",
     "test:senado": "node --import tsx scripts/test-senado.ts && node --import tsx scripts/test-senate-control.ts"
   },
   "dependencies": {
