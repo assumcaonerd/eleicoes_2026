@@ -11,6 +11,14 @@ export function electionIdForOffice(office: number, round = 1) {
   return office === 1 ? config.federalElection : config.stateElection;
 }
 
+/**
+ * Código do cargo nos arquivos do TSE. O aplicativo usa 7 para
+ * "Deputado Estadual/Distrital"; no DF o TSE publica esse cargo como 8.
+ */
+export function tseCargoCode(office: number, uf: string) {
+  return office === 7 && String(uf).toUpperCase() === "DF" ? 8 : office;
+}
+
 export function scopeResultUrl(args: {
   office: number;
   round?: number;
@@ -20,7 +28,7 @@ export function scopeResultUrl(args: {
 }) {
   const election = electionIdForOffice(args.office, args.round);
   const uf = args.uf.toLowerCase();
-  const cargo = pad(args.office, 4);
+  const cargo = pad(tseCargoCode(args.office, args.uf), 4);
   const ele = pad(election, 6);
 
   if (!args.municipalityCode) {

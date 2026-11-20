@@ -5,7 +5,7 @@ import { offices } from "../config.js";
 import { sql } from "../db/index.js";
 import { fetchAndPersist } from "./client.js";
 import { discoverMunicipalities, extractCandidates } from "./normalize.js";
-import { electionIdForOffice, municipalityConfigUrl, scopeResultUrl } from "./url.js";
+import { electionIdForOffice, municipalityConfigUrl, scopeResultUrl, tseCargoCode } from "./url.js";
 
 async function mapLimit<T>(items:T[], limit:number, fn:(item:T)=>Promise<void>) {
   let index=0;
@@ -43,7 +43,7 @@ export async function storeScope(args: {
   const url = scopeResultUrl(args);
   const { data, file } = await fetchAndPersist<any>(url);
   const round = args.round ?? 1;
-  if(String(data.ele)!==String(electionIdForOffice(args.office,round)) || Number(data.t)!==round || data.f!=="o" || data.dv!=="s" || !data.carg?.some((c:any)=>Number(c.cd)===args.office)) throw new Error("Resultado TSE diverge da eleição, turno ou cargo.");
+  if(String(data.ele)!==String(electionIdForOffice(args.office,round)) || Number(data.t)!==round || data.f!=="o" || data.dv!=="s" || !data.carg?.some((c:any)=>Number(c.cd)===tseCargoCode(args.office,args.uf))) throw new Error("Resultado TSE diverge da eleição, turno ou cargo.");
   if([1,3].includes(args.office)) parseIndicators(data,{electionId:electionIdForOffice(args.office,round),round,office:args.office,uf:args.uf,municipalityCode:args.municipalityCode,zone:args.zone});
   const candidates = extractCandidates(data);
   if(!candidates.length) throw new Error("Resultado sem candidatos.");

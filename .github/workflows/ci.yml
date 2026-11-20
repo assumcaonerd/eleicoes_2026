@@ -19,6 +19,7 @@ jobs:
       - run: npm run test:indicators
       - run: npm run test:map
       - run: npm run test:http
+      - run: npm run test:tse-url
       - uses: actions/upload-artifact@v4
         with:
           name: mapa-es-validacao-sintetica
