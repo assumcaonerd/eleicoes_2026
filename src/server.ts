@@ -9,6 +9,7 @@ import { z } from "zod";
 import { config } from "./config.js";
 import { candidateSummary, searchCandidates, votesByLevel } from "./tools/queries.js";
 import { handleWeb } from "./web/handler.js";
+import { hardenRequest } from "./web/http-hardening.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const widget = readFileSync(join(here, "ui", "results-widget.html"), "utf8");
@@ -72,6 +73,7 @@ function makeMcpServer() {
 
 const server = createServer(async (req, res) => {
   try {
+    hardenRequest(req, res);
     if (req.url === "/health") {
       res.writeHead(200, { "content-type": "application/json" });
       res.end(JSON.stringify({ ok: true, app: "Votos por Seção", year: 2026 }));

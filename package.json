@@ -19,6 +19,7 @@
     "import:totals:summary": "tsx scripts/import-majority-summary-totals.ts",
     "test:national-map": "node --import tsx scripts/test-national-map.ts",
     "test:billing": "node --import tsx --test scripts/test-billing.ts",
+    "test:http": "node --import tsx scripts/test-http-hardening.ts",
     "test:senado": "node --import tsx scripts/test-senado.ts && node --import tsx scripts/test-senate-control.ts"
   },
   "dependencies": {

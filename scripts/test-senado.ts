@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {readFileSync,readdirSync} from 'node:fs';
+import {readFileSync,readdirSync,existsSync} from 'node:fs';
 import vm from 'node:vm';
 import {handleWeb} from '../src/web/handler.js';
 import {homePage} from '../src/web/pages.js';
@@ -25,6 +25,7 @@ try{
  const context={window:{} as any};vm.runInNewContext(readFileSync('src/ui/senado/senadores.js','utf8'),context);
  const senators=context.window.SENADORES;assert.equal(senators.length,81);assert.equal(new Set(senators.map((s:any)=>s.uf)).size,27);
  for(const uf of new Set(senators.map((s:any)=>s.uf)))assert.equal(senators.filter((s:any)=>s.uf===uf).length,3);
+ for(const s of senators)if(s.foto)assert.ok(existsSync('src/ui/senado/img/senadores/'+String(s.foto).replace(/\.[a-z]+$/,'')+'-mini.webp'),'miniatura ausente: '+s.foto);
  const assets=['senadores.js',...readdirSync('src/ui/senado/img').filter(f=>!f.includes('.')).flatMap(()=>[]),...readdirSync('src/ui/senado/img').filter(f=>f.includes('.')).map(f=>'img/'+f),...readdirSync('src/ui/senado/img/senadores').map(f=>'img/senadores/'+f)];
  for(const asset of assets){const r=await fetch(origin+'/assets/senado/'+asset);assert.equal(r.status,200,asset);await r.arrayBuffer()}
  for(const path of ['/assets/senado/not-found.js','/assets/senado/img/not-found.jpg','/assets/senado/img/%2e%2e%2findex.html'])assert.equal((await fetch(origin+path)).status,404,path);

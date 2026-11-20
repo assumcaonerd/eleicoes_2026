@@ -233,10 +233,10 @@
         </defs>
         <g id="spectators" pointer-events="none" opacity="0.95" style="filter:drop-shadow(0 12px 22px #0009)">
           <svg x="760" y="0" width="760" height="760" viewBox="120 8 410 395" preserveAspectRatio="xMidYMid meet" mask="url(#observerMask)">
-            <image href="/assets/senado/img/lula-observador.png" width="619" height="410" style="filter:brightness(.86) saturate(.88)"/>
+            <image href="/assets/senado/img/lula-observador.webp" width="619" height="410" style="filter:brightness(.86) saturate(.88)"/>
           </svg>
           <svg x="1770" y="0" width="580" height="760" viewBox="125 155 260 357" preserveAspectRatio="xMidYMid meet" mask="url(#observerMask)">
-            <image href="/assets/senado/img/flavio-observador.png" width="512" height="512" style="filter:brightness(.88) saturate(.88)"/>
+            <image href="/assets/senado/img/flavio-observador.webp" width="512" height="512" style="filter:brightness(.88) saturate(.88)"/>
           </svg>
         </g>
         <g id="tug">
@@ -405,6 +405,8 @@
     const norm = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
     const searchUrl = (site, nome) => `https://www.google.com/search?q=${encodeURIComponent(`site:${site} senador ${nome}`)}`;
     const fotoUrl = (s) => s.foto ? `/assets/senado/img/senadores/${s.foto}` : "";
+    // Miniatura (156x195 WebP) para a lista e os alfinetes do mapa; a foto original fica só no perfil ampliado.
+    const miniUrl = (s) => s.foto ? `/assets/senado/img/senadores/${s.foto.replace(/\.[a-z]+$/, "")}-mini.webp` : "";
     const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
     function socialLinks(s) {
@@ -418,7 +420,7 @@
     }
 
     function avatar(s) {
-      return `<div class="avatar">${s.foto ? `<img src="${fotoUrl(s)}" alt="" loading="lazy">` : initials(s.nome)}</div>`;
+      return `<div class="avatar">${s.foto ? `<img src="${miniUrl(s)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${fotoUrl(s)}'">` : initials(s.nome)}</div>`;
     }
 
     /* ---------- placar ---------- */
@@ -486,7 +488,7 @@
           const inner = el("g", { class: "inner" });
           inner.appendChild(el("circle", { class: "ring", r: R + 0.09 }));
           if (s.foto) {
-            inner.appendChild(el("image", { href: fotoUrl(s), x: -R, y: -R, width: 2 * R, height: 2 * R, preserveAspectRatio: "xMidYMin slice", "clip-path": "url(#pinclip)" }));
+            inner.appendChild(el("image", { href: miniUrl(s), x: -R, y: -R, width: 2 * R, height: 2 * R, preserveAspectRatio: "xMidYMin slice", "clip-path": "url(#pinclip)" }));
           } else {
             inner.appendChild(el("circle", { class: "fallback", r: R }));
             inner.appendChild(Object.assign(el("text", { class: "initials", y: 0.02 }), { textContent: initials(s.nome) }));
