@@ -13,7 +13,7 @@ const pwaCss = ".sov-install-help{position:fixed;inset:0;z-index:1000;display:fl
 // Android/Chrome avisam com beforeinstallprompt; no iPhone não há esse aviso,
 // então o botão abre as instruções de "Adicionar à Tela de Início".
 const pwaScript = `(function(){
-if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js',{scope:'/',updateViaCache:'none'}).then(function(reg){document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')reg.update().catch(function(){})})}).catch(function(){})})}
 var btn=document.getElementById('sov-install'),help=document.getElementById('sov-install-help'),close=document.getElementById('sov-install-close');
 var installed=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 if(!btn||installed)return;

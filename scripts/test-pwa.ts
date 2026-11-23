@@ -55,9 +55,19 @@ try {
   if (offlineUrl && /\bOFFLINE_URL\b/.test(block)) precache.push(offlineUrl);
   assert.ok(precache.includes("/offline") && precache.length >= 5, "lista de precache encontrada");
   for (const path of precache) assert.equal((await get(path)).status, 200, "precache " + path);
-  // Páginas (navegação) vão sempre à rede; só estáticos da marca entram no cache.
-  assert.match(swSource, /request\.mode === "navigate"[\s\S]*?fetch\(request\)\.catch/);
+  // Páginas (navegação): network-first, com redirecionamento limpo (exigência do WebKit/iOS).
+  assert.match(swSource, /request\.mode === "navigate"[\s\S]*?networkFirstPage/);
+  assert.match(swSource, /redirect: "follow"/);
+  assert.match(swSource, /response\.redirected\) return Response\.redirect\(response\.url, 303\)/);
+  // Login/logout apagam as páginas guardadas; HTML com no-store nunca entra no cache.
+  assert.match(swSource, /\/logout"[\s\S]*?caches\.delete\(PAGES\)/);
+  assert.match(swSource, /no-store/);
   assert.match(swSource, /pathname\.startsWith\("\/assets\/siga-voto\/"\)/);
+
+  // /app sem sessão redireciona: é exatamente o caso do app recém-instalado no iPhone.
+  const app = await get("/app");
+  assert.equal(app.status, 303);
+  assert.equal(app.headers.location, "/login");
 
   const offline = await get("/offline");
   assert.equal(offline.status, 200);
@@ -65,7 +75,7 @@ try {
   assert.match(page, /<link rel="manifest" href="\/manifest\.webmanifest">/);
   assert.match(page, /apple-mobile-web-app-capable/);
   assert.match(page, /id="sov-install" hidden/);
-  assert.match(page, /serviceWorker\.register\('\/sw\.js'\)/);
+  assert.match(page, /serviceWorker\.register\('\/sw\.js',\{scope:'\/',updateViaCache:'none'\}\)/);
 
   assert.equal(readFileSync(new URL("../src/ui/sw.js", import.meta.url), "utf8"), swSource);
   console.log("PWA: manifesto, ícones, service worker, precache e página offline ok.");
